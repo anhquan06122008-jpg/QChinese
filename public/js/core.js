@@ -150,7 +150,10 @@ window.QCore = (function () {
       options.body = JSON.stringify(options.body);
     }
     options.headers = headers;
-    const res = await fetch(url, options);
+    if (!serverHealth.ok && /^\/?api\/(ai|user)\//.test(String(url))) {
+      throw new Error("Tính năng AI cần chạy backend (python server.py hoặc deploy lên Render). Bản GitHub Pages chỉ có phần học tĩnh, tài khoản lưu trong trình duyệt này.");
+    }
+    const res = await fetch(String(url).replace(/^\//, ""), options);
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       throw new Error(data.error || `Lỗi kết nối (${res.status})`);
@@ -444,7 +447,7 @@ window.QCore = (function () {
     };
 
     if (serverHealth.ok) {
-      const audio = new Audio(`/api/tts?text=${encodeURIComponent(cleanText)}&slow=${slowFlag}`);
+      const audio = new Audio(`api/tts?text=${encodeURIComponent(cleanText)}&slow=${slowFlag}`);
       audio.playbackRate = slowFlag === "1" ? 0.92 : Math.max(0.5, Math.min(1.4, rate));
       activeAudio = audio;
       audio.onended = () => {
@@ -577,7 +580,7 @@ window.QCore = (function () {
   async function fetchStrokeData(char) {
     if (strokeMemCache[char]) return strokeMemCache[char];
     const urls = serverHealth.ok
-      ? [`/api/strokes?char=${encodeURIComponent(char)}`, `https://cdn.jsdelivr.net/npm/hanzi-writer-data@2.0/${encodeURIComponent(char)}.json`]
+      ? [`api/strokes?char=${encodeURIComponent(char)}`, `https://cdn.jsdelivr.net/npm/hanzi-writer-data@2.0/${encodeURIComponent(char)}.json`]
       : [`https://cdn.jsdelivr.net/npm/hanzi-writer-data@2.0/${encodeURIComponent(char)}.json`];
 
     for (const u of urls) {

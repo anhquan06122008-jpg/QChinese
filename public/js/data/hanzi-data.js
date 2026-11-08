@@ -5,6 +5,36 @@
 
 window.QCHINESE_HANZI_LIST = [
   {
+  {
+    hanzi: "水", // Chữ Hán giản thể muốn thêm
+    hsk_level: 1,
+    pinyin: "shuǐ",
+    pinyin_number: "shui3",
+    vietnamese_hint: "suổi (thanh 3, uốn cong lưỡi nhẹ)",
+    part_of_speech: "名词 · Danh từ",
+    meanings: {
+      chinese: "无色无味的液体，生活必需品。",
+      english: "Water — clear liquid essential for life.",
+      vietnamese: "Nước."
+    },
+    radical: "水 (bộ Thủy)",
+    decomposition: "Chữ độc lập cấu tạo từ bộ Thủy.",
+    stroke_count: 4,
+    stroke_names: [
+      "1. Sổ móc (亅) ở giữa",
+      "2. Ngang gập phẩy (㇇) bên trái",
+      "3. Phẩy ngắn (丿) trên phải",
+      "4. Mác (乀) dưới phải"
+    ],
+    compounds: [
+      { word: "喝水", pinyin: "hē shuǐ", vi: "uống nước", en: "drink water" },
+      { word: "水果", pinyin: "shuǐguǒ", vi: "hoa quả / trái cây", en: "fruit" }
+    ],
+    examples: [
+      { chinese: "我想喝水。", pinyin: "Wǒ xiǎng hē shuǐ.", english: "I want to drink water.", vietnamese: "Tôi muốn uống nước." }
+    ],
+    common_mistakes: "Viết nét sổ móc ở giữa trước, rồi đến bên trái, sau đó mới viết bên phải."
+  },
     hanzi: "你",
     hsk_level: 1,
     pinyin: "nǐ",

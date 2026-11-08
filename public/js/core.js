@@ -95,6 +95,7 @@ window.QCore = (function () {
     st.readingCompleted = Array.isArray(st.readingCompleted) ? st.readingCompleted : [];
     st.readingNotes = st.readingNotes || {};
     st.markedWords = Array.isArray(st.markedWords) ? st.markedWords : [];
+    st.customHanzi = Array.isArray(st.customHanzi) ? st.customHanzi : [];
     st.writingSubmissions = Array.isArray(st.writingSubmissions) ? st.writingSubmissions : [];
     st.skillScores = Object.assign({}, def.skillScores, st.skillScores || {});
     st.testHistory = Array.isArray(st.testHistory) ? st.testHistory : [];

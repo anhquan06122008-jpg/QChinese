@@ -93,7 +93,18 @@ window.QHanziStudio = (function () {
 
     const st = QCore.getState();
     const detail = QCore.resolveHanziDetail(activeChar);
-    const charList = window.QCHINESE_HANZI_LIST || [];
+    const customChars = Array.isArray(st.customHanzi) ? st.customHanzi : [];
+    const builtinList = window.QCHINESE_HANZI_LIST || [];
+    const charList = builtinList.concat(
+      customChars
+        .filter((c) => !builtinList.some((b) => b.hanzi === c))
+        .map((c) => {
+          const d = QCore.resolveHanziDetail(c);
+          return { hanzi: c, pinyin: /^[a-zA-Zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜü]/.test(d.pinyin) && d.pinyin !== "Tra âm trực tiếp" ? d.pinyin : "" };
+        })
+    );
+    const isPinned = customChars.includes(activeChar) || builtinList.some((b) => b.hanzi === activeChar);
+    const isBuiltin = builtinList.some((b) => b.hanzi === activeChar);
     const prog = st.hanziProgress[activeChar] || { attempts: 0, bestScore: 0, memorized: false };
 
     container.innerHTML = `
@@ -135,7 +146,14 @@ window.QHanziStudio = (function () {
               <span class="badge" id="hz-stroke-badge">${detail.stroke_count ? `${detail.stroke_count} nét` : "Đang tải số nét..."}</span>
               ${prog.memorized ? `<span class="badge badge-jade">✓ Đã ghi nhớ (${prog.bestScore}%)</span>` : ""}
             </div>
-            <button class="btn btn-outline btn-sm" id="hz-save-notebook">📒 Lưu chữ khó vào Sổ tay</button>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              ${
+                isBuiltin
+                  ? ""
+                  : `<button class="btn ${isPinned ? "btn-danger" : "btn-soft"} btn-sm" id="hz-pin-btn">${isPinned ? "✕ Bỏ khỏi danh sách chọn nhanh" : "➕ Thêm vào danh sách chọn nhanh"}</button>`
+              }
+              <button class="btn btn-outline btn-sm" id="hz-save-notebook">📒 Lưu chữ khó vào Sổ tay</button>
+            </div>
           </div>
 
           <div style="display:flex;align-items:center;gap:22px;flex-wrap:wrap;margin-bottom:14px;">
@@ -309,6 +327,23 @@ window.QHanziStudio = (function () {
     container.querySelectorAll("[data-speak-word]").forEach((b) => {
       b.onclick = () => QCore.speakChinese(b.getAttribute("data-speak-word"));
     });
+    const pinBtn = container.querySelector("#hz-pin-btn");
+    if (pinBtn) {
+      pinBtn.onclick = () => {
+        st.customHanzi = Array.isArray(st.customHanzi) ? st.customHanzi : [];
+        const i = st.customHanzi.indexOf(activeChar);
+        if (i >= 0) {
+          st.customHanzi.splice(i, 1);
+          QCore.showToast(`Đã bỏ "${activeChar}" khỏi danh sách chọn nhanh.`);
+        } else {
+          st.customHanzi.push(activeChar);
+          QCore.showToast(`Đã thêm "${activeChar}" vào danh sách chọn nhanh!`);
+        }
+        QCore.saveState(true);
+        renderHanzi(container);
+      };
+    }
+
     container.querySelector("#hz-save-notebook").onclick = () => {
       QCore.addToNotebook({
         category: "hard_hanzi",

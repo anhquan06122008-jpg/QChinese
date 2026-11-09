@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CHINESE PERSONAL TUTOR – AI 汉语私人教师 (Tiếng Trung Giản Thể)</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <meta name="description" content="Hệ thống học tiếng Trung Giản thể cá nhân hóa từ con số 0 đến HSK 6: Pinyin, 4 thanh điệu, hoạt ảnh thứ tự nét chữ Hán, từ vựng ba ngôn ngữ Trung–Anh–Việt và AI Giáo viên." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Left Navigation Sidebar (13 Sections) -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-seal" title="Luyện chữ Giản thể">练</div>
+        <div class="brand-titles">
+          <h1>QChinese Tutor</h1>
+          <span>AI 汉语私人教师 · Giản thể</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav" id="sidebar-nav" aria-label="Điều hướng học tập"></nav>
+
+      <div class="sidebar-user">
+        <div class="user-avatar" id="sb-user-avatar">H</div>
+        <div class="user-meta">
+          <strong id="sb-user-name">Học viên</strong>
+          <small id="sb-user-sub">@user · HSK 1</small>
+        </div>
+        <button class="icon-btn" id="sb-switch-account" title="Đổi tài khoản / Đăng xuất" style="padding:6px 9px;">⇄</button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="main-area">
+      <header class="topbar">
+        <button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Mở menu">☰</button>
+
+        <div class="quick-search-wrap">
+          <span class="quick-search-icon">🔍</span>
+          <input
+            type="text"
+            id="quick-search-input"
+            class="quick-search-input"
+            placeholder="Tra nhanh Pinyin (vd: nihao, xihuan), chữ Hán hoặc tiếng Việt..."
+            autocomplete="off"
+          />
+          <div id="quick-search-dropdown" class="quick-search-dropdown"></div>
+        </div>
+
+        <div class="topbar-pills">
+          <span class="stat-pill" id="top-streak" title="Chuỗi ngày học liên tục">🔥 1 ngày</span>
+          <span class="stat-pill" id="top-hanzi" title="Số chữ Hán đã ghi nhớ">✿ 0 chữ</span>
+          <span class="stat-pill" id="top-hsk" title="Cấp độ đang học">✦ HSK 1</span>
+          <button class="icon-btn" id="top-theme-btn" title="Chuyển đổi Sáng / Tối">🌙 Tối</button>
+        </div>
+      </header>
+
+      <main class="page-content" id="page-content">
+        <div class="card" style="text-align:center;padding:48px;">
+          Đang khởi tạo hệ thống học tiếng Trung cá nhân hóa QChinese...
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Multi-User Login / Registration Gate -->
+  <div id="auth-modal" class="modal-backdrop"></div>
+
+  <!-- Verified Stroke Order & Handwriting Engine -->
+  <script src="vendor/hanzi-writer.min.js"></script>
+
+  <!-- Verified Simplified Chinese Datasets -->
+  <script src="js/data/vocab-data.js"></script>
+  <script src="js/data/hanzi-data.js"></script>
+  <script src="js/data/pinyin-data.js"></script>
+  <script src="js/data/grammar-data.js"></script>
+  <script src="js/data/listening-reading-data.js"></script>
+
+  <!-- Core Services & Smart Pinyin-to-Hanzi IME -->
+  <script src="js/core.js"></script>
+  <script src="js/pinyin-ime.js"></script>
+
+  <!-- Feature Modules -->
+  <script src="js/modules/dashboard-assessment.js"></script>
+  <script src="js/modules/vocab-tutor.js"></script>
+  <script src="js/modules/hanzi-studio.js"></script>
+  <script src="js/modules/pinyin-listening.js"></script>
+  <script src="js/modules/grammar-reading-writing.js"></script>
+  <script src="js/modules/notebook-analytics-settings.js"></script>
+
+  <!-- Application Bootstrapper -->
+  <script src="js/app.js"></script>
+</body>
+</html>

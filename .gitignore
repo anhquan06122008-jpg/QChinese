@@ -1,0 +1,18 @@
+# Environment & Secret Keys (NEVER commit API keys!)
+.env
+.env.local
+.env.*.local
+
+# User SQLite Database & Audio Cache
+data/qchinese.db
+data/qchinese.db-shm
+data/qchinese.db-wal
+data/tts_cache/
+
+# Python bytecode & OS files
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.DS_Store
+Thumbs.db

@@ -1,2 +1,0 @@
-# QChinese runs entirely on Python 3.10+ Standard Library (sqlite3, http.server, hashlib, urllib)!
-# Zero third-party pip packages are required.

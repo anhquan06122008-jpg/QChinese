@@ -285,8 +285,20 @@ window.QGrammarReadingWriting = (function () {
     }
   }
 
-  function renderSpeaking(container, skipAutoInit = false) {
+  let activeSpkMatId = null;
+
+  function renderSpeaking(container, skipAutoInit = false, params = {}) {
     const st = QCore.getState();
+    if (params && params.materialId) {
+      activeSpkMatId = params.materialId;
+    } else if (params && params.materialId === null) {
+      activeSpkMatId = null;
+    }
+    const customMat = activeSpkMatId ? (st.materials || []).find((m) => m.id === activeSpkMatId) : null;
+    if (customMat) {
+      renderMaterialSpeakingStudio(container, customMat);
+      return;
+    }
     if (!chatHistory.length && !skipAutoInit) {
       container.innerHTML = `<div class="card">⏳ Đang kết nối với AI Giáo viên tiếng Trung...</div>`;
       startNewConversation(container);
@@ -500,10 +512,26 @@ window.QGrammarReadingWriting = (function () {
   let selectedSentIdx = 0;
   let showReadQuiz = false;
 
-  function renderReading(container) {
+  let activeReadMatId = null;
+  let matRdShowGloss = true;
+  let matRdSelectedWord = null;
+
+  function renderReading(container, params = {}) {
+    const st = QCore.getState();
+    if (params && params.materialId) {
+      activeReadMatId = params.materialId;
+      matRdSelectedWord = null;
+    } else if (params && params.materialId === null) {
+      activeReadMatId = null;
+    }
+    const customMat = activeReadMatId ? (st.materials || []).find((m) => m.id === activeReadMatId) : null;
+    if (customMat) {
+      renderMaterialReadingStudio(container, customMat);
+      return;
+    }
+
     const passages = window.QCHINESE_READING || [];
     const passage = passages.find((p) => p.id === activeReadId) || passages[0];
-    const st = QCore.getState();
     const sent = passage.sentences[selectedSentIdx] || passage.sentences[0];
     const tok = selectedToken || sent.tokens.find((t) => !t.punct) || sent.tokens[0];
     const noteKey = `${passage.id}_${selectedSentIdx}`;
@@ -738,12 +766,25 @@ window.QGrammarReadingWriting = (function () {
   /* ==================== 6.6. WRITING STUDIO (PART A HANZI + PART B SENTENCE/PARAGRAPH AI) ==================== */
   let wrSection = "partB"; // "partA" | "partB"
   let activeTaskIdx = 0;
+  let activeWriteMatId = null;
   let lastAiGrade = null;
 
-  function renderWriting(container) {
+  function renderWriting(container, params = {}) {
+    const st = QCore.getState();
+    if (params && params.materialId) {
+      activeWriteMatId = params.materialId;
+      wrSection = "partB";
+      lastAiGrade = null;
+    } else if (params && params.materialId === null) {
+      activeWriteMatId = null;
+    }
+    const customMat = activeWriteMatId ? (st.materials || []).find((m) => m.id === activeWriteMatId) : null;
+    if (customMat) {
+      renderMaterialWritingStudio(container, customMat);
+      return;
+    }
     const tasks = window.QCHINESE_WRITING_TASKS || [];
     const task = tasks[activeTaskIdx % tasks.length];
-    const st = QCore.getState();
 
     container.innerHTML = `
       <div class="page-header">
@@ -949,6 +990,296 @@ window.QGrammarReadingWriting = (function () {
     root.querySelectorAll("[data-speak-corr]").forEach((b) => {
       b.onclick = () => QCore.speakChinese(b.getAttribute("data-speak-corr"));
     });
+  }
+
+  /* ==================== PERSONAL MATERIAL INTEGRATIONS (WRITING / READING / SPEAKING) ==================== */
+
+  function renderMaterialWritingStudio(container, mat) {
+    const st = QCore.getState();
+    container.innerHTML = `
+      <div class="page-header">
+        <div>
+          <span class="badge badge-blue">📁 ĐỀ BÀI TỪ KHO TÀI LIỆU CÁ NHÂN · HSK ${mat.hskLevel}</span>
+          <h2 style="margin:6px 0 4px;">✍️ Luyện Viết: ${QCore.escapeHtml(mat.title)}</h2>
+          <p>AI chấm bài bám sát đúng đề bài gốc bạn cung cấp, đánh giá bài làm gốc trước rồi mới đưa ra phiên bản sửa chuẩn.</p>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-outline btn-sm" id="mwr-back-std">← Về đề viết chuẩn HSK</button>
+          <button class="btn btn-soft btn-sm" id="mwr-back-lib">📁 Về Kho tài liệu</button>
+        </div>
+      </div>
+
+      <div class="grid-2" style="align-items:start;">
+        <div class="card">
+          <div class="card-subtle" style="margin-bottom:14px;border-left:4px solid var(--primary);">
+            <strong style="font-size:12.5px;color:var(--primary);">📋 ĐỀ BÀI GỐC (Không thay đổi):</strong>
+            <div class="hanzi-text" style="font-size:19px;font-weight:700;margin-top:6px;white-space:pre-wrap;">${QCore.escapeHtml(mat.content || mat.title)}</div>
+            ${mat.notes ? `<div style="font-size:12.5px;color:var(--text-secondary);margin-top:6px;">📝 Ghi chú: ${QCore.escapeHtml(mat.notes)}</div>` : ""}
+          </div>
+
+          <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;">Bài làm của bạn (Chữ Hán Giản thể – gõ Pinyin tự hiện gợi ý):</label>
+          <textarea class="textarea-field hanzi-text" id="mwr-text" rows="6" data-pinyin-ime="true" style="font-size:18px;margin-bottom:10px;" placeholder="Viết đoạn văn/câu trả lời bằng tiếng Trung Giản thể..."></textarea>
+
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-primary" id="mwr-submit">👩‍🏫 Nộp bài & Đánh giá chi tiết</button>
+            <button class="btn btn-outline" id="mwr-speak-prompt">🔊 Nghe đọc đề bài</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin:0 0 12px;">📊 Kết quả đánh giá của AI Giáo viên</h3>
+          <div id="mwr-grade-panel">
+            ${lastAiGrade ? renderAiWritingFeedbackHTML(lastAiGrade) : `<div class="card-subtle" style="color:var(--text-muted);font-size:13.5px;">Nhập bài viết bên trái và bấm "Nộp bài & Đánh giá chi tiết". Kết quả và điểm số sẽ được lưu vào lịch sử tài liệu này!</div>`}
+          </div>
+          ${(mat.history || []).length ? `
+            <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border-color);">
+              <strong style="font-size:13.5px;">🕒 Lịch sử nộp bài (${mat.history.length} lần):</strong>
+              ${mat.history.slice(0, 4).map((h) => `
+                <div class="card-subtle" style="margin-top:6px;padding:8px 10px;font-size:12.5px;">
+                  <strong>Điểm: ${h.score != null ? h.score + "/100" : "—"}</strong> · ${new Date(h.date).toLocaleString("vi-VN")}
+                  <div class="hanzi-text" style="margin-top:2px;color:var(--text-secondary);">${QCore.escapeHtml((h.answer || "").slice(0, 90))}</div>
+                </div>
+              `).join("")}
+            </div>
+          ` : ""}
+        </div>
+      </div>
+    `;
+    if (window.QPinyinIME) QPinyinIME.attachAll(container);
+    container.querySelector("#mwr-back-std").onclick = () => { activeWriteMatId = null; renderWriting(container); };
+    container.querySelector("#mwr-back-lib").onclick = () => window.QApp.navigate("materials");
+    container.querySelector("#mwr-speak-prompt").onclick = () => QCore.speakChinese(mat.content || mat.title);
+
+    container.querySelector("#mwr-submit").onclick = async () => {
+      const text = (container.querySelector("#mwr-text").value || "").trim();
+      if (!text) { QCore.showToast("Vui lòng viết bài tiếng Trung trước khi nộp!"); return; }
+      const panel = container.querySelector("#mwr-grade-panel");
+      panel.innerHTML = `<div class="card-subtle">⏳ AI Giáo viên đang chấm bài bám sát đề "${QCore.escapeHtml(mat.title)}"...</div>`;
+      const res = await window.QAiTutor.evaluateSentenceSmart({
+        text,
+        prompt: mat.content || mat.title,
+        hskLevel: mat.hskLevel || st.profile.hskLevel
+      });
+      lastAiGrade = res;
+      QCore.recordMaterialPractice(mat.id, { mode: "Luyện Viết", score: res.score, answer: text, status: (res.score || 0) >= 70 ? "completed" : "in_progress" });
+      st.writingSubmissions.unshift({ date: QCore.todayStr(), original: res.original, corrected: res.corrected, score: res.score, materialTitle: mat.title });
+      QCore.updateSkillScore("writing", res.score || 70);
+      QCore.saveState(true);
+      renderMaterialWritingStudio(container, mat);
+    };
+    if (lastAiGrade) bindGradePanelAudio(container.querySelector("#mwr-grade-panel"));
+  }
+
+  async function renderMaterialReadingStudio(container, mat) {
+    await QVocabStore.init();
+    const tokens = QVocabStore.segmentChineseText(mat.content || "");
+    const st = QCore.getState();
+    const markedSet = new Set(st.markedWords || []);
+    const sel = matRdSelectedWord;
+    const sentences = (mat.content || "").split(/[。！？\n]+/).map((s) => s.trim()).filter((s) => s.length >= 4);
+
+    container.innerHTML = `
+      <div class="page-header">
+        <div>
+          <span class="badge badge-blue">📁 ĐỌC HIỂU TƯƠNG TÁC (LWT-STYLE) · HSK ${mat.hskLevel}</span>
+          <h2 style="margin:6px 0 4px;">📖 ${QCore.escapeHtml(mat.title)}</h2>
+          <p>Giữ nguyên văn bản gốc — bấm vào bất kỳ từ chữ Hán nào để nghe phát âm, tra nghĩa Trung–Anh–Việt, đánh dấu từ mới và lưu vào Sổ tay.</p>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn ${matRdShowGloss ? "btn-primary" : "btn-outline"} btn-sm" id="mrd-tog-gloss">👁️ ${matRdShowGloss ? "Đang hiện Chú thích dưới từ" : "Ẩn chú thích (Tự luyện đọc)"}</button>
+          <button class="btn btn-soft btn-sm" id="mrd-speak-all">🔊 Đọc toàn bài</button>
+          <button class="btn btn-outline btn-sm" id="mrd-back-std">← Về bài đọc HSK</button>
+          <button class="btn btn-outline btn-sm" id="mrd-back-lib">📁 Kho tài liệu</button>
+        </div>
+      </div>
+
+      <div class="reading-layout">
+        <div class="card">
+          <div style="display:flex;flex-wrap:wrap;gap:6px 4px;align-items:flex-end;line-height:1.4;">
+            ${tokens.map((tk, idx) => {
+              if (!tk.isHanzi) {
+                return tk.text === "\n" ? `<div style="flex-basis:100%;height:8px;"></div>` : `<span style="font-size:22px;padding:0 2px;">${QCore.escapeHtml(tk.text)}</span>`;
+              }
+              const isMarked = markedSet.has(tk.text);
+              const gloss = tk.entry ? (tk.entry.meanings.vietnamese[0] || tk.entry.meanings.english[0] || "").split(/[;,]/)[0].slice(0, 18) : "";
+              const py = tk.entry ? tk.entry.pinyin : "";
+              return `
+                <button type="button" data-mrd-tok="${idx}" style="background:${isMarked ? "var(--bg-warn-soft)" : "transparent"};border:none;border-bottom:2px solid ${isMarked ? "var(--accent-amber)" : tk.entry ? "var(--primary-light)" : "var(--border-color)"};border-radius:6px;padding:4px 5px;cursor:pointer;display:inline-flex;flex-direction:column;align-items:center;color:var(--text-main);">
+                  ${matRdShowGloss && py ? `<span class="pinyin-text" style="font-size:11px;color:var(--primary);">${QCore.escapeHtml(py)}</span>` : ""}
+                  <span class="hanzi-text" style="font-size:24px;font-weight:500;">${QCore.escapeHtml(tk.text)}</span>
+                  ${matRdShowGloss && gloss ? `<span style="font-size:10.5px;color:var(--text-muted);max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${QCore.escapeHtml(gloss)}</span>` : ""}
+                </button>
+              `;
+            }).join("")}
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div class="card">
+            <h3 style="margin:0 0 10px;font-size:16px;">🔍 Từ điển tức thì khi bấm từ</h3>
+            ${sel ? `
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <div>
+                  <span class="hanzi-text" style="font-size:34px;font-weight:700;">${QCore.escapeHtml(sel.text)}</span>
+                  ${sel.entry ? `<span class="pinyin-text" style="font-size:18px;color:var(--primary);font-weight:700;margin-left:8px;">${QCore.escapeHtml(sel.entry.pinyin)}</span>` : ""}
+                </div>
+                <button class="btn btn-primary btn-sm" id="mrd-speak-tok">🔊 Nghe</button>
+              </div>
+              <div class="card-subtle" style="margin-bottom:10px;font-size:13.5px;">
+                ${sel.entry ? `
+                  ${sel.entry.meanings.vietnamese.length ? `<div><strong>🇻🇳 Việt:</strong> ${QCore.escapeHtml(sel.entry.meanings.vietnamese.join("; "))}</div>` : ""}
+                  ${sel.entry.meanings.english.length ? `<div style="margin-top:4px;color:var(--text-secondary);"><strong>🇬🇧 Anh:</strong> ${QCore.escapeHtml(sel.entry.meanings.english.slice(0, 3).join("; "))}</div>` : ""}
+                  ${sel.entry.han_viet ? `<div style="margin-top:4px;"><strong>Hán Việt:</strong> ${QCore.escapeHtml(sel.entry.han_viet.toUpperCase())}</div>` : ""}
+                ` : `<div>Chưa có trong cấp HSK đang nạp — bấm "AI giải thích sâu" hoặc mở Kho từ vựng cấp cao hơn.</div>`}
+              </div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <button class="btn btn-soft btn-sm" id="mrd-mark-tok">🖍️ Đánh dấu từ mới</button>
+                <button class="btn btn-outline btn-sm" id="mrd-save-nb">📒 Lưu Sổ tay</button>
+                <button class="btn btn-outline btn-sm" id="mrd-ask-ai">🤖 AI giải thích</button>
+              </div>
+            ` : `<div class="card-subtle" style="font-size:13px;color:var(--text-muted);">Bấm vào bất kỳ từ chữ Hán nào bên trái để nghe phát âm & tra nghĩa ngay lập tức!</div>`}
+          </div>
+
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <h3 style="margin:0;font-size:16px;">📝 Tự kiểm tra Đọc hiểu</h3>
+              <span class="badge badge-amber">AI Generated</span>
+            </div>
+            <p style="font-size:13px;color:var(--text-secondary);margin:0 0 8px;">Tóm tắt ý chính của đoạn văn trên bằng 1–2 câu tiếng Trung hoặc tiếng Việt để hoàn thành bài đọc:</p>
+            <textarea class="textarea-field" id="mrd-summary" rows="3" placeholder="Nhập câu tóm tắt nội dung bài đọc..."></textarea>
+            <button class="btn btn-primary btn-sm" style="margin-top:8px;" id="mrd-complete">✅ Ghi nhận hoàn thành bài đọc</button>
+            ${sentences.length ? `<div style="margin-top:10px;font-size:12px;color:var(--text-muted);">Số câu trong bài gốc: ${sentences.length} câu · Đã tách thành ${tokens.filter((t) => t.isHanzi).length} cụm từ.</div>` : ""}
+          </div>
+        </div>
+      </div>
+    `;
+
+    container.querySelector("#mrd-tog-gloss").onclick = () => { matRdShowGloss = !matRdShowGloss; renderMaterialReadingStudio(container, mat); };
+    container.querySelector("#mrd-speak-all").onclick = () => QCore.speakChinese((mat.content || "").slice(0, 260));
+    container.querySelector("#mrd-back-std").onclick = () => { activeReadMatId = null; renderReading(container); };
+    container.querySelector("#mrd-back-lib").onclick = () => window.QApp.navigate("materials");
+
+    container.querySelectorAll("[data-mrd-tok]").forEach((btn) => {
+      btn.onclick = () => {
+        const tk = tokens[Number(btn.getAttribute("data-mrd-tok"))];
+        matRdSelectedWord = tk;
+        QCore.speakChinese(tk.text);
+        renderMaterialReadingStudio(container, mat);
+      };
+    });
+
+    if (sel) {
+      container.querySelector("#mrd-speak-tok").onclick = () => QCore.speakChinese(sel.text);
+      container.querySelector("#mrd-mark-tok").onclick = () => {
+        const idx = st.markedWords.indexOf(sel.text);
+        if (idx >= 0) st.markedWords.splice(idx, 1);
+        else st.markedWords.push(sel.text);
+        QCore.saveState(false);
+        renderMaterialReadingStudio(container, mat);
+      };
+      container.querySelector("#mrd-save-nb").onclick = () => {
+        QCore.addToNotebook({
+          category: "vocab",
+          hanzi: sel.text,
+          pinyin: sel.entry ? sel.entry.pinyin : "",
+          english: sel.entry ? (sel.entry.meanings.english || []).slice(0, 2).join("; ") : "",
+          vietnamese: sel.entry ? (sel.entry.meanings.vietnamese[0] || sel.entry.meanings.english[0] || "") : ""
+        });
+      };
+      container.querySelector("#mrd-ask-ai").onclick = () => window.QApp.navigate("ai-tutor", { tab: "explain_word", word: sel.text });
+    }
+
+    container.querySelector("#mrd-complete").onclick = () => {
+      const sum = (container.querySelector("#mrd-summary").value || "").trim();
+      QCore.recordMaterialPractice(mat.id, { mode: "Đọc hiểu tương tác", score: 100, answer: sum || "Đã hoàn thành đọc hiểu", status: "completed" });
+      QCore.updateSkillScore("reading", 90);
+      QCore.showToast("🎉 Đã lưu hoàn thành bài đọc vào Kho tài liệu!");
+    };
+  }
+
+  function renderMaterialSpeakingStudio(container, mat) {
+    container.innerHTML = `
+      <div class="page-header">
+        <div>
+          <span class="badge badge-blue">📁 CHỦ ĐỀ NÓI TỪ KHO TÀI LIỆU CÁ NHÂN · HSK ${mat.hskLevel}</span>
+          <h2 style="margin:6px 0 4px;">🎙️ Luyện Nói: ${QCore.escapeHtml(mat.title)}</h2>
+          <p>Hệ thống bám sát chủ đề giảng viên giao, gợi ý từ vựng/cấu trúc phù hợp HSK ${mat.hskLevel}, cho phép thu âm và nhận phản hồi.</p>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-outline btn-sm" id="mspk-back-std">← Về luyện nói chuẩn</button>
+          <button class="btn btn-soft btn-sm" id="mspk-back-lib">📁 Kho tài liệu</button>
+        </div>
+      </div>
+
+      <div class="grid-2" style="align-items:start;">
+        <div class="card">
+          <div class="card-subtle" style="border-left:4px solid var(--primary);margin-bottom:14px;">
+            <strong style="color:var(--primary);font-size:12.5px;">🎯 ĐỀ BÀI / CHỦ ĐỀ LUYỆN NÓI:</strong>
+            <div class="hanzi-text" style="font-size:20px;font-weight:700;margin-top:6px;">${QCore.escapeHtml(mat.content || mat.title)}</div>
+            <button class="btn btn-soft btn-sm" style="margin-top:8px;" id="mspk-listen">🔊 Nghe đọc đề bài</button>
+          </div>
+          <div class="card-subtle" style="margin-bottom:14px;font-size:13.5px;">
+            <strong>🧩 Cấu trúc gợi ý trả lời (HSK ${mat.hskLevel}):</strong>
+            <ul style="margin:6px 0 0;padding-left:18px;">
+              <li>Mở đầu: <code>大家好，今天我想介绍一下……</code> (Chào mọi người, hôm nay tôi muốn giới thiệu...)</li>
+              <li>Triển khai: <code>首先……，其次……，而且……</code> (Đầu tiên..., thứ hai..., hơn nữa...)</li>
+              <li>Cảm nghĩ: <code>我觉得……非常有意思 / 很重要。</code> (Tôi thấy ... rất thú vị / quan trọng.)</li>
+            </ul>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+            <button class="btn btn-primary" id="mspk-rec">🎙️ Ghi âm câu trả lời (6 giây)</button>
+          </div>
+          <div id="mspk-rec-out"></div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin:0 0 8px;">✍️ Soạn & Kiểm tra kịch bản nói với AI</h3>
+          <textarea class="textarea-field hanzi-text" id="mspk-script" rows="5" data-pinyin-ime="true" placeholder="Ghi âm ở bên trái (tự điền văn bản nhận diện) hoặc gõ câu trả lời tiếng Trung của bạn vào đây để AI kiểm tra ngữ pháp & độ tự nhiên..."></textarea>
+          <button class="btn btn-primary" style="margin-top:10px;" id="mspk-eval">🤖 Chấm nội dung bài nói & Lưu tiến độ</button>
+          <div id="mspk-eval-out" style="margin-top:12px;"></div>
+        </div>
+      </div>
+    `;
+    if (window.QPinyinIME) QPinyinIME.attachAll(container);
+    container.querySelector("#mspk-back-std").onclick = () => { activeSpkMatId = null; renderSpeaking(container); };
+    container.querySelector("#mspk-back-lib").onclick = () => window.QApp.navigate("materials");
+    container.querySelector("#mspk-listen").onclick = () => QCore.speakChinese(mat.content || mat.title);
+
+    container.querySelector("#mspk-rec").onclick = () => {
+      const out = container.querySelector("#mspk-rec-out");
+      out.innerHTML = `<div class="card-subtle" style="color:var(--accent-red);">🔴 Đang thu âm 6 giây... Hãy trả lời bằng tiếng Trung!</div>`;
+      QCore.captureLearnerVoice({
+        durationMs: 6000,
+        onAudioReady: (url, transcript) => {
+          if (transcript) {
+            const ta = container.querySelector("#mspk-script");
+            ta.value = (ta.value ? ta.value + " " : "") + transcript;
+          }
+          out.innerHTML = `
+            <div class="card-subtle">
+              <audio controls src="${url}" style="width:100%;height:36px;margin-bottom:6px;"></audio>
+              <div style="font-size:12.5px;color:var(--text-secondary);">${transcript ? `✅ Nhận diện: "${QCore.escapeHtml(transcript)}" (đã chép sang ô kịch bản bên phải để AI sửa ngữ pháp!).` : "🎧 Đã lưu băng thu âm. Nghe lại để tự kiểm tra độ rõ ràng & thanh điệu."}</div>
+            </div>
+          `;
+        }
+      });
+    };
+
+    container.querySelector("#mspk-eval").onclick = async () => {
+      const text = (container.querySelector("#mspk-script").value || "").trim();
+      if (!text) { QCore.showToast("Vui lòng thu âm hoặc nhập câu trả lời trước!"); return; }
+      const out = container.querySelector("#mspk-eval-out");
+      out.innerHTML = `<div class="card-subtle">⏳ AI đang chấm bài nói theo chủ đề "${QCore.escapeHtml(mat.title)}"...</div>`;
+      const res = await window.QAiTutor.evaluateSentenceSmart({
+        text,
+        prompt: mat.content || mat.title,
+        hskLevel: mat.hskLevel || 1
+      });
+      QCore.recordMaterialPractice(mat.id, { mode: "Luyện Nói", score: res.score, answer: text, status: (res.score || 0) >= 70 ? "completed" : "in_progress" });
+      QCore.logDailyActivity("speakingMinutes", 2);
+      QCore.updateSkillScore("speaking", res.score || 75);
+      out.innerHTML = window.QAiTutor.renderSentenceEvaluationCard(res);
+    };
   }
 
   return {

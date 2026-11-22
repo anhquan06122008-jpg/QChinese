@@ -7,10 +7,12 @@ window.QApp = (function () {
 
   const NAV_ITEMS = [
     { id: "dashboard", label: "Dashboard", icon: "🏠" },
-    { id: "assessment", label: "Đánh giá trình độ", icon: "🧭" },
-    { id: "vocab", label: "Học từ vựng", icon: "📖" },
+    { id: "vocab", label: "Kho từ vựng HSK", icon: "📚" },
+    { id: "pinyin", label: "Phòng luyện Pinyin", icon: "🎵" },
+    { id: "ai-tutor", label: "QChinese AI Tutor", icon: "🤖" },
+    { id: "materials", label: "Kho tài liệu cá nhân", icon: "📁" },
     { id: "hanzi", label: "Học chữ Hán", icon: "✍️" },
-    { id: "pinyin", label: "Pinyin và phát âm", icon: "🎵" },
+    { id: "assessment", label: "Đánh giá trình độ", icon: "🧭" },
     { id: "grammar", label: "Ngữ pháp", icon: "🧩" },
     { id: "listening", label: "Luyện nghe", icon: "🎧" },
     { id: "speaking", label: "Luyện nói", icon: "🎙️" },
@@ -88,28 +90,34 @@ window.QApp = (function () {
         QDashboardAssessment.renderAssessment(main);
         break;
       case "vocab":
-        QVocabTutor.renderVocab(main);
+        QVocabTutor.renderVocab(main, params);
         break;
       case "hanzi":
         QHanziStudio.renderHanzi(main, params);
         break;
       case "pinyin":
-        QPinyinListening.renderPinyin(main);
+        QPinyinListening.renderPinyin(main, params);
+        break;
+      case "ai-tutor":
+        QAiTutor.renderAiTutor(main, params);
+        break;
+      case "materials":
+        QMaterialsHub.renderMaterials(main, params);
         break;
       case "grammar":
         QGrammarReadingWriting.renderGrammar(main);
         break;
       case "listening":
-        QPinyinListening.renderListening(main);
+        QPinyinListening.renderListening(main, params);
         break;
       case "speaking":
-        QGrammarReadingWriting.renderSpeaking(main);
+        QGrammarReadingWriting.renderSpeaking(main, false, params);
         break;
       case "reading":
-        QGrammarReadingWriting.renderReading(main);
+        QGrammarReadingWriting.renderReading(main, params);
         break;
       case "writing":
-        QGrammarReadingWriting.renderWriting(main);
+        QGrammarReadingWriting.renderWriting(main, params);
         break;
       case "notebook":
         QNotebookAnalyticsSettings.renderNotebook(main);
@@ -140,7 +148,12 @@ window.QApp = (function () {
       }
       const ql = q.toLowerCase();
       // Combine Pinyin IME suggestions + Vietnamese/English/Hanzi dictionary matches
-      const pyHits = QPinyinIME.searchByPinyin(ql, 6);
+      const pyHits = QPinyinIME.searchByPinyin(ql, 5);
+      const storeHits = (window.QVocabStore ? QVocabStore.searchLoaded(q, 8) : []).map((v) => ({
+        hanzi: v.hanzi,
+        pinyin: v.pinyin,
+        vi: QVocabStore.getDisplayMeaning(v)
+      }));
       const vocabHits = (window.QCHINESE_VOCAB || [])
         .filter(
           (v) =>
@@ -154,7 +167,7 @@ window.QApp = (function () {
 
       const seen = new Set();
       const merged = [];
-      [...pyHits, ...vocabHits].forEach((item) => {
+      [...storeHits, ...pyHits, ...vocabHits].forEach((item) => {
         if (!seen.has(item.hanzi)) {
           seen.add(item.hanzi);
           merged.push(item);
@@ -320,6 +333,7 @@ window.QApp = (function () {
   }
 
   async function init() {
+    if (window.QVocabStore) QVocabStore.init();
     QPinyinIME.initGlobalListeners();
     initQuickSearch();
 

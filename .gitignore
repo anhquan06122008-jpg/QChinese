@@ -8,6 +8,13 @@ data/qchinese.db
 data/qchinese.db-shm
 data/qchinese.db-wal
 data/tts_cache/
+data/uploads/
+data/sources/complete.json
+data/sources/Unihan.zip
+data/sources/Unihan_Readings.txt
+data/sources/readme_src.md
+data/sources/*.txt
+data/sources/legacy_vocab.json
 
 # Python bytecode & OS files
 __pycache__/

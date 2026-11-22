@@ -5,7 +5,6 @@
 
 window.QCHINESE_HANZI_LIST = [
   {
-  {
     hanzi: "水", // Chữ Hán giản thể muốn thêm
     hsk_level: 1,
     pinyin: "shuǐ",
@@ -35,6 +34,7 @@ window.QCHINESE_HANZI_LIST = [
     ],
     common_mistakes: "Viết nét sổ móc ở giữa trước, rồi đến bên trái, sau đó mới viết bên phải."
   },
+  {
     hanzi: "你",
     hsk_level: 1,
     pinyin: "nǐ",

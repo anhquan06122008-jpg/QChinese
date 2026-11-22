@@ -972,6 +972,9 @@ html, body {
   .grid-2, .grid-3 {
     grid-template-columns: 1fr;
   }
+  .filter-grid-4, .filter-grid-3 {
+    grid-template-columns: 1fr !important;
+  }
 }
 
 @media (max-width: 480px) {

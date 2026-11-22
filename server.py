@@ -4,19 +4,26 @@ QChinese – AI 汉语私人教师 (Chinese Personal Tutor)
 Full-Stack Server (Python 3 stdlib + SQLite + Secure Multi-User Auth + Cached Putonghua TTS & Verified Stroke Data + Secure AI Gateway)
 """
 
+import base64
 import datetime
 import hashlib
 import hmac
+import html as html_mod
 import http.cookies
+import io
+import ipaddress
 import json
 import mimetypes
 import os
 import re
 import secrets
+import socket
 import sqlite3
 import sys
 import threading
 import time
+import xml.etree.ElementTree as ET
+import zipfile
 
 if hasattr(sys.stdout, "reconfigure"):
     try:
@@ -34,6 +41,11 @@ from typing import Any, Dict, Optional, Tuple
 from backend.ai_pedagogy import (
     get_ai_config,
     handle_analytics_advice,
+    handle_explain_grammar,
+    handle_explain_word,
+    handle_fix_sentence,
+    handle_personalized_drills,
+    handle_pronunciation_analysis,
     handle_speaking_turn,
     handle_writing_evaluation,
 )
@@ -205,6 +217,130 @@ def hash_token(token: str) -> str:
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
+def _is_safe_public_url(url: str) -> Tuple[bool, str]:
+    """Validate URL scheme and block private/loopback/link-local IPs to prevent SSRF."""
+    try:
+        parsed = urllib.parse.urlparse(url.strip())
+        if parsed.scheme not in ("http", "https"):
+            return False, "Chỉ hỗ trợ đường dẫn công khai http:// hoặc https://."
+        host = (parsed.hostname or "").strip().lower()
+        if not host or host in ("localhost", "0.0.0.0") or host.endswith(".local"):
+            return False, "Không được phép truy cập địa chỉ nội bộ (localhost/mạng cục bộ)."
+        infos = socket.getaddrinfo(host, parsed.port or (443 if parsed.scheme == "https" else 80), proto=socket.IPPROTO_TCP)
+        for info in infos:
+            ip_obj = ipaddress.ip_address(info[4][0])
+            if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local or ip_obj.is_reserved or ip_obj.is_multicast:
+                return False, "Địa chỉ IP đích thuộc mạng nội bộ/riêng tư, bị chặn để bảo mật."
+        return True, ""
+    except Exception:
+        return False, "URL không hợp lệ hoặc không thể phân giải tên miền."
+
+
+def _safe_fetch_public_url(url: str) -> Dict[str, Any]:
+    """Respectfully extract public Chinese text from a user-provided URL (no login/paywall/CAPTCHA bypass)."""
+    ok, err = _is_safe_public_url(url)
+    if not ok:
+        return {"ok": False, "error": err}
+    try:
+        req = urllib.request.Request(
+            url.strip(),
+            headers={
+                "User-Agent": "QChinese-Educational-Importer/1.0 (+https://github.com/anhquan06122008-jpg/QChinese)",
+                "Accept": "text/html,text/plain;q=0.9,*/*;q=0.1",
+            },
+        )
+        with urllib.request.urlopen(req, timeout=12) as resp:
+            ctype = (resp.headers.get("Content-Type") or "").lower()
+            if "text/" not in ctype and "html" not in ctype and "xml" not in ctype:
+                return {"ok": False, "error": f"URL trả về định dạng '{ctype}' không phải văn bản/HTML. Hãy tải file về rồi upload trực tiếp."}
+            raw = resp.read(1_500_000)
+            text = raw.decode("utf-8", errors="replace")
+    except urllib.error.HTTPError as e:
+        if e.code in (401, 403, 429):
+            return {"ok": False, "error": f"Website yêu cầu đăng nhập hoặc chặn truy cập tự động (HTTP {e.code}). Vui lòng sao chép đoạn văn bản hợp pháp và dán thủ công vào QChinese."}
+        return {"ok": False, "error": f"Không tải được trang web (HTTP {e.code})."}
+    except Exception:
+        return {"ok": False, "error": "Không thể kết nối tới URL này (hết thời gian chờ hoặc mạng bị chặn)."}
+
+    low = text.lower()
+    if any(k in low for k in ("cf-turnstile", "g-recaptcha", "h-captcha", "verify you are human")):
+        return {"ok": False, "error": "Trang web có bước xác minh bảo mật (CAPTCHA). QChinese không vượt qua cơ chế bảo vệ website — vui lòng sao chép văn bản hợp pháp và dán thủ công."}
+
+    title_m = re.search(r"<title[^>]*>(.*?)</title>", text, re.I | re.S)
+    title = html_mod.unescape(re.sub(r"\s+", " ", title_m.group(1))).strip() if title_m else urllib.parse.urlparse(url).netloc
+
+    cleaned = re.sub(r"<(script|style|noscript|svg|nav|footer|header)[^>]*>.*?</\1>", " ", text, flags=re.I | re.S)
+    cleaned = re.sub(r"</(p|div|li|br|h[1-6]|tr)>", "\n", cleaned, flags=re.I)
+    cleaned = re.sub(r"<[^>]+>", " ", cleaned)
+    cleaned = html_mod.unescape(cleaned)
+    lines = [re.sub(r"[ \t]+", " ", ln).strip() for ln in cleaned.splitlines()]
+    lines = [ln for ln in lines if len(ln) >= 2]
+    # Prioritize lines containing Chinese characters if abundant
+    zh_lines = [ln for ln in lines if re.search(r"[\u4e00-\u9fff]", ln)]
+    extracted = "\n".join(zh_lines[:120] if len(zh_lines) >= 2 else lines[:80])[:12000]
+    zh_count = len(re.findall(r"[\u4e00-\u9fff]", extracted))
+
+    if not extracted.strip():
+        return {"ok": False, "error": "Không trích xuất được nội dung văn bản từ trang này (có thể trang tải nội dung bằng JavaScript). Vui lòng sao chép nội dung và dán thủ công."}
+
+    # Rough HSK guess based on text length
+    est_hsk = 1 if zh_count < 60 else (2 if zh_count < 160 else (3 if zh_count < 350 else 4))
+    return {
+        "ok": True,
+        "title": title[:140],
+        "sourceUrl": url.strip(),
+        "content": extracted,
+        "hanziCount": zh_count,
+        "suggestedHsk": est_hsk,
+    }
+
+
+def _extract_uploaded_document(filename: str, data_b64: str) -> Dict[str, Any]:
+    """Safely extract text from .txt, .md, .docx (stdlib zipfile+XML) and uncompressed .pdf."""
+    ext = Path(filename or "").suffix.lower()
+    if ext not in (".txt", ".md", ".docx", ".pdf"):
+        return {"ok": False, "error": f"Chưa hỗ trợ trích xuất văn bản tự động cho định dạng '{ext}'. Hỗ trợ: .txt, .md, .docx, .pdf."}
+    try:
+        raw = base64.b64decode(data_b64, validate=False)
+    except Exception:
+        return {"ok": False, "error": "Dữ liệu file không hợp lệ."}
+    if len(raw) > 8_000_000:
+        return {"ok": False, "error": "Dung lượng file vượt quá giới hạn an toàn 8 MB."}
+
+    if ext in (".txt", ".md"):
+        text = raw.decode("utf-8", errors="replace").strip()[:20000]
+        return {"ok": True, "content": text, "hanziCount": len(re.findall(r"[\u4e00-\u9fff]", text))}
+
+    if ext == ".docx":
+        try:
+            with zipfile.ZipFile(io.BytesIO(raw)) as zf:
+                xml_bytes = zf.read("word/document.xml")
+            root = ET.fromstring(xml_bytes)
+            paras = []
+            for p in root.iter():
+                if p.tag.endswith("}p"):
+                    runs = [t.text for t in p.iter() if t.tag.endswith("}t") and t.text]
+                    if runs:
+                        paras.append("".join(runs))
+            text = "\n".join(paras).strip()[:20000]
+            return {"ok": True, "content": text, "hanziCount": len(re.findall(r"[\u4e00-\u9fff]", text))}
+        except Exception:
+            return {"ok": False, "error": "Không đọc được cấu trúc file .docx này. Hãy kiểm tra file không bị mã hóa mật khẩu."}
+
+    if ext == ".pdf":
+        # Minimal stdlib PDF text extractor for uncompressed text operators; honest guidance for compressed/scanned PDFs
+        decoded = raw.decode("latin-1", errors="ignore")
+        chunks = re.findall(r"\(([^()]{2,200})\)\s*Tj", decoded)
+        text = "\n".join(chunks).strip()[:12000]
+        if not text:
+            return {
+                "ok": False,
+                "error": "File PDF này được nén hoặc là ảnh scan nên server Python stdlib không tự tách chữ Hán được. Bạn vẫn có thể lưu file PDF làm tham chiếu hoặc copy văn bản từ PDF dán vào ô nội dung nhé!"
+            }
+        return {"ok": True, "content": text, "hanziCount": len(re.findall(r"[\u4e00-\u9fff]", text))}
+    return {"ok": False, "error": "Định dạng không được hỗ trợ."}
+
+
 init_db()
 
 # Ensure proper UTF-8 MIME types across platforms
@@ -230,6 +366,9 @@ class QChineseRequestHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(raw)))
         self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("X-Frame-Options", "SAMEORIGIN")
+        self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
         if extra_headers:
             for k, v in extra_headers.items():
                 self.send_header(k, v)
@@ -488,7 +627,8 @@ class QChineseRequestHandler(BaseHTTPRequestHandler):
         route = parsed.path
         client_ip = self.client_address[0] if self.client_address else "local"
 
-        body = self._read_json()
+        max_len = 12_000_000 if route == "/api/materials/extract-file" else 2_000_000
+        body = self._read_json(max_bytes=max_len)
         if body is None:
             self._send_json(400, {"error": "JSON không hợp lệ."})
             return
@@ -683,18 +823,55 @@ class QChineseRequestHandler(BaseHTTPRequestHandler):
             self._send_json(200, {"ok": True, "state": state})
             return
 
-        if route in ("/api/ai/speaking", "/api/ai/writing", "/api/ai/analytics"):
+        ai_routes = (
+            "/api/ai/speaking",
+            "/api/ai/writing",
+            "/api/ai/analytics",
+            "/api/ai/explain-word",
+            "/api/ai/fix-sentence",
+            "/api/ai/explain-grammar",
+            "/api/ai/pronunciation",
+            "/api/ai/personalized-drills",
+        )
+        if route in ai_routes:
             user = self._get_authenticated_user()
             rate_key = f"ai:{user['id'] if user else client_ip}"
-            if not check_rate_limit(rate_key, limit=30, window_sec=60):
+            if not check_rate_limit(rate_key, limit=40, window_sec=60):
                 self._send_json(429, {"error": "Bạn đã gửi quá nhiều yêu cầu AI trong 1 phút. Hãy nghỉ vài giây rồi tiếp tục nhé!"})
                 return
             if route == "/api/ai/speaking":
                 self._send_json(200, handle_speaking_turn(body))
             elif route == "/api/ai/writing":
                 self._send_json(200, handle_writing_evaluation(body))
-            else:
+            elif route == "/api/ai/analytics":
                 self._send_json(200, handle_analytics_advice(body))
+            elif route == "/api/ai/explain-word":
+                self._send_json(200, handle_explain_word(body))
+            elif route == "/api/ai/fix-sentence":
+                self._send_json(200, handle_fix_sentence(body))
+            elif route == "/api/ai/explain-grammar":
+                self._send_json(200, handle_explain_grammar(body))
+            elif route == "/api/ai/pronunciation":
+                self._send_json(200, handle_pronunciation_analysis(body))
+            elif route == "/api/ai/personalized-drills":
+                self._send_json(200, handle_personalized_drills(body))
+            return
+
+        if route == "/api/materials/fetch-url":
+            if not check_rate_limit(f"maturl:{client_ip}", limit=15, window_sec=60):
+                self._send_json(429, {"error": "Vui lòng chờ vài giây trước khi tải URL tiếp theo."})
+                return
+            url = (body.get("url") or "").strip()
+            res = _safe_fetch_public_url(url)
+            self._send_json(200 if res.get("ok") else 400, res)
+            return
+
+        if route == "/api/materials/extract-file":
+            if not check_rate_limit(f"matfile:{client_ip}", limit=15, window_sec=60):
+                self._send_json(429, {"error": "Vui lòng chờ vài giây trước khi tải thêm file."})
+                return
+            res = _extract_uploaded_document(body.get("filename") or "", body.get("dataBase64") or "")
+            self._send_json(200 if res.get("ok") else 400, res)
             return
 
         self._send_json(404, {"error": "API endpoint not found."})

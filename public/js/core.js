@@ -36,6 +36,7 @@ window.QCore = (function () {
         showVietnameseHint: true,
         showPinyinDefault: true,
         enablePinyinIme: true,
+        vocabVersion: "hsk2",
         audioSpeed: 1.0,
         dailyGoalMinutes: 30,
         dailyTargets: {
@@ -54,6 +55,14 @@ window.QCore = (function () {
       readingCompleted: [],
       readingNotes: {},
       markedWords: [],
+      customHanzi: [],
+      favoriteVocab: [],
+      customVocab: [],
+      vocabSubSkills: {},
+      phoneticErrors: {},
+      pronunciationSessions: 0,
+      materials: [],
+      aiHistory: [],
       writingSubmissions: [],
       speakingSessions: 0,
       skillScores: {
@@ -96,6 +105,13 @@ window.QCore = (function () {
     st.readingNotes = st.readingNotes || {};
     st.markedWords = Array.isArray(st.markedWords) ? st.markedWords : [];
     st.customHanzi = Array.isArray(st.customHanzi) ? st.customHanzi : [];
+    st.favoriteVocab = Array.isArray(st.favoriteVocab) ? st.favoriteVocab : [];
+    st.customVocab = Array.isArray(st.customVocab) ? st.customVocab : [];
+    st.vocabSubSkills = st.vocabSubSkills && typeof st.vocabSubSkills === "object" ? st.vocabSubSkills : {};
+    st.phoneticErrors = st.phoneticErrors && typeof st.phoneticErrors === "object" ? st.phoneticErrors : {};
+    st.pronunciationSessions = Number(st.pronunciationSessions || 0);
+    st.materials = Array.isArray(st.materials) ? st.materials : [];
+    st.aiHistory = Array.isArray(st.aiHistory) ? st.aiHistory : [];
     st.writingSubmissions = Array.isArray(st.writingSubmissions) ? st.writingSubmissions : [];
     st.skillScores = Object.assign({}, def.skillScores, st.skillScores || {});
     st.testHistory = Array.isArray(st.testHistory) ? st.testHistory : [];
@@ -365,6 +381,147 @@ window.QCore = (function () {
     appState.skillScores.vocab = Math.max(appState.skillScores.vocab || 0, ratio);
     saveState(false);
     return card;
+  }
+
+  function recordVocabSubSkill(wordId, dim /* meaning|pinyin|listening|usage */, isCorrect) {
+    if (!appState || !wordId) return;
+    if (!appState.vocabSubSkills[wordId]) {
+      appState.vocabSubSkills[wordId] = {
+        meaning: { ok: 0, err: 0 },
+        pinyin: { ok: 0, err: 0 },
+        listening: { ok: 0, err: 0 },
+        usage: { ok: 0, err: 0 }
+      };
+    }
+    const slot = appState.vocabSubSkills[wordId][dim] || { ok: 0, err: 0 };
+    if (isCorrect) slot.ok += 1;
+    else slot.err += 1;
+    appState.vocabSubSkills[wordId][dim] = slot;
+    saveState(false);
+  }
+
+  function toggleFavoriteVocab(wordId) {
+    if (!appState || !wordId) return false;
+    const idx = appState.favoriteVocab.indexOf(wordId);
+    let added = false;
+    if (idx >= 0) {
+      appState.favoriteVocab.splice(idx, 1);
+    } else {
+      appState.favoriteVocab.unshift(wordId);
+      added = true;
+    }
+    saveState(false);
+    return added;
+  }
+
+  function addCustomVocab(word) {
+    if (!appState || !word || !word.hanzi) return null;
+    const entry = {
+      id: "custom_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
+      hanzi: String(word.hanzi).trim(),
+      traditional: String(word.traditional || "").trim(),
+      pinyin: String(word.pinyin || "").trim(),
+      pinyin_number: String(word.pinyin_number || word.pinyin || "").trim(),
+      pinyin_plain: String(word.pinyin || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9 ]/g, ""),
+      hsk_level: Number(word.hsk_level || appState.profile.hskLevel || 1),
+      topic: word.topic || "other",
+      pos: Array.isArray(word.pos) ? word.pos : ["other"],
+      part_of_speech: word.part_of_speech || "Từ cá nhân",
+      meanings: {
+        vietnamese: Array.isArray(word.vietnamese) ? word.vietnamese : [String(word.vietnamese || "").trim()].filter(Boolean),
+        english: Array.isArray(word.english) ? word.english : [String(word.english || "").trim()].filter(Boolean),
+        chinese: []
+      },
+      han_viet: word.han_viet || "",
+      examples: Array.isArray(word.examples) ? word.examples : [],
+      usage_note: word.usage_note || "",
+      isCustom: true,
+      createdAt: todayStr()
+    };
+    appState.customVocab.unshift(entry);
+    saveState(false);
+    return entry;
+  }
+
+  function recordPhoneticAttempt(pairKey, isCorrect) {
+    if (!appState || !pairKey) return;
+    const rec = appState.phoneticErrors[pairKey] || { right: 0, wrong: 0, lastWrongAt: null };
+    if (isCorrect) rec.right += 1;
+    else {
+      rec.wrong += 1;
+      rec.lastWrongAt = new Date().toISOString();
+    }
+    appState.phoneticErrors[pairKey] = rec;
+    appState.pronunciationSessions = (appState.pronunciationSessions || 0) + 1;
+    const totals = Object.values(appState.phoneticErrors).reduce(
+      (acc, r) => ({ ok: acc.ok + (r.right || 0), all: acc.all + (r.right || 0) + (r.wrong || 0) }),
+      { ok: 0, all: 0 }
+    );
+    if (totals.all > 0) {
+      updateSkillScore("pinyin", Math.round((totals.ok / totals.all) * 100));
+    }
+    saveState(false);
+  }
+
+  function addMaterial(mat) {
+    if (!appState) return null;
+    const item = {
+      id: "mat_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
+      title: String(mat.title || "Tài liệu không tiêu đề").trim(),
+      category: mat.category || "reading", // writing|listening|speaking|reading|vocabulary|grammar|hsk|other
+      folder: mat.folder || "Tài liệu trên lớp",
+      source: String(mat.source || "Người học tải lên").trim(),
+      sourceUrl: String(mat.sourceUrl || "").trim(),
+      hskLevel: Number(mat.hskLevel || appState.profile.hskLevel || 1),
+      topic: String(mat.topic || "").trim(),
+      content: String(mat.content || "").trim(),
+      transcript: String(mat.transcript || "").trim(),
+      mediaUrl: String(mat.mediaUrl || "").trim(),
+      mediaType: String(mat.mediaType || "").trim(),
+      fileName: String(mat.fileName || "").trim(),
+      status: mat.status || "not_started", // not_started | in_progress | completed
+      score: mat.score != null ? Number(mat.score) : null,
+      notes: String(mat.notes || "").trim(),
+      aiGeneratedExercises: Array.isArray(mat.aiGeneratedExercises) ? mat.aiGeneratedExercises : [],
+      history: Array.isArray(mat.history) ? mat.history : [],
+      createdAt: todayStr()
+    };
+    appState.materials.unshift(item);
+    saveState(false);
+    return item;
+  }
+
+  function updateMaterial(id, patch) {
+    if (!appState) return null;
+    const item = appState.materials.find((m) => m.id === id);
+    if (!item) return null;
+    Object.assign(item, patch);
+    saveState(false);
+    return item;
+  }
+
+  function deleteMaterial(id) {
+    if (!appState) return;
+    appState.materials = appState.materials.filter((m) => m.id !== id);
+    saveState(false);
+  }
+
+  function recordMaterialPractice(id, entry) {
+    if (!appState) return;
+    const item = appState.materials.find((m) => m.id === id);
+    if (!item) return;
+    item.history = Array.isArray(item.history) ? item.history : [];
+    item.history.unshift(Object.assign({ date: new Date().toISOString() }, entry));
+    if (entry.score != null) item.score = Number(entry.score);
+    item.status = entry.status || "completed";
+    saveState(false);
+  }
+
+  function logAiHistory(entry) {
+    if (!appState) return;
+    appState.aiHistory.unshift(Object.assign({ id: "ai_" + Date.now(), at: new Date().toISOString() }, entry));
+    if (appState.aiHistory.length > 40) appState.aiHistory = appState.aiHistory.slice(0, 40);
+    saveState(false);
   }
 
   function recordHanziPractice(hanzi, accuracyScore) {
@@ -653,6 +810,15 @@ window.QCore = (function () {
     logDailyActivity,
     updateSkillScore,
     reviewWordSRS,
+    recordVocabSubSkill,
+    toggleFavoriteVocab,
+    addCustomVocab,
+    recordPhoneticAttempt,
+    addMaterial,
+    updateMaterial,
+    deleteMaterial,
+    recordMaterialPractice,
+    logAiHistory,
     recordHanziPractice,
     addToNotebook,
     speakChinese,

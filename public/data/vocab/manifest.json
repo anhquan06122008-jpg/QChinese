@@ -1,0 +1,392 @@
+{
+ "schema": 2,
+ "versions": {
+  "hsk2": {
+   "label": "HSK 2.0 (Chuẩn 6 cấp – 5.000 từ)",
+   "short": "HSK 2.0",
+   "note": "Hệ thống HSK 2.0 (2010, 6 cấp) đang được sử dụng phổ biến trong kỳ thi HSK quốc tế.",
+   "levels": {
+    "1": {
+     "count": 150,
+     "official": 150,
+     "diff": 0,
+     "duplicatesRemoved": 0,
+     "withVietnamese": 150,
+     "withHanViet": 118,
+     "withExamples": 20,
+     "topicClassified": 115
+    },
+    "2": {
+     "count": 147,
+     "official": 150,
+     "diff": -3,
+     "duplicatesRemoved": 0,
+     "withVietnamese": 147,
+     "withHanViet": 122,
+     "withExamples": 5,
+     "topicClassified": 99
+    },
+    "3": {
+     "count": 298,
+     "official": 300,
+     "diff": -2,
+     "duplicatesRemoved": 0,
+     "withVietnamese": 75,
+     "withHanViet": 234,
+     "withExamples": 3,
+     "topicClassified": 203
+    },
+    "4": {
+     "count": 598,
+     "official": 600,
+     "diff": -2,
+     "duplicatesRemoved": 0,
+     "withVietnamese": 53,
+     "withHanViet": 464,
+     "withExamples": 3,
+     "topicClassified": 329
+    },
+    "5": {
+     "count": 1298,
+     "official": 1300,
+     "diff": -2,
+     "duplicatesRemoved": 0,
+     "withVietnamese": 9,
+     "withHanViet": 992,
+     "withExamples": 2,
+     "topicClassified": 649
+    },
+    "6": {
+     "count": 2500,
+     "official": 2500,
+     "diff": 0,
+     "duplicatesRemoved": 0,
+     "withVietnamese": 4,
+     "withHanViet": 1799,
+     "withExamples": 1,
+     "topicClassified": 1059
+    }
+   },
+   "total": 4991,
+   "officialTotal": 5000
+  },
+  "hsk3": {
+   "label": "HSK 3.0 (Chuẩn mới 9 cấp – Cấp 1–6 & 7–9)",
+   "short": "HSK 3.0",
+   "note": "Hệ thống HSK 3.0 (2021, 9 cấp). Cấp 7–9 được gộp vào mục HSK 7–9 (new-7 trong nguồn complete-hsk-vocabulary).",
+   "levels": {
+    "1": {
+     "count": 506,
+     "official": 500,
+     "diff": 6,
+     "duplicatesRemoved": 0,
+     "withVietnamese": 232,
+     "withHanViet": 419,
+     "withExamples": 24,
+     "topicClassified": 352
+    },
+    "2": {
+     "count": 750,
+     "official": 772,
+     "diff": -22,
+     "duplicatesRemoved": 0,
+     "withVietnamese": 115,
+     "withHanViet": 597,
+     "withExamples": 3,
+     "topicClassified": 488
+    },
+    "3": {
+     "count": 953,
+     "official": 973,
+     "diff": -20,
+     "duplicatesRemoved": 0,
+     "withVietnamese": 57,
+     "withHanViet": 810,
+     "withExamples": 5,
+     "topicClassified": 497
+    },
+    "4": {
+     "count": 972,
+     "official": 1000,
+     "diff": -28,
+     "duplicatesRemoved": 0,
+     "withVietnamese": 27,
+     "withHanViet": 763,
+     "withExamples": 1,
+     "topicClassified": 538
+    },
+    "5": {
+     "count": 1059,
+     "official": 1071,
+     "diff": -12,
+     "duplicatesRemoved": 0,
+     "withVietnamese": 8,
+     "withHanViet": 808,
+     "withExamples": 0,
+     "topicClassified": 505
+    },
+    "6": {
+     "count": 1123,
+     "official": 1140,
+     "diff": -17,
+     "duplicatesRemoved": 0,
+     "withVietnamese": 2,
+     "withHanViet": 873,
+     "withExamples": 0,
+     "topicClassified": 604
+    },
+    "7": {
+     "count": 5606,
+     "official": 5636,
+     "diff": -30,
+     "duplicatesRemoved": 0,
+     "withVietnamese": 3,
+     "withHanViet": 3949,
+     "withExamples": 2,
+     "topicClassified": 2548
+    }
+   },
+   "total": 10969,
+   "officialTotal": 11092
+  }
+ },
+ "topics": [
+  {
+   "id": "greeting",
+   "label": "Chào hỏi & giao tiếp"
+  },
+  {
+   "id": "family",
+   "label": "Gia đình & bạn bè"
+  },
+  {
+   "id": "school",
+   "label": "Trường học & giáo dục"
+  },
+  {
+   "id": "work",
+   "label": "Công việc & nghề nghiệp"
+  },
+  {
+   "id": "time",
+   "label": "Thời gian & ngày tháng"
+  },
+  {
+   "id": "numbers",
+   "label": "Số đếm"
+  },
+  {
+   "id": "food",
+   "label": "Đồ ăn & thức uống"
+  },
+  {
+   "id": "shopping",
+   "label": "Mua sắm"
+  },
+  {
+   "id": "travel",
+   "label": "Du lịch"
+  },
+  {
+   "id": "transport",
+   "label": "Giao thông"
+  },
+  {
+   "id": "health",
+   "label": "Sức khỏe"
+  },
+  {
+   "id": "emotion",
+   "label": "Cảm xúc"
+  },
+  {
+   "id": "weather",
+   "label": "Thời tiết"
+  },
+  {
+   "id": "tech",
+   "label": "Công nghệ"
+  },
+  {
+   "id": "society",
+   "label": "Xã hội"
+  },
+  {
+   "id": "culture",
+   "label": "Văn hóa"
+  },
+  {
+   "id": "economy",
+   "label": "Kinh tế"
+  },
+  {
+   "id": "politics",
+   "label": "Chính trị"
+  },
+  {
+   "id": "environment",
+   "label": "Môi trường"
+  },
+  {
+   "id": "other",
+   "label": "Đời sống & Khác"
+  }
+ ],
+ "pos": [
+  {
+   "id": "noun",
+   "label": "Danh từ"
+  },
+  {
+   "id": "verb",
+   "label": "Động từ"
+  },
+  {
+   "id": "adj",
+   "label": "Tính từ"
+  },
+  {
+   "id": "pron",
+   "label": "Đại từ"
+  },
+  {
+   "id": "adv",
+   "label": "Phó từ"
+  },
+  {
+   "id": "prep",
+   "label": "Giới từ"
+  },
+  {
+   "id": "conj",
+   "label": "Liên từ"
+  },
+  {
+   "id": "measure",
+   "label": "Lượng từ"
+  },
+  {
+   "id": "particle",
+   "label": "Trợ từ"
+  },
+  {
+   "id": "numeral",
+   "label": "Số từ"
+  },
+  {
+   "id": "other",
+   "label": "Khác"
+  }
+ ],
+ "sources": [
+  {
+   "name": "complete-hsk-vocabulary (drkameleon)",
+   "url": "https://github.com/drkameleon/complete-hsk-vocabulary",
+   "license": "MIT",
+   "use": "Danh sách từ HSK 2.0 (cấp 1–6) & HSK 3.0 (cấp 1–9), Pinyin, chữ Phồn thể, từ loại"
+  },
+  {
+   "name": "CC-CEDICT",
+   "url": "https://cc-cedict.org",
+   "license": "CC BY-SA 4.0",
+   "use": "Nghĩa tiếng Anh & phân tách cách đọc"
+  },
+  {
+   "name": "Unicode Unihan (kVietnamese)",
+   "url": "https://www.unicode.org/charts/unihan.html",
+   "license": "Unicode Terms of Use",
+   "use": "Âm Hán Việt từng chữ (hỗ trợ người Việt liên hệ từ gốc)"
+  },
+  {
+   "name": "QChinese Curated Vietnamese Glossary",
+   "url": "",
+   "license": "Project",
+   "use": "Nghĩa tiếng Việt chuẩn hóa cho 100% HSK 1–2 và từ cốt lõi HSK 3–6, kèm ví dụ"
+  }
+ ],
+ "notes": {
+  "topic": "Chủ đề được phân loại tự động dựa trên nghĩa chuẩn & từ loại (heuristic) và giữ nguyên chủ đề biên soạn cho nhóm từ cốt lõi.",
+  "vi": "100% HSK 1–2 (HSK 2.0) và nhóm từ cốt lõi HSK 3–6 có nghĩa tiếng Việt biên soạn; các từ nâng cao hơn hiển thị nghĩa tiếng Anh CC-CEDICT + âm Hán Việt Unihan và hỗ trợ giải thích sâu bằng AI Tutor.",
+  "examples": "Ví dụ mẫu có sẵn cho nhóm từ cốt lõi; mọi từ đều có thể mở AI Giải thích từ vựng để xem ví dụ và phân biệt từ dễ nhầm."
+ },
+ "legacyMismatches": [
+  {
+   "version": "hsk2",
+   "hanzi": "工作",
+   "legacyLevel": 2,
+   "officialLevel": 1
+  },
+  {
+   "version": "hsk2",
+   "hanzi": "您",
+   "legacyLevel": 1,
+   "officialLevel": 2
+  },
+  {
+   "version": "hsk2",
+   "hanzi": "中文",
+   "legacyLevel": 1,
+   "officialLevel": 4
+  },
+  {
+   "version": "hsk3",
+   "hanzi": "工作",
+   "legacyLevel": 2,
+   "officialLevel": 1
+  },
+  {
+   "version": "hsk3",
+   "hanzi": "觉得",
+   "legacyLevel": 2,
+   "officialLevel": 1
+  },
+  {
+   "version": "hsk3",
+   "hanzi": "时间",
+   "legacyLevel": 2,
+   "officialLevel": 1
+  },
+  {
+   "version": "hsk3",
+   "hanzi": "习惯",
+   "legacyLevel": 3,
+   "officialLevel": 2
+  },
+  {
+   "version": "hsk3",
+   "hanzi": "把握",
+   "legacyLevel": 5,
+   "officialLevel": 3
+  },
+  {
+   "version": "hsk3",
+   "hanzi": "坚持",
+   "legacyLevel": 4,
+   "officialLevel": 3
+  },
+  {
+   "version": "hsk3",
+   "hanzi": "交流",
+   "legacyLevel": 4,
+   "officialLevel": 3
+  },
+  {
+   "version": "hsk3",
+   "hanzi": "效率",
+   "legacyLevel": 5,
+   "officialLevel": 4
+  },
+  {
+   "version": "hsk3",
+   "hanzi": "举一反三",
+   "legacyLevel": 6,
+   "officialLevel": 7
+  },
+  {
+   "version": "hsk3",
+   "hanzi": "潜移默化",
+   "legacyLevel": 6,
+   "officialLevel": 7
+  }
+ ]
+}

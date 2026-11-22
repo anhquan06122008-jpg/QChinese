@@ -265,6 +265,37 @@ window.QDashboardAssessment = (function () {
             </div>
           </div>
 
+          <!-- Personalized Weak-Points & Next Lesson Intelligence -->
+          ${(() => {
+            const now = Date.now();
+            const dueSrs = Object.keys(st.srs || {}).filter((id) => st.srs[id].nextReview <= now).length;
+            const lapseSrs = Object.keys(st.srs || {}).filter((id) => (st.srs[id].lapses || 0) >= 1).length;
+            const weakPhon = Object.entries(st.phoneticErrors || {}).filter(([, v]) => (v.wrong || 0) > 0).sort((a, b) => b[1].wrong - a[1].wrong).slice(0, 3);
+            const pendingMats = (st.materials || []).filter((m) => m.status !== "completed").length;
+            const nextAction = weakPhon.length
+              ? { label: `Luyện cặp âm hay nhầm: ${weakPhon[0][0]}`, route: "pinyin", params: { pair: weakPhon[0][0] } }
+              : dueSrs > 0
+              ? { label: `Ôn ngay ${dueSrs} từ vựng đến hạn SRS`, route: "vocab", params: { mode: "flashcard", status: "due" } }
+              : pendingMats > 0
+              ? { label: `Tiếp tục ${pendingMats} tài liệu cá nhân đang làm dở`, route: "materials", params: {} }
+              : { label: "Vào Phòng luyện Pinyin phân biệt âm bật hơi & cong lưỡi", route: "pinyin", params: { tab: "contrast" } };
+            return `
+              <div class="card" style="border-color:var(--primary);background:linear-gradient(135deg,var(--bg-accent-soft),var(--bg-surface));">
+                <h3 style="margin:0 0 10px;font-size:16px;">🎯 Gợi ý Cá nhân hóa Hôm nay (Từ dữ liệu thực)</h3>
+                <div style="display:flex;flex-direction:column;gap:6px;font-size:13.5px;margin-bottom:12px;">
+                  <div>🔄 <strong>Từ đến hạn ôn SRS:</strong> ${dueSrs} từ ${lapseSrs ? `(${lapseSrs} từ hay quên)` : ""}</div>
+                  <div>🎵 <strong>Âm Pinyin cần cải thiện:</strong> ${weakPhon.length ? weakPhon.map(([k, v]) => `<span class="badge badge-red">${QCore.escapeHtml(k)} (${v.wrong} lỗi)</span>`).join(" ") : "Chưa ghi nhận lỗi — hãy thử Challenge Pinyin!"}</div>
+                  <div>📁 <strong>Kho tài liệu cá nhân:</strong> ${(st.materials || []).length} tài liệu (${pendingMats} đang học / chưa làm)</div>
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                  <button class="btn btn-primary btn-sm" id="dash-next-rec">🚀 ${QCore.escapeHtml(nextAction.label)}</button>
+                  <button class="btn btn-soft btn-sm" data-goto="ai-tutor">🤖 Hỏi AI Tutor</button>
+                  <button class="btn btn-outline btn-sm" data-goto="materials">📁 Kho tài liệu</button>
+                </div>
+              </div>
+            `;
+          })()}
+
           <!-- Quick Smart Pinyin Lookup Tip -->
           <div class="card-subtle">
             <strong style="font-size:14px;">💡 Mẹo cho người mới: Gõ Pinyin tự động gợi ý chữ Hán!</strong>
@@ -279,6 +310,20 @@ window.QDashboardAssessment = (function () {
     container.querySelectorAll("[data-goto]").forEach((btn) => {
       btn.onclick = () => window.QApp.navigate(btn.getAttribute("data-goto"));
     });
+
+    const recBtn = container.querySelector("#dash-next-rec");
+    if (recBtn) {
+      recBtn.onclick = () => {
+        const now = Date.now();
+        const dueSrs = Object.keys(st.srs || {}).filter((id) => st.srs[id].nextReview <= now).length;
+        const weakPhon = Object.entries(st.phoneticErrors || {}).filter(([, v]) => (v.wrong || 0) > 0).sort((a, b) => b[1].wrong - a[1].wrong);
+        const pendingMats = (st.materials || []).filter((m) => m.status !== "completed").length;
+        if (weakPhon.length) window.QApp.navigate("pinyin", { pair: weakPhon[0][0] });
+        else if (dueSrs > 0) window.QApp.navigate("vocab", { mode: "flashcard", status: "due" });
+        else if (pendingMats > 0) window.QApp.navigate("materials");
+        else window.QApp.navigate("pinyin", { tab: "contrast" });
+      };
+    }
 
     const tutorBtn = container.querySelector("#btn-open-tutor-12");
     if (tutorBtn) {

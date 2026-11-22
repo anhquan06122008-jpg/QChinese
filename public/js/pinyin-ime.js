@@ -235,6 +235,7 @@ window.QPinyinIME = (function () {
 
   return {
     initGlobalListeners,
+    attachAll: function () {},
     searchByPinyin,
     stripTones,
     hideBar

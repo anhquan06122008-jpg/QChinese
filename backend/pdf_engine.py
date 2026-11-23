@@ -172,6 +172,25 @@ def _load_hsk3_l1_vocab(root_dir: Path) -> Dict[str, Dict[str, Any]]:
         return {}
 
 
+HSK1_MP3_MANIFEST: Dict[int, List[str]] = {
+    1: ["1-1.mp3", "1-2.mp3", "1-3.mp3", "1-4.mp3", "1-5.mp3", "1-6.mp3", "1-7.mp3"],
+    2: ["2-1.mp3", "2-2.mp3", "2-3.mp3", "2-4.mp3", "2-5.mp3", "2-6.mp3", "2-7.mp3"],
+    3: ["3-1.mp3", "3-2.mp3", "3-3.mp3", "3-4.mp3", "3-5.mp3", "3-6.mp3", "3-7.mp3"],
+    4: ["4-1.mp3", "4-2.mp3", "4-3.mp3", "4-4.mp3", "4-5.mp3", "4-6.mp3"],
+    5: ["5-1.mp3", "5-2.mp3", "5-3.mp3", "5-4.mp3", "5-5.mp3", "5-6.mp3"],
+    6: ["6-1.mp3", "6-2.mp3", "6-3.mp3", "6-4.mp3", "6-5.mp3", "6-6.mp3"],
+    7: ["7-1.mp3", "7-2.mp3", "7-3.mp3", "7-4.mp3", "7-5.mp3", "7-6.mp3"],
+    8: ["8-1.mp3", "8-2.mp3", "8-3.mp3", "8-4.mp3", "8-5.mp3", "8-6.mp3"],
+    9: ["9-1.mp3", "9-2.mp3", "9-3.mp3", "9-4.mp3", "9-5.mp3", "9-6.mp3"],
+    10: ["10-1.mp3", "10-2.mp3", "10-3.mp3", "10-4.mp3", "10-5.mp3", "10-6.mp3"],
+    11: ["11-1.mp3", "11-2.mp3", "11-3.mp3", "11-4.mp3", "11-5.mp3", "11-6.mp3"],
+    12: ["12-1.mp3", "12-2.mp3", "12-3.mp3", "12-4.mp3", "12-5.mp3", "12-6.mp3"],
+    13: ["13-1.mp3", "13-2.mp3", "13-3.mp3", "13-4.mp3", "13-5.mp3", "13-6.mp3"],
+    14: ["14-1.mp3", "14-2.mp3", "14-3.mp3", "14-4.mp3", "14-5.mp3", "14-6.mp3"],
+    15: ["15-1.mp3", "15-2.mp3", "15-3.mp3", "15-4.mp3", "15-5.mp3", "15-6.mp3"],
+}
+
+
 def _scan_local_hsk1_mp3s(root_dir: Optional[Path] = None) -> Dict[int, List[str]]:
     by_lesson: Dict[int, List[str]] = {}
     repo_root = root_dir or Path(__file__).resolve().parent.parent
@@ -181,7 +200,8 @@ def _scan_local_hsk1_mp3s(root_dir: Optional[Path] = None) -> Dict[int, List[str
     ]
     target_dir = next((d for d in candidates if d.exists() and list(d.glob("*.mp3"))), None)
     if not target_dir:
-        return by_lesson
+        # On Vercel serverless runtime, public/audio/hsk1/*.mp3 is served directly from Vercel CDN Edge (/audio/hsk1/*.mp3)
+        return {k: list(v) for k, v in HSK1_MP3_MANIFEST.items()}
     for f in sorted(target_dir.glob("*.mp3")):
         parts = f.stem.split("-")
         if len(parts) >= 2 and parts[0].isdigit():
@@ -530,7 +550,7 @@ def _build_lesson_exercises_for_topic(
                 "title": f"Listening {idx + 1} – Track {trk}",
                 "title_vi": f"Bài nghe {idx + 1} – Audio gốc {trk} (Lesson {lesson_num})",
                 "audioFile": trk,
-                "audioUrl": f"api/pdf/audio?file={trk}",
+                "audioUrl": f"audio/hsk1/{trk}",
                 "staticAudioUrl": f"public/audio/hsk1/{trk}",
                 "audioSource": "real_mp3",
                 "sourceTag": "extracted_from_pdf",
@@ -914,7 +934,7 @@ def ensure_hsk3_level1_seeded(get_db_fn: Callable[[], sqlite3.Connection], db_lo
         try:
             init_pdf_tables(conn)
             exists = conn.execute("SELECT id, course_json FROM pdf_courses WHERE hsk_level = 1 LIMIT 1").fetchone()
-            if exists and '"schemaVersion": 4' in (exists["course_json"] or ""):
+            if exists and '"schemaVersion": 5' in (exists["course_json"] or ""):
                 return
         finally:
             conn.close()
@@ -964,7 +984,7 @@ def ensure_hsk3_level1_seeded(get_db_fn: Callable[[], sqlite3.Connection], db_lo
         lessons.append(lesson_obj)
 
     course_payload = {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "contentSource": "AI_PDF_HSK3",
         "courseType": "hsk3_pdf_curriculum",
         "hskLevel": 1,

@@ -13,9 +13,11 @@
 ## 2. Triển khai trên QChinese (100% Cô lập & An toàn)
 1. **Schema độc lập ([supabase-schema.sql](file:///c:/Users/anhqu/Downloads/QChinese/supabase-schema.sql)):**
    - Sử dụng tiền tố riêng `qchinese_*`: `qchinese_user_profiles`, `qchinese_user_snapshots`, `qchinese_user_devices`.
-   - Bật Row Level Security (`auth.uid() = user_id`), cấp quyền tối thiểu (`authenticated`), và bật `supabase_realtime` CDC trên `qchinese_user_snapshots` & `qchinese_user_devices`.
+   - Bật Row Level Security (`auth.uid() = user_id`), cấp quyền tối thiểu (`GRANT SELECT, INSERT, UPDATE, DELETE ... TO authenticated`), và bật `supabase_realtime` CDC trên `qchinese_user_snapshots` & `qchinese_user_devices`.
+   - Đã chạy thực tế trên Supabase project `tlgjhakqijpnjnvtpzoj` mà không đụng chạm bất kỳ bảng nào của QEnglish hay TKB.
 2. **Backend Public Config ([server.py](file:///c:/Users/anhqu/Downloads/QChinese/server.py)):**
    - Bổ sung `GET /api/config` theo đúng chuẩn QEnglish/TKB (chỉ trả `supabaseUrl`, `supabaseAnonKey`, `aiConfigured`, `aiProvider`, `aiModel`; tuyệt đối không lộ `GEMINI_API_KEY` hay `SERVICE_ROLE_KEY`).
+   - Đã cấu hình biến môi trường `SUPABASE_URL`, `SUPABASE_ANON_KEY` và `GEMINI_API_KEY` trên Vercel Production (`q-chinese`).
 3. **Frontend Cloud Sync ([cloud-sync.js](file:///c:/Users/anhqu/Downloads/QChinese/public/js/cloud-sync.js), [core.js](file:///c:/Users/anhqu/Downloads/QChinese/public/js/core.js), [app.js](file:///c:/Users/anhqu/Downloads/QChinese/public/js/app.js), [notebook-analytics-settings.js](file:///c:/Users/anhqu/Downloads/QChinese/public/js/modules/notebook-analytics-settings.js)):**
    - Đăng nhập trực tiếp bằng cùng tài khoản Supabase Auth của QEnglish/TKB (ví dụ `anhquan06122008@gmail.com`).
    - Hỗ trợ đăng nhập đồng thời Laptop + Điện thoại, đăng xuất thiết bị cục bộ (`scope=local`), đăng xuất thiết bị từ xa, đồng bộ thời gian thực qua WebSocket 24/7, tự gộp dữ liệu chống xung đột và hàng đợi Offline.

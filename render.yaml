@@ -2,10 +2,20 @@ services:
   - type: web
     name: qchinese-personal-tutor
     runtime: python
-    buildCommand: echo "No external pip packages needed"
+    plan: starter
+    buildCommand: echo "QChinese uses Python 3.10+ stdlib - zero pip dependencies required"
     startCommand: python server.py
+    healthCheckPath: /api/health
+    disk:
+      name: qchinese-data
+      mountPath: /opt/render/project/src/data
+      sizeGB: 1
     envVars:
       - key: PORT
         value: 8000
+      - key: CORS_ORIGINS
+        value: "*"
       - key: GEMINI_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
         sync: false

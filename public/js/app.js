@@ -4,12 +4,16 @@
 
 window.QApp = (function () {
   let currentRoute = "dashboard";
+  let currentParams = {};
 
   const NAV_ITEMS = [
     { id: "dashboard", label: "Dashboard", icon: "🏠" },
     { id: "vocab", label: "Kho từ vựng HSK", icon: "📚" },
     { id: "pinyin", label: "Phòng luyện Pinyin", icon: "🎵" },
     { id: "ai-tutor", label: "QChinese AI Tutor", icon: "🤖" },
+    { id: "ai-tournament", label: "Đấu trường 100 AI", icon: "🏆" },
+    { id: "ai-pdf", label: "AI PDF · HSK 3.0", icon: "📄" },
+    { id: "lessons", label: "Khóa học & Lesson", icon: "🎓" },
     { id: "materials", label: "Kho tài liệu cá nhân", icon: "📁" },
     { id: "hanzi", label: "Học chữ Hán", icon: "✍️" },
     { id: "assessment", label: "Đánh giá trình độ", icon: "🧭" },
@@ -71,6 +75,13 @@ window.QApp = (function () {
 
   function navigate(route, params = {}) {
     currentRoute = route;
+    currentParams = params || {};
+    if (window.QAiTournament && typeof window.QAiTournament.stopPolling === "function") {
+      window.QAiTournament.stopPolling();
+    }
+    if (window.QAiPdfStudio && typeof window.QAiPdfStudio.stopPoll === "function") {
+      window.QAiPdfStudio.stopPoll();
+    }
     QPinyinIME.hideBar();
     renderSidebar();
     refreshTopbar();
@@ -100,6 +111,15 @@ window.QApp = (function () {
         break;
       case "ai-tutor":
         QAiTutor.renderAiTutor(main, params);
+        break;
+      case "ai-tournament":
+        QAiTournament.renderTournament(main);
+        break;
+      case "ai-pdf":
+        QAiPdfStudio.renderPdfStudio(main);
+        break;
+      case "lessons":
+        QLessonStudio.renderLessons(main, params);
         break;
       case "materials":
         QMaterialsHub.renderMaterials(main, params);
@@ -255,10 +275,12 @@ window.QApp = (function () {
 
           <div class="tabs-bar" style="width:100%;margin-bottom:16px;">
             <button class="tab-pill ${authTab === "login" ? "active" : ""}" style="flex:1;" id="auth-tab-login">Đăng nhập</button>
-            <button class="tab-pill ${authTab === "register" ? "active" : ""}" style="flex:1;" id="auth-tab-reg">Tạo tài khoản mới</button>
+            <button class="tab-pill ${authTab === "register" ? "active" : ""}" style="flex:1;" id="auth-tab-reg">Tạo tài khoản</button>
+            <button class="tab-pill ${authTab === "recover" ? "active" : ""}" style="flex:1;" id="auth-tab-rec">Khôi phục MK</button>
           </div>
 
           <div id="auth-err" style="color:var(--accent-red);font-size:13px;margin-bottom:10px;display:none;"></div>
+          <div id="auth-ok" style="color:var(--primary);font-size:13px;margin-bottom:10px;display:none;"></div>
 
           <div style="display:flex;flex-direction:column;gap:10px;">
             <label style="font-size:13px;font-weight:600;">Tên tài khoản (viết liền không dấu, vd: minh_an)
@@ -275,12 +297,25 @@ window.QApp = (function () {
                 : ""
             }
 
-            <label style="font-size:13px;font-weight:600;">Mật khẩu (tối thiểu 6 ký tự)
-              <input type="password" class="input-field" id="auth-pw" placeholder="Nhập mật khẩu bảo mật...">
-            </label>
+            ${
+              authTab === "recover"
+                ? `
+              <label style="font-size:13px;font-weight:600;">Mã khôi phục (QCN-XXXX-XXXX-XXXX)
+                <input class="input-field" id="auth-reckey" placeholder="Nhập mã khôi phục đã lưu...">
+              </label>
+              <label style="font-size:13px;font-weight:600;">Mật khẩu mới (tối thiểu 6 ký tự)
+                <input type="password" class="input-field" id="auth-pw" placeholder="Nhập mật khẩu mới...">
+              </label>
+            `
+                : `
+              <label style="font-size:13px;font-weight:600;">Mật khẩu (tối thiểu 6 ký tự)
+                <input type="password" class="input-field" id="auth-pw" placeholder="Nhập mật khẩu bảo mật...">
+              </label>
+            `
+            }
 
             <button class="btn btn-primary" style="margin-top:6px;width:100%;padding:12px;" id="auth-submit">
-              ${authTab === "login" ? "🚀 Đăng nhập vào lớp học" : "✨ Tạo tài khoản & Bắt đầu từ con số 0"}
+              ${authTab === "login" ? "🚀 Đăng nhập (hỗ trợ đa thiết bị)" : authTab === "register" ? "✨ Tạo tài khoản & Bắt đầu từ con số 0" : "🔑 Đặt lại mật khẩu ngay"}
             </button>
           </div>
 
@@ -295,6 +330,7 @@ window.QApp = (function () {
 
       gate.querySelector("#auth-tab-login").onclick = () => { authTab = "login"; drawAuth(); };
       gate.querySelector("#auth-tab-reg").onclick = () => { authTab = "register"; drawAuth(); };
+      gate.querySelector("#auth-tab-rec").onclick = () => { authTab = "recover"; drawAuth(); };
       gate.querySelector("#auth-switch-quick").onclick = () => {
         authTab = authTab === "login" ? "register" : "login";
         drawAuth();
@@ -304,15 +340,32 @@ window.QApp = (function () {
         const u = gate.querySelector("#auth-user").value.trim();
         const pw = gate.querySelector("#auth-pw").value;
         const dispEl = gate.querySelector("#auth-disp");
+        const recEl = gate.querySelector("#auth-reckey");
         const disp = dispEl ? dispEl.value.trim() : u;
         const errBox = gate.querySelector("#auth-err");
+        const okBox = gate.querySelector("#auth-ok");
         errBox.style.display = "none";
+        if (okBox) okBox.style.display = "none";
 
         try {
+          if (authTab === "recover") {
+            const res = await QCore.apiFetch("/api/auth/recover-password", {
+              method: "POST",
+              body: { username: u, recoveryKey: recEl ? recEl.value.trim() : "", newPassword: pw }
+            });
+            if (okBox) {
+              okBox.textContent = "✅ " + (res.message || "Đặt lại mật khẩu thành công! Hãy chuyển sang tab Đăng nhập.");
+              okBox.style.display = "block";
+            }
+            return;
+          }
           if (authTab === "login") {
             await QCore.loginAccount(u, pw);
           } else {
-            await QCore.registerAccount(u, disp || u, pw);
+            const usr = await QCore.registerAccount(u, disp || u, pw);
+            if (usr && usr.recoveryKey) {
+              QCore.showToast(`🔑 Mã khôi phục của bạn: ${usr.recoveryKey} (hãy lưu lại!)`);
+            }
           }
           gate.classList.remove("open");
           QCore.showToast(`Chào mừng ${QCore.getState().profile.name} đến với QChinese!`);
@@ -371,8 +424,15 @@ window.QApp = (function () {
 
   document.addEventListener("DOMContentLoaded", init);
 
+  function refreshCurrentView() {
+    if (currentRoute) {
+      navigate(currentRoute, currentParams);
+    }
+  }
+
   return {
     navigate,
+    refreshCurrentView,
     refreshTopbar,
     showAuthGate
   };

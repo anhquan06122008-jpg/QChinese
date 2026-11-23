@@ -5,6 +5,9 @@
 window.QCore = (function () {
   let currentUser = null;
   let appState = null;
+  let stateVersion = 1;
+  let syncSource = null;
+  let syncConnected = false;
   let syncTimer = null;
   let activeAudio = null;
   let studyInterval = null;
@@ -62,6 +65,7 @@ window.QCore = (function () {
       phoneticErrors: {},
       pronunciationSessions: 0,
       materials: [],
+      lessonProgress: {},
       aiHistory: [],
       writingSubmissions: [],
       speakingSessions: 0,
@@ -111,6 +115,7 @@ window.QCore = (function () {
     st.phoneticErrors = st.phoneticErrors && typeof st.phoneticErrors === "object" ? st.phoneticErrors : {};
     st.pronunciationSessions = Number(st.pronunciationSessions || 0);
     st.materials = Array.isArray(st.materials) ? st.materials : [];
+    st.lessonProgress = st.lessonProgress && typeof st.lessonProgress === "object" ? st.lessonProgress : {};
     st.aiHistory = Array.isArray(st.aiHistory) ? st.aiHistory : [];
     st.writingSubmissions = Array.isArray(st.writingSubmissions) ? st.writingSubmissions : [];
     st.skillScores = Object.assign({}, def.skillScores, st.skillScores || {});
@@ -158,6 +163,22 @@ window.QCore = (function () {
     else localStorage.removeItem("qchinese_auth_token");
   }
 
+  function getApiBase() {
+    return (localStorage.getItem("qchinese_api_base") || "").trim().replace(/\/+$/, "");
+  }
+
+  function setApiBase(url) {
+    const clean = String(url || "").trim().replace(/\/+$/, "");
+    if (clean) localStorage.setItem("qchinese_api_base", clean);
+    else localStorage.removeItem("qchinese_api_base");
+  }
+
+  function resolveApiUrl(url) {
+    const base = getApiBase();
+    const rel = String(url).replace(/^\//, "");
+    return base ? `${base}/${rel}` : rel;
+  }
+
   async function apiFetch(url, options = {}) {
     const headers = Object.assign({}, options.headers || {});
     const tok = getAuthToken();
@@ -167,10 +188,10 @@ window.QCore = (function () {
       options.body = JSON.stringify(options.body);
     }
     options.headers = headers;
-    if (!serverHealth.ok && /^\/?api\/(ai|user)\//.test(String(url))) {
-      throw new Error("Tính năng AI cần chạy backend (python server.py hoặc deploy lên Render). Bản GitHub Pages chỉ có phần học tĩnh, tài khoản lưu trong trình duyệt này.");
+    if (!serverHealth.ok && /^\/?api\/(ai|user|tournament|materials|sync|pdf|system)\//.test(String(url))) {
+      throw new Error("Tính năng này cần kết nối Backend Server 24/7 (python server.py hoặc URL Render trong Cài đặt).");
     }
-    const res = await fetch(String(url).replace(/^\//, ""), options);
+    const res = await fetch(resolveApiUrl(url), options);
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       throw new Error(data.error || `Lỗi kết nối (${res.status})`);
@@ -180,6 +201,111 @@ window.QCore = (function () {
 
   function localUserKey(username) {
     return `qchinese_local_state_${String(username || "guest").toLowerCase()}`;
+  }
+
+  function offlineQueueKey(username) {
+    return `qchinese_offline_sync_${String(username || "guest").toLowerCase()}`;
+  }
+
+  function disconnectRealtimeSync() {
+    if (syncSource) {
+      try { syncSource.close(); } catch (_) {}
+      syncSource = null;
+    }
+    syncConnected = false;
+  }
+
+  function applyRemoteState(remoteState, remoteVersion, notify = true) {
+    if (!currentUser || !remoteState) return;
+    if (remoteVersion && remoteVersion <= stateVersion) return;
+    stateVersion = remoteVersion || stateVersion + 1;
+    appState = ensureStateIntegrity(remoteState, currentUser.displayName);
+    localStorage.setItem(localUserKey(currentUser.username), JSON.stringify(appState));
+    applyTheme(appState.profile.theme);
+    if (window.QApp && typeof window.QApp.refreshTopbar === "function") {
+      window.QApp.refreshTopbar();
+    }
+    // Live UI refresh without reload (skip disrupting active typing in input/textarea)
+    const activeTag = document.activeElement && document.activeElement.tagName;
+    if (window.QApp && typeof window.QApp.refreshCurrentView === "function" && activeTag !== "INPUT" && activeTag !== "TEXTAREA") {
+      window.QApp.refreshCurrentView();
+    }
+    if (notify) {
+      showToast("🔄 Đã đồng bộ dữ liệu mới nhất từ thiết bị khác!");
+    }
+  }
+
+  async function pullLatestState() {
+    if (!serverHealth.ok || !currentUser || !getAuthToken()) return;
+    try {
+      const res = await apiFetch("/api/user/state");
+      if (res && res.state && (res.version || 0) > stateVersion) {
+        applyRemoteState(res.state, res.version, false);
+      }
+    } catch (_) {}
+  }
+
+  async function flushOfflineQueue() {
+    if (!serverHealth.ok || !currentUser || !navigator.onLine) return;
+    const qKey = offlineQueueKey(currentUser.username);
+    const pending = JSON.parse(localStorage.getItem(qKey) || "null");
+    if (!pending || !pending.state) return;
+    try {
+      const res = await apiFetch("/api/user/state", {
+        method: "POST",
+        body: { state: pending.state, baseVersion: pending.baseVersion, clientMutationId: pending.mutationId }
+      });
+      localStorage.removeItem(qKey);
+      if (res.version) stateVersion = res.version;
+      if (res.merged && res.state) {
+        applyRemoteState(res.state, res.version, false);
+      }
+      showToast("☁️ Đã đồng bộ các thay đổi offline lên Cloud!");
+    } catch (_) {}
+  }
+
+  function connectRealtimeSync() {
+    disconnectRealtimeSync();
+    if (!serverHealth.ok || !currentUser || !window.EventSource) return;
+    const tok = getAuthToken();
+    if (!tok) return;
+    const url = resolveApiUrl(`api/sync/stream?token=${encodeURIComponent(tok)}`);
+    try {
+      syncSource = new EventSource(url);
+      syncSource.addEventListener("connected", () => {
+        syncConnected = true;
+        flushOfflineQueue();
+      });
+      syncSource.addEventListener("state_update", (ev) => {
+        try {
+          const payload = JSON.parse(ev.data || "{}");
+          if (payload.originSessionId && currentUser && payload.originSessionId === currentUser.sessionId) {
+            if (payload.version && payload.version > stateVersion) stateVersion = payload.version;
+            return;
+          }
+          if (payload.state) {
+            applyRemoteState(payload.state, payload.version, true);
+          }
+        } catch (_) {}
+      });
+      syncSource.onerror = () => {
+        syncConnected = false;
+      };
+    } catch (_) {}
+  }
+
+  if (typeof window !== "undefined") {
+    window.addEventListener("online", () => {
+      flushOfflineQueue();
+      pullLatestState();
+      connectRealtimeSync();
+    });
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden && currentUser && serverHealth.ok) {
+        flushOfflineQueue();
+        pullLatestState();
+      }
+    });
   }
 
   async function initSession() {
@@ -194,9 +320,11 @@ window.QCore = (function () {
         const me = await apiFetch("/api/auth/me");
         if (me.authenticated && me.user) {
           currentUser = me.user;
+          stateVersion = me.version || 1;
           appState = ensureStateIntegrity(me.state, me.user.displayName);
           applyTheme(appState.profile.theme);
           startStudyTimer();
+          connectRealtimeSync();
           return { authenticated: true, user: currentUser };
         }
         return { authenticated: false };
@@ -226,10 +354,12 @@ window.QCore = (function () {
       });
       setAuthToken(res.token);
       currentUser = res.user;
+      if (res.recoveryKey) currentUser.recoveryKey = res.recoveryKey;
       appState = ensureStateIntegrity(res.state, res.user.displayName);
       localStorage.setItem(localUserKey(username), JSON.stringify(appState));
       applyTheme(appState.profile.theme);
       startStudyTimer();
+      connectRealtimeSync();
       return res.user;
     } else {
       // Static fallback multi-account registry
@@ -258,10 +388,12 @@ window.QCore = (function () {
       });
       setAuthToken(res.token);
       currentUser = res.user;
+      if (res.recoveryKey) currentUser.recoveryKey = res.recoveryKey;
       appState = ensureStateIntegrity(res.state, res.user.displayName);
       localStorage.setItem(localUserKey(username), JSON.stringify(appState));
       applyTheme(appState.profile.theme);
       startStudyTimer();
+      connectRealtimeSync();
       return res.user;
     } else {
       const accounts = JSON.parse(localStorage.getItem("qchinese_static_accounts") || "{}");
@@ -282,6 +414,7 @@ window.QCore = (function () {
 
   async function logoutAccount() {
     if (studyInterval) clearInterval(studyInterval);
+    disconnectRealtimeSync();
     if (serverHealth.ok) {
       try { await apiFetch("/api/auth/logout", { method: "POST", body: {} }); } catch (_) {}
     }
@@ -289,6 +422,7 @@ window.QCore = (function () {
     localStorage.removeItem("qchinese_static_active_user");
     currentUser = null;
     appState = null;
+    stateVersion = 1;
   }
 
   function saveState(immediate = false) {
@@ -300,15 +434,28 @@ window.QCore = (function () {
     if (!serverHealth.ok) return;
 
     if (syncTimer) clearTimeout(syncTimer);
+    const mutationId = "mut_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7);
+    const qKey = offlineQueueKey(currentUser.username);
     const pushFn = async () => {
       try {
-        await apiFetch("/api/user/state", { method: "POST", body: { state: appState } });
+        const res = await apiFetch("/api/user/state", {
+          method: "POST",
+          body: { state: appState, baseVersion: stateVersion, clientMutationId: mutationId }
+        });
+        localStorage.removeItem(qKey);
+        if (res && res.version) stateVersion = res.version;
+        if (res && res.merged && res.state) {
+          appState = ensureStateIntegrity(res.state, currentUser.displayName);
+          localStorage.setItem(localUserKey(currentUser.username), JSON.stringify(appState));
+        }
       } catch (e) {
-        console.warn("Background state sync deferred:", e.message);
+        // Queue for automatic sync once network returns (offline resilience)
+        localStorage.setItem(qKey, JSON.stringify({ state: appState, baseVersion: stateVersion, mutationId, savedAt: Date.now() }));
+        console.warn("Offline sync queued:", e.message);
       }
     };
     if (immediate) pushFn();
-    else syncTimer = setTimeout(pushFn, 600);
+    else syncTimer = setTimeout(pushFn, 450);
   }
 
   function startStudyTimer() {
@@ -522,6 +669,23 @@ window.QCore = (function () {
     appState.aiHistory.unshift(Object.assign({ id: "ai_" + Date.now(), at: new Date().toISOString() }, entry));
     if (appState.aiHistory.length > 40) appState.aiHistory = appState.aiHistory.slice(0, 40);
     saveState(false);
+  }
+
+  function recordLessonExercise(exId, score, wrongFocuses = []) {
+    if (!appState || !exId) return;
+    const prev = appState.lessonProgress[exId] || { status: "not_started", bestScore: 0, lastScore: 0, attempts: 0, history: [] };
+    const s = Math.max(0, Math.min(100, Math.round(Number(score || 0))));
+    prev.attempts += 1;
+    prev.lastScore = s;
+    prev.bestScore = Math.max(prev.bestScore || 0, s);
+    prev.status = s >= 60 ? "completed" : "in_progress";
+    prev.updatedAt = new Date().toISOString();
+    prev.history = Array.isArray(prev.history) ? prev.history : [];
+    prev.history.unshift({ date: prev.updatedAt, score: s, wrongFocuses });
+    if (prev.history.length > 10) prev.history = prev.history.slice(0, 10);
+    appState.lessonProgress[exId] = prev;
+    saveState(true);
+    return prev;
   }
 
   function recordHanziPractice(hanzi, accuracyScore) {
@@ -802,6 +966,10 @@ window.QCore = (function () {
     loginAccount,
     logoutAccount,
     apiFetch,
+    getApiBase,
+    setApiBase,
+    resolveApiUrl,
+    getAuthToken,
     getUser: () => currentUser,
     getState: () => appState,
     setState: (st) => { appState = ensureStateIntegrity(st, currentUser ? currentUser.displayName : "Học viên"); saveState(true); },
@@ -818,6 +986,7 @@ window.QCore = (function () {
     updateMaterial,
     deleteMaterial,
     recordMaterialPractice,
+    recordLessonExercise,
     logAiHistory,
     recordHanziPractice,
     addToNotebook,

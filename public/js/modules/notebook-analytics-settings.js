@@ -589,12 +589,112 @@ window.QNotebookAnalyticsSettings = (function () {
           </div>
         </div>
       </div>
+
+      <!-- Hạng mục 2 & 3: Multi-Device Sessions, Recovery Key & Cloud Server Config -->
+      <div class="grid-2" style="margin-top:16px;">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+            <h3 style="margin:0;font-size:17px;">📱 Thiết bị & Phiên đăng nhập Đa thiết bị</h3>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <button class="btn btn-outline btn-sm" id="set-revoke-others">Đăng xuất thiết bị khác</button>
+              <button class="btn btn-danger btn-sm" id="set-revoke-all">Đăng xuất tất cả</button>
+            </div>
+          </div>
+          <p style="font-size:12.5px;color:var(--text-secondary);margin:0 0 12px;">
+            Một tài khoản đăng nhập đồng thời trên Điện thoại, Laptop, PC, iPad mà không tự đăng xuất lẫn nhau.
+          </p>
+          <div id="set-sessions-list" style="display:flex;flex-direction:column;gap:8px;">
+            <div class="card-subtle" style="font-size:13px;color:var(--text-muted);">${health.ok ? "⏳ Đang tải danh sách thiết bị đang đăng nhập..." : "Chế độ tĩnh trình duyệt — kết nối Backend 24/7 để quản lý phiên đa thiết bị."}</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin:0 0 10px;font-size:17px;">🔑 Khôi phục mật khẩu & Máy chủ Cloud 24/7</h3>
+          <div class="card-subtle" style="margin-bottom:12px;">
+            <strong style="font-size:13.5px;">Mã khôi phục tài khoản (An toàn PBKDF2):</strong>
+            <p style="font-size:12.5px;color:var(--text-secondary);margin:4px 0 8px;">Dùng để đặt lại mật khẩu nếu bạn quên, không lưu mật khẩu dạng văn bản thuần.</p>
+            <button class="btn btn-soft btn-sm" id="set-regen-rec" ${!health.ok ? "disabled" : ""}>🔑 Tạo Mã khôi phục mới</button>
+            <div id="set-rec-out" style="margin-top:8px;font-size:13px;"></div>
+          </div>
+
+          <div class="card-subtle">
+            <strong style="font-size:13.5px;">🌐 Kết nối Backend Server Online 24/7 (Render / Railway / VPS):</strong>
+            <p style="font-size:12.5px;color:var(--text-secondary);margin:4px 0 8px;">Nếu bạn mở giao diện từ GitHub Pages / Vercel, hãy dán URL Backend 24/7 của bạn để đồng bộ đa thiết bị mọi lúc:</p>
+            <div style="display:flex;gap:8px;">
+              <input class="input-field" id="set-api-base" value="${QCore.escapeHtml(QCore.getApiBase())}" placeholder="Để trống nếu chạy cùng server, hoặc https://qchinese-api.onrender.com" />
+              <button class="btn btn-primary btn-sm" id="set-save-api-base">Lưu</button>
+            </div>
+          </div>
+        </div>
+      </div>
     `;
 
     container.querySelector("#set-logout-btn").onclick = async () => {
       await QCore.logoutAccount();
       window.QApp.showAuthGate();
     };
+
+    const saveApiBtn = container.querySelector("#set-save-api-base");
+    if (saveApiBtn) {
+      saveApiBtn.onclick = () => {
+        QCore.setApiBase(container.querySelector("#set-api-base").value);
+        QCore.showToast("Đã lưu địa chỉ Backend Cloud! Đang tải lại kết nối...");
+        setTimeout(() => window.location.reload(), 600);
+      };
+    }
+
+    if (health.ok) {
+      const loadSessions = async () => {
+        const box = container.querySelector("#set-sessions-list");
+        if (!box) return;
+        try {
+          const data = await QCore.apiFetch("/api/auth/sessions");
+          const list = data.sessions || [];
+          box.innerHTML = list.length
+            ? list.map((s) => `
+                <div class="card-subtle" style="padding:10px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;">
+                  <div>
+                    <strong>${QCore.escapeHtml(s.deviceName)}</strong>
+                    ${s.isCurrent ? `<span class="badge badge-jade" style="margin-left:6px;">Thiết bị hiện tại</span>` : ""}
+                    <div style="font-size:11.5px;color:var(--text-muted);">IP: ${QCore.escapeHtml(s.ipAddress)} · Hoạt động: ${new Date(s.lastActiveAt).toLocaleString("vi-VN")}</div>
+                  </div>
+                  <button class="btn btn-outline btn-sm" data-rev-sid="${QCore.escapeHtml(s.sessionId)}">Đăng xuất</button>
+                </div>
+              `).join("")
+            : `<div class="card-subtle" style="font-size:13px;">Không có phiên hoạt động nào.</div>`;
+          box.querySelectorAll("[data-rev-sid]").forEach((b) => {
+            b.onclick = async () => {
+              const res = await QCore.apiFetch("/api/auth/sessions/revoke", { method: "POST", body: { sessionId: b.getAttribute("data-rev-sid") } });
+              if (res.revokedCurrent) {
+                await QCore.logoutAccount();
+                window.QApp.showAuthGate();
+              } else {
+                QCore.showToast("Đã đăng xuất thiết bị đã chọn!");
+                loadSessions();
+              }
+            };
+          });
+        } catch (e) {
+          box.innerHTML = `<div class="card-subtle" style="color:var(--accent-red);">${QCore.escapeHtml(e.message)}</div>`;
+        }
+      };
+      loadSessions();
+
+      container.querySelector("#set-revoke-others").onclick = async () => {
+        const res = await QCore.apiFetch("/api/auth/sessions/revoke-all", { method: "POST", body: { keepCurrent: true } });
+        QCore.showToast(`Đã đăng xuất ${res.revokedCount || 0} thiết bị khác!`);
+        loadSessions();
+      };
+      container.querySelector("#set-revoke-all").onclick = async () => {
+        await QCore.apiFetch("/api/auth/sessions/revoke-all", { method: "POST", body: { keepCurrent: false } });
+        await QCore.logoutAccount();
+        window.QApp.showAuthGate();
+      };
+      container.querySelector("#set-regen-rec").onclick = async () => {
+        const res = await QCore.apiFetch("/api/auth/recovery-key/regenerate", { method: "POST", body: {} });
+        container.querySelector("#set-rec-out").innerHTML = `<div style="padding:8px 10px;background:var(--bg-accent-soft);border-radius:8px;"><strong>Mã khôi phục mới (chỉ hiện 1 lần, hãy lưu lại):</strong><br/><code style="font-size:15px;font-weight:800;">${QCore.escapeHtml(res.recoveryKey)}</code></div>`;
+      };
+    }
 
     container.querySelector("#set-save-account").onclick = async () => {
       const newDisp = container.querySelector("#set-disp-name").value.trim() || p.name;

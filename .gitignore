@@ -9,6 +9,8 @@ data/qchinese.db-shm
 data/qchinese.db-wal
 data/tts_cache/
 data/uploads/
+data/backups/
+data/logs/
 data/sources/complete.json
 data/sources/Unihan.zip
 data/sources/Unihan_Readings.txt

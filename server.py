@@ -15,6 +15,7 @@ import ipaddress
 import json
 import mimetypes
 import os
+import queue
 import re
 import secrets
 import socket
@@ -44,10 +45,37 @@ from backend.ai_pedagogy import (
     handle_explain_grammar,
     handle_explain_word,
     handle_fix_sentence,
+    handle_generate_lesson_exercise,
     handle_personalized_drills,
     handle_pronunciation_analysis,
     handle_speaking_turn,
     handle_writing_evaluation,
+)
+from backend.ai_tournament import (
+    create_tournament,
+    get_tournament_detail,
+    init_tournament_tables,
+    list_tournaments,
+    run_all_rounds_async,
+    run_next_round,
+)
+
+from backend.ops_backup import (
+    collect_system_metrics,
+    list_backups,
+    record_server_error,
+    run_hot_backup,
+    setup_logger,
+    start_backup_scheduler,
+)
+from backend.pdf_engine import (
+    LOCAL_HSK1_MP3_DIR,
+    ensure_hsk3_level1_seeded,
+    get_course_detail,
+    get_pdf_overview,
+    init_pdf_tables,
+    publish_course,
+    upload_and_process_pdf,
 )
 
 ROOT_DIR = Path(__file__).resolve().parent
@@ -55,10 +83,14 @@ PUBLIC_DIR = ROOT_DIR / "public"
 DATA_DIR = ROOT_DIR / "data"
 TTS_CACHE_DIR = DATA_DIR / "tts_cache"
 STROKES_CACHE_DIR = DATA_DIR / "strokes_cache"
+BACKUP_DIR = DATA_DIR / "backups"
+LOG_DIR = DATA_DIR / "logs"
 DB_PATH = DATA_DIR / "qchinese.db"
 
-for d in (PUBLIC_DIR, DATA_DIR, TTS_CACHE_DIR, STROKES_CACHE_DIR):
+for d in (PUBLIC_DIR, DATA_DIR, TTS_CACHE_DIR, STROKES_CACHE_DIR, BACKUP_DIR, LOG_DIR):
     d.mkdir(parents=True, exist_ok=True)
+
+SERVER_LOGGER = setup_logger(LOG_DIR)
 
 
 def load_dotenv(dotenv_path: Path) -> None:
@@ -84,6 +116,91 @@ load_dotenv(ROOT_DIR / ".env")
 DB_LOCK = threading.Lock()
 RATE_LOCK = threading.Lock()
 RATE_BUCKETS: Dict[str, list] = {}
+SYNC_LOCK = threading.Lock()
+SYNC_SUBSCRIBERS: Dict[int, list] = {}
+SEEN_MUTATIONS: Dict[int, list] = {}
+
+
+def _merge_list_by_id(base_list: list, inc_list: list, id_field: str = "id") -> list:
+    merged = {}
+    order = []
+    for item in (inc_list or []):
+        if isinstance(item, dict) and item.get(id_field):
+            k = str(item[id_field])
+            if k not in merged:
+                order.append(k)
+            merged[k] = item
+    for item in (base_list or []):
+        if isinstance(item, dict) and item.get(id_field):
+            k = str(item[id_field])
+            if k not in merged:
+                order.append(k)
+                merged[k] = item
+    return [merged[k] for k in order]
+
+
+def _merge_user_states(server_state: Dict[str, Any], client_state: Dict[str, Any]) -> Dict[str, Any]:
+    """Deterministic conflict-free merge when two devices edit concurrently (newer data never overwritten by stale)."""
+    out = dict(server_state)
+    out.update(client_state)
+    # Profile: preserve higher counters
+    sp = server_state.get("profile") or {}
+    cp = client_state.get("profile") or {}
+    mp = dict(sp)
+    mp.update(cp)
+    mp["totalStudyMinutes"] = max(int(sp.get("totalStudyMinutes", 0) or 0), int(cp.get("totalStudyMinutes", 0) or 0))
+    mp["streakDays"] = max(int(sp.get("streakDays", 1) or 1), int(cp.get("streakDays", 1) or 1))
+    mp["unlockedHsk"] = max(int(sp.get("unlockedHsk", 1) or 1), int(cp.get("unlockedHsk", 1) or 1))
+    out["profile"] = mp
+
+    # Set-union arrays (lesson completions, favorites, customHanzi, markedWords)
+    for arr_key in ("grammarCompleted", "listeningCompleted", "readingCompleted", "markedWords", "customHanzi", "favoriteVocab"):
+        s_arr = server_state.get(arr_key) or []
+        c_arr = client_state.get(arr_key) or []
+        seen = set()
+        combined = []
+        for x in list(c_arr) + list(s_arr):
+            if x not in seen:
+                seen.add(x)
+                combined.append(x)
+        out[arr_key] = combined
+
+    # SRS cards: keep whichever card has higher reps or later nextReview
+    s_srs = dict(server_state.get("srs") or {})
+    for k, v in (client_state.get("srs") or {}).items():
+        if k not in s_srs or (v.get("nextReview", 0) >= s_srs[k].get("nextReview", 0)):
+            s_srs[k] = v
+    out["srs"] = s_srs
+
+    # Hanzi progress: keep higher attempts / bestScore
+    s_hz = dict(server_state.get("hanziProgress") or {})
+    for k, v in (client_state.get("hanziProgress") or {}).items():
+        if k not in s_hz or (v.get("attempts", 0) >= s_hz[k].get("attempts", 0)):
+            s_hz[k] = v
+    out["hanziProgress"] = s_hz
+
+    # Entity lists by ID (notebook, materials, customVocab) - never duplicate
+    for list_key in ("notebook", "materials", "customVocab"):
+        out[list_key] = _merge_list_by_id(server_state.get(list_key) or [], client_state.get(list_key) or [])
+
+    # Lesson progress map (Hạng mục 5/6)
+    s_lp = dict(server_state.get("lessonProgress") or {})
+    for k, v in (client_state.get("lessonProgress") or {}).items():
+        if k not in s_lp or (v.get("updatedAt", "") >= s_lp[k].get("updatedAt", "")):
+            s_lp[k] = v
+    out["lessonProgress"] = s_lp
+    return out
+
+
+def broadcast_user_sync(user_id: int, event_payload: Dict[str, Any]) -> None:
+    msg = json.dumps(event_payload, ensure_ascii=False)
+    with SYNC_LOCK:
+        queues = list(SYNC_SUBSCRIBERS.get(user_id, []))
+    for q in queues:
+        try:
+            q.put_nowait(msg)
+        except Exception:
+            pass
 
 
 def check_rate_limit(bucket_key: str, limit: int = 45, window_sec: int = 60) -> bool:
@@ -105,6 +222,45 @@ def get_db() -> sqlite3.Connection:
     conn.execute("PRAGMA journal_mode=WAL;")
     conn.execute("PRAGMA foreign_keys=ON;")
     return conn
+
+
+def _ensure_column(conn: sqlite3.Connection, table: str, col: str, ddl: str) -> None:
+    cols = {r[1] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()}
+    if col not in cols:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {ddl}")
+
+
+def parse_device_name(ua: str) -> str:
+    ua_l = (ua or "").lower()
+    os_name = "Thiết bị khác"
+    if "iphone" in ua_l:
+        os_name = "iPhone"
+    elif "ipad" in ua_l:
+        os_name = "iPad"
+    elif "android" in ua_l:
+        os_name = "Android"
+    elif "windows" in ua_l:
+        os_name = "Windows PC"
+    elif "macintosh" in ua_l or "mac os" in ua_l:
+        os_name = "MacBook / macOS"
+    elif "linux" in ua_l:
+        os_name = "Linux"
+
+    browser = "Trình duyệt"
+    if "edg/" in ua_l:
+        browser = "Edge"
+    elif "chrome/" in ua_l and "edg/" not in ua_l:
+        browser = "Chrome"
+    elif "firefox/" in ua_l:
+        browser = "Firefox"
+    elif "safari/" in ua_l and "chrome/" not in ua_l:
+        browser = "Safari"
+    return f"{os_name} · {browser}"
+
+
+def generate_recovery_key() -> str:
+    raw = secrets.token_hex(6).upper()
+    return f"QCN-{raw[:4]}-{raw[4:8]}-{raw[8:12]}"
 
 
 def init_db() -> None:
@@ -139,6 +295,21 @@ def init_db() -> None:
                 );
                 """
             )
+            # Safe non-destructive migrations for multi-device auth, recovery & realtime sync version
+            _ensure_column(conn, "users", "recovery_hash", "TEXT DEFAULT ''")
+            _ensure_column(conn, "users", "recovery_salt", "TEXT DEFAULT ''")
+            _ensure_column(conn, "sessions", "session_id", "TEXT DEFAULT ''")
+            _ensure_column(conn, "sessions", "device_name", "TEXT DEFAULT 'Thiết bị web'")
+            _ensure_column(conn, "sessions", "user_agent", "TEXT DEFAULT ''")
+            _ensure_column(conn, "sessions", "ip_address", "TEXT DEFAULT ''")
+            _ensure_column(conn, "sessions", "last_active_at", "TEXT DEFAULT ''")
+            _ensure_column(conn, "user_state", "version", "INTEGER NOT NULL DEFAULT 1")
+            # Backfill opaque session_id for any legacy sessions
+            legacy_sess = conn.execute("SELECT token_hash FROM sessions WHERE session_id IS NULL OR session_id = ''").fetchall()
+            for row in legacy_sess:
+                conn.execute("UPDATE sessions SET session_id = ?, last_active_at = created_at WHERE token_hash = ?", ("ses_" + secrets.token_hex(8), row["token_hash"]))
+            init_tournament_tables(conn)
+            init_pdf_tables(conn)
             conn.commit()
         finally:
             conn.close()
@@ -360,6 +531,27 @@ class QChineseRequestHandler(BaseHTTPRequestHandler):
         sys_time = self.log_date_time_string()
         print(f"[{sys_time}] {self.command} {self.path} -> {args[1] if len(args) > 1 else ''}")
 
+    def _cors_headers(self) -> Dict[str, str]:
+        origin = (self.headers.get("Origin") or "").strip()
+        allowed_env = os.environ.get("CORS_ORIGINS", "*").strip()
+        if not origin:
+            return {}
+        if allowed_env == "*" or origin in [o.strip() for o in allowed_env.split(",")]:
+            return {
+                "Access-Control-Allow-Origin": origin,
+                "Access-Control-Allow-Credentials": "true",
+                "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Device-Name",
+                "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+                "Vary": "Origin",
+            }
+        return {}
+
+    def do_OPTIONS(self) -> None:
+        self.send_response(204)
+        for k, v in self._cors_headers().items():
+            self.send_header(k, v)
+        self.end_headers()
+
     def _send_json(self, status: int, data: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None) -> None:
         raw = json.dumps(data, ensure_ascii=False).encode("utf-8")
         self.send_response(status)
@@ -369,6 +561,8 @@ class QChineseRequestHandler(BaseHTTPRequestHandler):
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("X-Frame-Options", "SAMEORIGIN")
         self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
+        for k, v in self._cors_headers().items():
+            self.send_header(k, v)
         if extra_headers:
             for k, v in extra_headers.items():
                 self.send_header(k, v)
@@ -406,12 +600,13 @@ class QChineseRequestHandler(BaseHTTPRequestHandler):
             return None
         thash = hash_token(token)
         now_ts = int(time.time())
+        now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
         with DB_LOCK:
             conn = get_db()
             try:
                 row = conn.execute(
                     """
-                    SELECT u.id, u.username, u.display_name, u.created_at
+                    SELECT u.id, u.username, u.display_name, u.created_at, s.session_id
                     FROM sessions s
                     JOIN users u ON u.id = s.user_id
                     WHERE s.token_hash = ? AND s.expires_at > ?
@@ -420,54 +615,105 @@ class QChineseRequestHandler(BaseHTTPRequestHandler):
                 ).fetchone()
                 if not row:
                     return None
+                conn.execute("UPDATE sessions SET last_active_at = ? WHERE token_hash = ?", (now_iso, thash))
+                conn.commit()
                 return {
                     "id": row["id"],
                     "username": row["username"],
                     "displayName": row["display_name"],
                     "createdAt": row["created_at"],
+                    "sessionId": row["session_id"] or "",
                 }
             finally:
                 conn.close()
 
-    def _load_user_state(self, user_id: int, display_name: str) -> Dict[str, Any]:
+    def _load_user_state_meta(self, user_id: int, display_name: str) -> Tuple[Dict[str, Any], int, str]:
         with DB_LOCK:
             conn = get_db()
             try:
                 row = conn.execute(
-                    "SELECT state_json FROM user_state WHERE user_id = ?", (user_id,)
+                    "SELECT state_json, updated_at, version FROM user_state WHERE user_id = ?", (user_id,)
                 ).fetchone()
                 if row:
-                    return json.loads(row["state_json"])
+                    return json.loads(row["state_json"]), int(row["version"] or 1), row["updated_at"]
                 default_state = create_default_user_state(display_name)
                 now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
                 conn.execute(
-                    "INSERT INTO user_state (user_id, state_json, updated_at) VALUES (?, ?, ?)",
+                    "INSERT INTO user_state (user_id, state_json, updated_at, version) VALUES (?, ?, ?, 1)",
                     (user_id, json.dumps(default_state, ensure_ascii=False), now_iso),
                 )
                 conn.commit()
-                return default_state
+                return default_state, 1, now_iso
             finally:
                 conn.close()
 
-    def _save_user_state(self, user_id: int, state: Dict[str, Any]) -> None:
+    def _load_user_state(self, user_id: int, display_name: str) -> Dict[str, Any]:
+        st, _, _ = self._load_user_state_meta(user_id, display_name)
+        return st
+
+    def _save_user_state(
+        self,
+        user_id: int,
+        state: Dict[str, Any],
+        base_version: Optional[int] = None,
+        mutation_id: Optional[str] = None,
+        origin_session_id: str = "",
+    ) -> Dict[str, Any]:
         now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
-        raw_state = json.dumps(state, ensure_ascii=False)
         with DB_LOCK:
+            # Idempotency: ignore duplicate retried mutation IDs
+            if mutation_id:
+                seen = SEEN_MUTATIONS.setdefault(user_id, [])
+                if mutation_id in seen:
+                    conn = get_db()
+                    try:
+                        row = conn.execute("SELECT state_json, version, updated_at FROM user_state WHERE user_id = ?", (user_id,)).fetchone()
+                        if row:
+                            return {"state": json.loads(row["state_json"]), "version": int(row["version"] or 1), "updatedAt": row["updated_at"], "deduped": True}
+                    finally:
+                        conn.close()
+
             conn = get_db()
             try:
+                row = conn.execute("SELECT state_json, version FROM user_state WHERE user_id = ?", (user_id,)).fetchone()
+                server_ver = int(row["version"] or 1) if row else 0
+                final_state = state
+                merged = False
+                if row and base_version is not None and int(base_version) < server_ver:
+                    server_state = json.loads(row["state_json"])
+                    final_state = _merge_user_states(server_state, state)
+                    merged = True
+                new_ver = server_ver + 1
+                raw_state = json.dumps(final_state, ensure_ascii=False)
                 conn.execute(
                     """
-                    INSERT INTO user_state (user_id, state_json, updated_at)
-                    VALUES (?, ?, ?)
+                    INSERT INTO user_state (user_id, state_json, updated_at, version)
+                    VALUES (?, ?, ?, ?)
                     ON CONFLICT(user_id) DO UPDATE SET
                         state_json = excluded.state_json,
-                        updated_at = excluded.updated_at
+                        updated_at = excluded.updated_at,
+                        version = excluded.version
                     """,
-                    (user_id, raw_state, now_iso),
+                    (user_id, raw_state, now_iso, new_ver),
                 )
                 conn.commit()
+                if mutation_id:
+                    seen = SEEN_MUTATIONS.setdefault(user_id, [])
+                    seen.append(mutation_id)
+                    if len(seen) > 100:
+                        del seen[:-50]
             finally:
                 conn.close()
+
+        # Push real-time SSE update to all devices of this user!
+        broadcast_user_sync(user_id, {
+            "version": new_ver,
+            "updatedAt": now_iso,
+            "originSessionId": origin_session_id,
+            "merged": merged,
+            "state": final_state,
+        })
+        return {"state": final_state, "version": new_ver, "updatedAt": now_iso, "merged": merged}
 
     def do_GET(self) -> None:
         parsed = urllib.parse.urlparse(self.path)
@@ -484,13 +730,143 @@ class QChineseRequestHandler(BaseHTTPRequestHandler):
             })
             return
 
+        if route == "/api/system/status":
+            metrics = collect_system_metrics(get_db, DB_LOCK, DB_PATH, BACKUP_DIR)
+            metrics["backups"] = list_backups(BACKUP_DIR)
+            self._send_json(200, metrics)
+            return
+
+        if route == "/api/pdf/overview":
+            self._send_json(200, get_pdf_overview(get_db, DB_LOCK, ROOT_DIR))
+            return
+
+        if route == "/api/pdf/course":
+            lvl_str = (query.get("hskLevel") or [""])[0].strip()
+            cid = (query.get("courseId") or [""])[0].strip() or None
+            lvl = int(lvl_str) if lvl_str.isdigit() else None
+            res = get_course_detail(get_db, DB_LOCK, ROOT_DIR, hsk_level=lvl, course_id=cid)
+            self._send_json(200 if res.get("ok") else 404, res)
+            return
+
+        if route == "/api/pdf/audio":
+            fname = (query.get("file") or [""])[0].strip()
+            if not re.match(r"^[0-9]{1,2}-[0-9]{1,2}\.mp3$", fname):
+                self._send_json(400, {"error": "Tên file audio không hợp lệ."})
+                return
+            audio_path = (LOCAL_HSK1_MP3_DIR / fname).resolve()
+            if not audio_path.exists() or not str(audio_path).startswith(str(LOCAL_HSK1_MP3_DIR.resolve())):
+                self._send_json(404, {"error": "Không tìm thấy file MP3 giáo trình trên server này."})
+                return
+            mp3_bytes = audio_path.read_bytes()
+            self.send_response(200)
+            self.send_header("Content-Type", "audio/mpeg")
+            self.send_header("Content-Length", str(len(mp3_bytes)))
+            self.send_header("Cache-Control", "public, max-age=86400")
+            for k, v in self._cors_headers().items():
+                self.send_header(k, v)
+            self.end_headers()
+            self.wfile.write(mp3_bytes)
+            return
+
+        if route == "/api/tournament/list":
+            self._send_json(200, list_tournaments(get_db, DB_LOCK))
+            return
+
+        if route == "/api/tournament/detail":
+            t_id = (query.get("id") or [""])[0].strip()
+            res = get_tournament_detail(get_db, DB_LOCK, t_id)
+            self._send_json(200 if "error" not in res else 404, res)
+            return
+
+        if route == "/api/auth/sessions":
+            user = self._get_authenticated_user()
+            if not user:
+                self._send_json(401, {"error": "Chưa đăng nhập."})
+                return
+            now_ts = int(time.time())
+            with DB_LOCK:
+                conn = get_db()
+                try:
+                    rows = conn.execute(
+                        """
+                        SELECT session_id, device_name, ip_address, created_at, last_active_at, expires_at
+                        FROM sessions
+                        WHERE user_id = ? AND expires_at > ?
+                        ORDER BY last_active_at DESC, created_at DESC
+                        """,
+                        (user["id"], now_ts),
+                    ).fetchall()
+                finally:
+                    conn.close()
+            sessions = [
+                {
+                    "sessionId": r["session_id"],
+                    "deviceName": r["device_name"] or "Thiết bị web",
+                    "ipAddress": r["ip_address"] or "—",
+                    "createdAt": r["created_at"],
+                    "lastActiveAt": r["last_active_at"] or r["created_at"],
+                    "isCurrent": r["session_id"] == user.get("sessionId"),
+                }
+                for r in rows
+            ]
+            self._send_json(200, {"sessions": sessions, "count": len(sessions)})
+            return
+
+        if route == "/api/sync/stream":
+            tok = (query.get("token") or [""])[0].strip() or self._get_session_token()
+            if not tok:
+                self._send_json(401, {"error": "Thiếu token đồng bộ."})
+                return
+            thash = hash_token(tok)
+            now_ts = int(time.time())
+            with DB_LOCK:
+                conn = get_db()
+                try:
+                    u_row = conn.execute("SELECT user_id FROM sessions WHERE token_hash = ? AND expires_at > ?", (thash, now_ts)).fetchone()
+                finally:
+                    conn.close()
+            if not u_row:
+                self._send_json(401, {"error": "Phiên đồng bộ hết hạn."})
+                return
+            uid = int(u_row["user_id"])
+            q: queue.Queue = queue.Queue(maxsize=32)
+            with SYNC_LOCK:
+                SYNC_SUBSCRIBERS.setdefault(uid, []).append(q)
+            try:
+                self.send_response(200)
+                self.send_header("Content-Type", "text/event-stream; charset=utf-8")
+                self.send_header("Cache-Control", "no-cache")
+                self.send_header("Connection", "keep-alive")
+                self.send_header("X-Accel-Buffering", "no")
+                for k, v in self._cors_headers().items():
+                    self.send_header(k, v)
+                self.end_headers()
+                self.wfile.write(b"event: connected\ndata: {\"ok\":true}\n\n")
+                self.wfile.flush()
+                while True:
+                    try:
+                        payload_str = q.get(timeout=20)
+                        self.wfile.write(f"event: state_update\ndata: {payload_str}\n\n".encode("utf-8"))
+                        self.wfile.flush()
+                    except queue.Empty:
+                        self.wfile.write(b": heartbeat\n\n")
+                        self.wfile.flush()
+            except Exception:
+                pass
+            finally:
+                with SYNC_LOCK:
+                    subs = SYNC_SUBSCRIBERS.get(uid, [])
+                    if q in subs:
+                        subs.remove(q)
+            return
+
         if route == "/api/auth/me":
             user = self._get_authenticated_user()
             if not user:
                 self._send_json(200, {"authenticated": False})
                 return
-            state = self._load_user_state(user["id"], user["displayName"])
-            self._send_json(200, {"authenticated": True, "user": user, "state": state})
+            state, ver, upd = self._load_user_state_meta(user["id"], user["displayName"])
+            self._send_json(200, {"authenticated": True, "user": user, "state": state, "version": ver, "updatedAt": upd})
             return
 
         if route == "/api/user/state":
@@ -498,8 +874,8 @@ class QChineseRequestHandler(BaseHTTPRequestHandler):
             if not user:
                 self._send_json(401, {"error": "Chưa đăng nhập."})
                 return
-            state = self._load_user_state(user["id"], user["displayName"])
-            self._send_json(200, {"state": state})
+            state, ver, upd = self._load_user_state_meta(user["id"], user["displayName"])
+            self._send_json(200, {"state": state, "version": ver, "updatedAt": upd})
             return
 
         if route == "/api/user/backup":
@@ -627,7 +1003,7 @@ class QChineseRequestHandler(BaseHTTPRequestHandler):
         route = parsed.path
         client_ip = self.client_address[0] if self.client_address else "local"
 
-        max_len = 12_000_000 if route == "/api/materials/extract-file" else 2_000_000
+        max_len = 35_000_000 if route in ("/api/materials/extract-file", "/api/pdf/upload") else 2_000_000
         body = self._read_json(max_bytes=max_len)
         if body is None:
             self._send_json(400, {"error": "JSON không hợp lệ."})
@@ -651,9 +1027,14 @@ class QChineseRequestHandler(BaseHTTPRequestHandler):
                 display_name = username
 
             pw_hash, pw_salt = hash_password(password)
+            rec_key = generate_recovery_key()
+            rec_hash, rec_salt = hash_password(rec_key)
             now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
             raw_token = secrets.token_urlsafe(32)
             token_h = hash_token(raw_token)
+            sess_id = "ses_" + secrets.token_hex(8)
+            ua = (self.headers.get("User-Agent") or "")[:240]
+            dev_name = (body.get("deviceName") or self.headers.get("X-Device-Name") or parse_device_name(ua))[:80]
             expires = int(time.time()) + 30 * 86400
             initial_state = create_default_user_state(display_name)
 
@@ -666,19 +1047,22 @@ class QChineseRequestHandler(BaseHTTPRequestHandler):
                         return
                     cur = conn.execute(
                         """
-                        INSERT INTO users (username, display_name, password_hash, password_salt, created_at, last_login_at)
-                        VALUES (?, ?, ?, ?, ?, ?)
+                        INSERT INTO users (username, display_name, password_hash, password_salt, recovery_hash, recovery_salt, created_at, last_login_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                         """,
-                        (username, display_name, pw_hash, pw_salt, now_iso, now_iso),
+                        (username, display_name, pw_hash, pw_salt, rec_hash, rec_salt, now_iso, now_iso),
                     )
                     user_id = cur.lastrowid
                     conn.execute(
-                        "INSERT INTO user_state (user_id, state_json, updated_at) VALUES (?, ?, ?)",
+                        "INSERT INTO user_state (user_id, state_json, updated_at, version) VALUES (?, ?, ?, 1)",
                         (user_id, json.dumps(initial_state, ensure_ascii=False), now_iso),
                     )
                     conn.execute(
-                        "INSERT INTO sessions (token_hash, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)",
-                        (token_h, user_id, expires, now_iso),
+                        """
+                        INSERT INTO sessions (token_hash, user_id, expires_at, created_at, session_id, device_name, user_agent, ip_address, last_active_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """,
+                        (token_h, user_id, expires, now_iso, sess_id, dev_name, ua, client_ip, now_iso),
                     )
                     conn.commit()
                 finally:
@@ -690,7 +1074,9 @@ class QChineseRequestHandler(BaseHTTPRequestHandler):
                 {
                     "ok": True,
                     "token": raw_token,
-                    "user": {"id": user_id, "username": username, "displayName": display_name},
+                    "sessionId": sess_id,
+                    "recoveryKey": rec_key,
+                    "user": {"id": user_id, "username": username, "displayName": display_name, "sessionId": sess_id},
                     "state": initial_state,
                 },
                 extra_headers={"Set-Cookie": cookie},
@@ -722,17 +1108,25 @@ class QChineseRequestHandler(BaseHTTPRequestHandler):
                     now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
                     raw_token = secrets.token_urlsafe(32)
                     token_h = hash_token(raw_token)
+                    sess_id = "ses_" + secrets.token_hex(8)
+                    ua = (self.headers.get("User-Agent") or "")[:240]
+                    dev_name = (body.get("deviceName") or self.headers.get("X-Device-Name") or parse_device_name(ua))[:80]
                     expires = int(time.time()) + 30 * 86400
                     conn.execute("UPDATE users SET last_login_at = ? WHERE id = ?", (now_iso, row["id"]))
+                    # Concurrent multi-device login: NEVER delete existing sessions of other devices!
                     conn.execute(
-                        "INSERT INTO sessions (token_hash, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)",
-                        (token_h, row["id"], expires, now_iso),
+                        """
+                        INSERT INTO sessions (token_hash, user_id, expires_at, created_at, session_id, device_name, user_agent, ip_address, last_active_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """,
+                        (token_h, row["id"], expires, now_iso, sess_id, dev_name, ua, client_ip, now_iso),
                     )
                     conn.commit()
                     user_info = {
                         "id": row["id"],
                         "username": row["username"],
                         "displayName": row["display_name"],
+                        "sessionId": sess_id,
                     }
                 finally:
                     conn.close()
@@ -758,6 +1152,94 @@ class QChineseRequestHandler(BaseHTTPRequestHandler):
                         conn.close()
             cookie = "qchinese_session=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax"
             self._send_json(200, {"ok": True}, extra_headers={"Set-Cookie": cookie})
+            return
+
+        if route == "/api/auth/sessions/revoke":
+            user = self._get_authenticated_user()
+            if not user:
+                self._send_json(401, {"error": "Chưa đăng nhập."})
+                return
+            target_sid = (body.get("sessionId") or "").strip()
+            if not target_sid:
+                self._send_json(400, {"error": "Thiếu mã phiên cần đăng xuất."})
+                return
+            with DB_LOCK:
+                conn = get_db()
+                try:
+                    cur = conn.execute("DELETE FROM sessions WHERE session_id = ? AND user_id = ?", (target_sid, user["id"]))
+                    conn.commit()
+                    deleted = cur.rowcount
+                finally:
+                    conn.close()
+            self._send_json(200, {"ok": True, "revoked": deleted > 0, "revokedCurrent": target_sid == user.get("sessionId")})
+            return
+
+        if route == "/api/auth/sessions/revoke-all":
+            user = self._get_authenticated_user()
+            if not user:
+                self._send_json(401, {"error": "Chưa đăng nhập."})
+                return
+            keep_current = bool(body.get("keepCurrent", True))
+            with DB_LOCK:
+                conn = get_db()
+                try:
+                    if keep_current and user.get("sessionId"):
+                        cur = conn.execute("DELETE FROM sessions WHERE user_id = ? AND session_id != ?", (user["id"], user["sessionId"]))
+                    else:
+                        cur = conn.execute("DELETE FROM sessions WHERE user_id = ?", (user["id"],))
+                    conn.commit()
+                    revoked_count = cur.rowcount
+                finally:
+                    conn.close()
+            self._send_json(200, {"ok": True, "revokedCount": revoked_count, "loggedOutSelf": not keep_current})
+            return
+
+        if route == "/api/auth/recovery-key/regenerate":
+            user = self._get_authenticated_user()
+            if not user:
+                self._send_json(401, {"error": "Chưa đăng nhập."})
+                return
+            rec_key = generate_recovery_key()
+            rec_hash, rec_salt = hash_password(rec_key)
+            with DB_LOCK:
+                conn = get_db()
+                try:
+                    conn.execute("UPDATE users SET recovery_hash = ?, recovery_salt = ? WHERE id = ?", (rec_hash, rec_salt, user["id"]))
+                    conn.commit()
+                finally:
+                    conn.close()
+            self._send_json(200, {"ok": True, "recoveryKey": rec_key})
+            return
+
+        if route == "/api/auth/recover-password":
+            if not check_rate_limit(f"recover:{client_ip}", limit=10, window_sec=60):
+                self._send_json(429, {"error": "Thao tác quá nhanh, vui lòng thử lại sau."})
+                return
+            username = (body.get("username") or "").strip()
+            rec_key = (body.get("recoveryKey") or "").strip().upper()
+            new_pw = body.get("newPassword") or ""
+            if len(new_pw) < 6:
+                self._send_json(400, {"error": "Mật khẩu mới cần ít nhất 6 ký tự."})
+                return
+            with DB_LOCK:
+                conn = get_db()
+                try:
+                    row = conn.execute("SELECT id, recovery_hash, recovery_salt FROM users WHERE username = ?", (username,)).fetchone()
+                    if not row or not row["recovery_hash"] or not row["recovery_salt"]:
+                        self._send_json(400, {"error": "Tài khoản không tồn tại hoặc chưa thiết lập Mã khôi phục."})
+                        return
+                    calc_h, _ = hash_password(rec_key, row["recovery_salt"])
+                    if not hmac.compare_digest(calc_h, row["recovery_hash"]):
+                        self._send_json(401, {"error": "Mã khôi phục không chính xác."})
+                        return
+                    new_h, new_s = hash_password(new_pw)
+                    conn.execute("UPDATE users SET password_hash = ?, password_salt = ? WHERE id = ?", (new_h, new_s, row["id"]))
+                    # Revoke all old sessions after password reset for security
+                    conn.execute("DELETE FROM sessions WHERE user_id = ?", (row["id"],))
+                    conn.commit()
+                finally:
+                    conn.close()
+            self._send_json(200, {"ok": True, "message": "Đã đặt lại mật khẩu và đăng xuất tất cả thiết bị cũ. Hãy đăng nhập lại bằng mật khẩu mới!"})
             return
 
         if route == "/api/auth/profile":
@@ -804,8 +1286,16 @@ class QChineseRequestHandler(BaseHTTPRequestHandler):
             if not isinstance(state, dict):
                 self._send_json(400, {"error": "Dữ liệu state không hợp lệ."})
                 return
-            self._save_user_state(user["id"], state)
-            self._send_json(200, {"ok": True})
+            base_ver = body.get("baseVersion")
+            mut_id = body.get("clientMutationId")
+            res = self._save_user_state(
+                user["id"],
+                state,
+                base_version=int(base_ver) if base_ver is not None else None,
+                mutation_id=str(mut_id) if mut_id else None,
+                origin_session_id=user.get("sessionId") or "",
+            )
+            self._send_json(200, {"ok": True, "version": res["version"], "updatedAt": res["updatedAt"], "merged": res.get("merged", False), "state": res["state"] if res.get("merged") else None})
             return
 
         if route == "/api/user/restore":
@@ -832,6 +1322,7 @@ class QChineseRequestHandler(BaseHTTPRequestHandler):
             "/api/ai/explain-grammar",
             "/api/ai/pronunciation",
             "/api/ai/personalized-drills",
+            "/api/ai/generate-lesson-exercise",
         )
         if route in ai_routes:
             user = self._get_authenticated_user()
@@ -853,7 +1344,9 @@ class QChineseRequestHandler(BaseHTTPRequestHandler):
                 self._send_json(200, handle_explain_grammar(body))
             elif route == "/api/ai/pronunciation":
                 self._send_json(200, handle_pronunciation_analysis(body))
-            elif route == "/api/ai/personalized-drills":
+            elif route == "/api/ai/generate-lesson-exercise":
+                self._send_json(200, handle_generate_lesson_exercise(body))
+            else:
                 self._send_json(200, handle_personalized_drills(body))
             return
 
@@ -874,10 +1367,82 @@ class QChineseRequestHandler(BaseHTTPRequestHandler):
             self._send_json(200 if res.get("ok") else 400, res)
             return
 
+        if route == "/api/system/backup":
+            user = self._get_authenticated_user()
+            if not user:
+                self._send_json(401, {"error": "Vui lòng đăng nhập để tạo bản sao lưu hệ thống."})
+                return
+            info = run_hot_backup(DB_PATH, BACKUP_DIR)
+            SERVER_LOGGER.info("Hot SQLite backup created by @%s: %s (%d bytes)", user["username"], info["file"], info["sizeBytes"])
+            self._send_json(200, info)
+            return
+
+        if route == "/api/pdf/upload":
+            if not check_rate_limit(f"pdfup:{client_ip}", limit=12, window_sec=60):
+                self._send_json(429, {"error": "Vui lòng chờ vài giây trước khi tải thêm PDF."})
+                return
+            user = self._get_authenticated_user()
+            res = upload_and_process_pdf(
+                get_db, DB_LOCK, ROOT_DIR,
+                user_id=user["id"] if user else None,
+                hsk_level=int(body.get("hskLevel") or 1),
+                filename=body.get("filename") or "curriculum.pdf",
+                data_b64=body.get("dataBase64") or "",
+                companion_text=body.get("companionText") or "",
+            )
+            self._send_json(200 if res.get("ok") else 400, res)
+            return
+
+        if route == "/api/pdf/publish":
+            cid = (body.get("courseId") or "").strip()
+            res = publish_course(get_db, DB_LOCK, cid)
+            self._send_json(200 if res.get("ok") else 404, res)
+            return
+
+        if route == "/api/pdf/delete":
+            did = (body.get("documentId") or "").strip()
+            with DB_LOCK:
+                conn = get_db()
+                try:
+                    conn.execute("DELETE FROM pdf_documents WHERE id = ? AND is_system_seed = 0", (did,))
+                    conn.commit()
+                finally:
+                    conn.close()
+            self._send_json(200, {"ok": True})
+            return
+
+        if route == "/api/tournament/create":
+            if not check_rate_limit(f"trn:{client_ip}", limit=12, window_sec=60):
+                self._send_json(429, {"error": "Quá nhiều yêu cầu tạo giải đấu trong 1 phút."})
+                return
+            res = create_tournament(
+                get_db,
+                DB_LOCK,
+                name=body.get("name") or "",
+                agent_count=int(body.get("agentCount") or 16),
+                mode=body.get("mode") or "pilot",
+                task_prompt=body.get("taskPrompt") or "",
+            )
+            self._send_json(200 if "error" not in res else 400, res)
+            return
+
+        if route == "/api/tournament/step":
+            t_id = (body.get("tournamentId") or "").strip()
+            res = run_next_round(get_db, DB_LOCK, t_id)
+            self._send_json(200 if "error" not in res else 404, res)
+            return
+
+        if route == "/api/tournament/run-all":
+            t_id = (body.get("tournamentId") or "").strip()
+            res = run_all_rounds_async(get_db, DB_LOCK, t_id)
+            self._send_json(200, res)
+            return
+
         self._send_json(404, {"error": "API endpoint not found."})
 
 
 def run_server() -> None:
+    start_backup_scheduler(DB_PATH, BACKUP_DIR)
     port = int(os.environ.get("PORT", "8000"))
     host = os.environ.get("HOST", "0.0.0.0")
     httpd = ThreadingHTTPServer((host, port), QChineseRequestHandler)

@@ -619,7 +619,8 @@ def upload_and_process_pdf(
 
     doc_id = "pdf_" + uuid.uuid4().hex[:10]
     now = _utc_now()
-    uploads_dir = root_dir / "data" / "uploads"
+    base_data_dir = Path("/tmp/qchinese_data") if (os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV")) else (root_dir / "data")
+    uploads_dir = base_data_dir / "uploads"
     uploads_dir.mkdir(parents=True, exist_ok=True)
     storage_path = ""
     if raw:
@@ -643,7 +644,10 @@ def upload_and_process_pdf(
         finally:
             conn.close()
 
-    # Run 7-stage pipeline in background worker thread
+    # Run 7-stage pipeline synchronously on serverless (Vercel) or async worker thread on 24/7 server
+    if os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"):
+        _run_pdf_pipeline_worker(get_db_fn, db_lock, root_dir, doc_id, hsk_level, clean_name, extracted, companion_text, page_count)
+        return {"ok": True, "documentId": doc_id, "hskLevel": hsk_level, "pageCount": page_count, "ocrRequired": bool(ocr_req), "status": "ready"}
     th = threading.Thread(
         target=_run_pdf_pipeline_worker,
         args=(get_db_fn, db_lock, root_dir, doc_id, hsk_level, clean_name, extracted, companion_text, page_count),

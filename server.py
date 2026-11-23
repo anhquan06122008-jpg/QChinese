@@ -78,16 +78,18 @@ from backend.pdf_engine import (
     upload_and_process_pdf,
 )
 
+IS_VERCEL = bool(os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"))
 ROOT_DIR = Path(__file__).resolve().parent
 PUBLIC_DIR = ROOT_DIR / "public"
-DATA_DIR = ROOT_DIR / "data"
+DATA_DIR = Path("/tmp/qchinese_data") if IS_VERCEL else (ROOT_DIR / "data")
 TTS_CACHE_DIR = DATA_DIR / "tts_cache"
 STROKES_CACHE_DIR = DATA_DIR / "strokes_cache"
 BACKUP_DIR = DATA_DIR / "backups"
 LOG_DIR = DATA_DIR / "logs"
 DB_PATH = DATA_DIR / "qchinese.db"
 
-for d in (PUBLIC_DIR, DATA_DIR, TTS_CACHE_DIR, STROKES_CACHE_DIR, BACKUP_DIR, LOG_DIR):
+_mkdir_targets = (DATA_DIR, TTS_CACHE_DIR, STROKES_CACHE_DIR, BACKUP_DIR, LOG_DIR) if IS_VERCEL else (PUBLIC_DIR, DATA_DIR, TTS_CACHE_DIR, STROKES_CACHE_DIR, BACKUP_DIR, LOG_DIR)
+for d in _mkdir_targets:
     d.mkdir(parents=True, exist_ok=True)
 
 SERVER_LOGGER = setup_logger(LOG_DIR)
@@ -828,6 +830,16 @@ class QChineseRequestHandler(BaseHTTPRequestHandler):
             if not u_row:
                 self._send_json(401, {"error": "Phiên đồng bộ hết hạn."})
                 return
+            if IS_VERCEL:
+                self.send_response(200)
+                self.send_header("Content-Type", "text/event-stream; charset=utf-8")
+                self.send_header("Cache-Control", "no-cache")
+                for k, v in self._cors_headers().items():
+                    self.send_header(k, v)
+                self.end_headers()
+                self.wfile.write(b'event: connected\ndata: {"ok":true,"mode":"serverless"}\n\n')
+                self.wfile.flush()
+                return
             uid = int(u_row["user_id"])
             q: queue.Queue = queue.Queue(maxsize=32)
             with SYNC_LOCK:
@@ -1439,6 +1451,11 @@ class QChineseRequestHandler(BaseHTTPRequestHandler):
             return
 
         self._send_json(404, {"error": "API endpoint not found."})
+
+
+class handler(QChineseRequestHandler):
+    """Vercel Python Serverless entrypoint (BaseHTTPRequestHandler subclass)."""
+    pass
 
 
 def run_server() -> None:

@@ -279,6 +279,8 @@ window.QApp = (function () {
       const idLabel = cloudMode ? "Email" : "Tên tài khoản";
       const idPlaceholder = cloudMode ? "Nhập địa chỉ email..." : "Nhập tên tài khoản...";
       const idType = cloudMode ? "email" : "text";
+      const lastUser = (localStorage.getItem("qchinese_last_user") || "").trim();
+      const userVal = authTab === "login" && lastUser ? lastUser : "";
       gate.innerHTML = `
         <div class="modal-card" style="max-width:440px;">
           <div style="text-align:center;margin-bottom:16px;">
@@ -322,7 +324,7 @@ window.QApp = (function () {
             `
                 : `
               <label style="font-size:13px;font-weight:600;">${idLabel}
-                <input type="${idType}" class="input-field" id="auth-user" placeholder="${idPlaceholder}">
+                <input type="${idType}" class="input-field" id="auth-user" placeholder="${idPlaceholder}" value="${userVal.replace(/"/g, '&quot;')}">
               </label>
 
               ${
@@ -354,6 +356,19 @@ window.QApp = (function () {
               `
               }
             `
+            }
+
+            ${
+              authTab === "login"
+                ? `
+              <div style="display:flex;align-items:center;gap:8px;margin-top:2px;margin-bottom:2px;user-select:none;">
+                <input type="checkbox" id="auth-remember" ${localStorage.getItem("qchinese_remember_login") !== "false" ? "checked" : ""} style="accent-color:var(--primary);width:16px;height:16px;cursor:pointer;">
+                <label for="auth-remember" style="font-size:13px;font-weight:500;cursor:pointer;color:var(--text-secondary);margin:0;">
+                  Ghi nhớ đăng nhập (không bị đăng xuất khi thoát web)
+                </label>
+              </div>
+            `
+                : ""
             }
 
             <button class="btn btn-primary" style="margin-top:6px;width:100%;padding:12px;font-weight:700;" id="auth-submit">
@@ -438,7 +453,9 @@ window.QApp = (function () {
             return;
           }
           if (authTab === "login") {
-            await QCore.loginAccount(u, pw);
+            const remEl = gate.querySelector("#auth-remember");
+            const remember = remEl ? remEl.checked : true;
+            await QCore.loginAccount(u, pw, remember);
           } else {
             const usr = await QCore.registerAccount(u, disp || u, pw);
             if (usr && usr.needsVerification) {

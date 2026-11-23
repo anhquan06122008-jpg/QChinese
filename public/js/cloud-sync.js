@@ -10,13 +10,13 @@ window.QCloud = (function () {
   const DEFAULT_CLOUD_ORIGIN = "https://q-chinese.vercel.app";
 
   let config = {
-    loaded: false,
-    authConfigured: false,
-    aiConfigured: false,
-    aiProvider: "pedagogical-engine",
-    aiModel: "",
-    supabaseUrl: "",
-    supabaseAnonKey: ""
+    loaded: true,
+    authConfigured: true,
+    aiConfigured: true,
+    aiProvider: "gemini",
+    aiModel: "gemini-3.8-flash",
+    supabaseUrl: "https://tlgjhakqijpnjnvtpzoj.supabase.co",
+    supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRsZ2poYWtxaWpwbmpudnRwem9qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUzNTM2MDcsImV4cCI6MjExMDkyOTYwN30.EG9mXfu8eyETbrtXe5p8XgrPcIQIPQzcnRB-Z7MnskI"
   };
 
   let session = null; // { access_token, refresh_token, expires_at, user }
@@ -166,6 +166,7 @@ window.QCloud = (function () {
   }
 
   async function refreshSessionToken(refreshTokenVal) {
+    if (!refreshTokenVal || !config.supabaseUrl) return { ok: false };
     try {
       const res = await fetch(`${config.supabaseUrl}/auth/v1/token?grant_type=refresh_token`, {
         method: "POST",
@@ -173,8 +174,15 @@ window.QCloud = (function () {
         body: JSON.stringify({ refresh_token: refreshTokenVal })
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data.access_token || !data.user) {
-        saveSession(null);
+      if (!res.ok) {
+        // Only clear session if token is genuinely revoked or invalid by server
+        if (res.status === 400 && (data.error === "invalid_grant" || /invalid|expired|revoked/i.test(data.error_description || ""))) {
+          console.warn("QCloud: Refresh token revoked or expired by server.");
+          saveSession(null);
+        }
+        return { ok: false };
+      }
+      if (!data.access_token || !data.user) {
         return { ok: false };
       }
       const sess = {
@@ -186,6 +194,7 @@ window.QCloud = (function () {
       saveSession(sess);
       return { ok: true, user: data.user };
     } catch (_) {
+      // Network failure / offline - DO NOT clear session!
       return { ok: false };
     }
   }
@@ -238,24 +247,32 @@ window.QCloud = (function () {
     }
 
     const saved = safeParse(localStorage.getItem(CLOUD_SESSION_KEY), null);
-    if (saved && saved.access_token) {
+    if (saved && (saved.access_token || saved.refresh_token || saved.user)) {
       session = saved;
       const nowSec = Math.floor(Date.now() / 1000);
-      if (saved.expires_at && saved.expires_at - 90 < nowSec && saved.refresh_token) {
-        const ref = await refreshSessionToken(saved.refresh_token);
-        if (ref.ok) return { restored: true, user: toQChineseUser(ref.user) };
-      } else {
-        const u = await fetchAuthUser(saved.access_token);
-        if (u) {
-          saved.user = u;
-          saveSession(saved);
-          return { restored: true, user: toQChineseUser(u) };
-        }
-        if (saved.refresh_token) {
-          const ref = await refreshSessionToken(saved.refresh_token);
-          if (ref.ok) return { restored: true, user: toQChineseUser(ref.user) };
-        }
+      const isExpired = Boolean(saved.expires_at && saved.expires_at - 90 < nowSec);
+
+      // 1. If access_token is still within validity period, restore immediately!
+      if (!isExpired && saved.access_token && saved.user) {
+        return { restored: true, user: toQChineseUser(saved.user) };
       }
+
+      // 2. If expired or access_token missing, refresh silently in the background
+      if (saved.refresh_token) {
+        try {
+          const ref = await refreshSessionToken(saved.refresh_token);
+          if (ref.ok && ref.user) {
+            return { restored: true, user: toQChineseUser(ref.user) };
+          }
+        } catch (_) {}
+      }
+
+      // 3. If offline or network delayed, keep cached user profile so user is NEVER abruptly kicked out!
+      if (saved.user) {
+        return { restored: true, user: toQChineseUser(saved.user), offline: true };
+      }
+
+      // 4. Only if neither user nor valid tokens exist
       saveSession(null);
     }
     return { restored: false };

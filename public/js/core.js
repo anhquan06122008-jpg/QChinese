@@ -362,10 +362,14 @@ window.QCore = (function () {
 
   async function hydrateCloudWorkspace(userObj, forceReactivateDevice = false) {
     currentUser = userObj;
+    localStorage.setItem("qchinese_persistent_user", JSON.stringify(userObj));
+    localStorage.setItem("qchinese_static_active_user", JSON.stringify(userObj));
     const devRes = await QCloud.registerCurrentDevice(forceReactivateDevice);
     if (devRes && devRes.revoked) {
       await QCloud.signOut(true);
       currentUser = null;
+      localStorage.removeItem("qchinese_persistent_user");
+      localStorage.removeItem("qchinese_static_active_user");
       return { authenticated: false, error: "Phiên thiết bị này đã bị đăng xuất từ xa. Vui lòng đăng nhập lại." };
     }
     const localRaw = JSON.parse(localStorage.getItem(localUserKey(userObj.username)) || "null");
@@ -408,10 +412,10 @@ window.QCore = (function () {
         try {
           serverHealth = await apiFetch("/api/health");
         } catch (__) {
-          serverHealth = { ok: false, aiConfigured: false, aiProvider: "local-offline" };
+          serverHealth = { ok: false, aiConfigured: true, aiProvider: "gemini" };
         }
       } else {
-        serverHealth = { ok: false, aiConfigured: false, aiProvider: "local-offline" };
+        serverHealth = { ok: false, aiConfigured: true, aiProvider: "gemini" };
       }
     }
 
@@ -423,6 +427,10 @@ window.QCore = (function () {
       if (res.restored && res.user) {
         return await hydrateCloudWorkspace(res.user, false);
       }
+      const pUser = JSON.parse(localStorage.getItem("qchinese_persistent_user") || "null");
+      if (pUser && pUser.username) {
+        return await hydrateCloudWorkspace(pUser, false);
+      }
       return { authenticated: false, error: res.error || "" };
     }
 
@@ -432,29 +440,28 @@ window.QCore = (function () {
         if (me.authenticated && me.user) {
           currentUser = me.user;
           stateVersion = me.version || 1;
+          localStorage.setItem("qchinese_persistent_user", JSON.stringify(currentUser));
+          localStorage.setItem("qchinese_static_active_user", JSON.stringify(currentUser));
           appState = ensureStateIntegrity(me.state, me.user.displayName);
           applyTheme(appState.profile.theme);
           startStudyTimer();
           connectRealtimeSync();
           return { authenticated: true, user: currentUser };
         }
-        return { authenticated: false };
-      } catch (_) {
-        return { authenticated: false };
-      }
-    } else {
-      // Pure static deployment fallback (e.g., GitHub Pages) with multi-account local storage
-      const savedUser = JSON.parse(localStorage.getItem("qchinese_static_active_user") || "null");
-      if (savedUser && savedUser.username) {
-        currentUser = savedUser;
-        const raw = JSON.parse(localStorage.getItem(localUserKey(savedUser.username)) || "null");
-        appState = ensureStateIntegrity(raw, savedUser.displayName);
-        applyTheme(appState.profile.theme);
-        startStudyTimer();
-        return { authenticated: true, user: currentUser };
-      }
-      return { authenticated: false };
+      } catch (_) {}
     }
+
+    // Pure static deployment fallback (e.g., GitHub Pages) with multi-account local storage
+    const savedUser = JSON.parse(localStorage.getItem("qchinese_static_active_user") || localStorage.getItem("qchinese_persistent_user") || "null");
+    if (savedUser && savedUser.username) {
+      currentUser = savedUser;
+      const raw = JSON.parse(localStorage.getItem(localUserKey(savedUser.username)) || "null");
+      appState = ensureStateIntegrity(raw, savedUser.displayName);
+      applyTheme(appState.profile.theme);
+      startStudyTimer();
+      return { authenticated: true, user: currentUser };
+    }
+    return { authenticated: false };
   }
 
   async function registerAccount(username, displayName, password) {
@@ -499,7 +506,13 @@ window.QCore = (function () {
     }
   }
 
-  async function loginAccount(username, password) {
+  async function loginAccount(username, password, rememberMe = true) {
+    if (rememberMe) {
+      localStorage.setItem("qchinese_remember_login", "true");
+      localStorage.setItem("qchinese_last_user", String(username || "").trim());
+    } else {
+      localStorage.setItem("qchinese_remember_login", "false");
+    }
     if (isCloudAuthMode()) {
       const userObj = await QCloud.signIn(username, password);
       await hydrateCloudWorkspace(userObj, true);
@@ -508,10 +521,12 @@ window.QCore = (function () {
     if (serverHealth.ok) {
       const res = await apiFetch("/api/auth/login", {
         method: "POST",
-        body: { username, password }
+        body: { username, password, rememberMe }
       });
       setAuthToken(res.token);
       currentUser = res.user;
+      localStorage.setItem("qchinese_persistent_user", JSON.stringify(currentUser));
+      localStorage.setItem("qchinese_static_active_user", JSON.stringify(currentUser));
       if (res.recoveryKey) currentUser.recoveryKey = res.recoveryKey;
       appState = ensureStateIntegrity(res.state, res.user.displayName);
       localStorage.setItem(localUserKey(username), JSON.stringify(appState));
@@ -527,9 +542,11 @@ window.QCore = (function () {
         throw new Error("Sai tên tài khoản hoặc mật khẩu.");
       }
       currentUser = { username: acc.username, displayName: acc.displayName };
+      localStorage.setItem("qchinese_persistent_user", JSON.stringify(currentUser));
       localStorage.setItem("qchinese_static_active_user", JSON.stringify(currentUser));
       const raw = JSON.parse(localStorage.getItem(localUserKey(key)) || "null");
       appState = ensureStateIntegrity(raw, acc.displayName);
+      localStorage.setItem(localUserKey(key), JSON.stringify(appState));
       applyTheme(appState.profile.theme);
       startStudyTimer();
       return currentUser;
@@ -545,7 +562,9 @@ window.QCore = (function () {
       try { await apiFetch("/api/auth/logout", { method: "POST", body: {} }); } catch (_) {}
     }
     setAuthToken("");
+    localStorage.removeItem("qchinese_persistent_user");
     localStorage.removeItem("qchinese_static_active_user");
+    localStorage.removeItem("qchinese_remember_login");
     currentUser = null;
     appState = null;
     stateVersion = 1;

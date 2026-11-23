@@ -53,10 +53,18 @@ def build_html() -> str:
 
 def main() -> None:
     html = build_html()
-    for out_name in ("QChinese.html", "index.html"):
-        out_path = ROOT / out_name
+    targets = [
+        ROOT / "QChinese.html",
+        ROOT / "index.html",
+        PUBLIC / "QChinese.html",
+        PUBLIC / "public" / "index.html",
+        PUBLIC / "public" / "QChinese.html",
+    ]
+    for out_path in targets:
+        out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_text(html, encoding="utf-8")
-        print(f"Wrote {out_name}: {len(html):,} chars ({out_path.stat().st_size / 1024:.1f} KB)")
+        rel = out_path.relative_to(ROOT)
+        print(f"Wrote {rel}: {len(html):,} chars ({out_path.stat().st_size / 1024:.1f} KB)")
 
 
 if __name__ == "__main__":

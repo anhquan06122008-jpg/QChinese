@@ -448,6 +448,7 @@ window.QLessonStudio = (function () {
     if (ex.audioFile) {
       const isFileProto = typeof window !== "undefined" && window.location && window.location.protocol === "file:";
       if (isFileProto) return `public/audio/hsk1/${ex.audioFile}`;
+      return `https://q-chinese.vercel.app/audio/hsk1/${ex.audioFile}`;
     }
     if (ex.audioUrl) return QCore.resolveApiUrl(ex.audioUrl);
     if (ex.staticAudioUrl) return ex.staticAudioUrl;

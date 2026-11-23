@@ -212,7 +212,7 @@ def get_ai_config() -> Dict[str, Any]:
     gemini_key = os.environ.get("GEMINI_API_KEY", "").strip()
     openai_key = os.environ.get("OPENAI_API_KEY", "").strip()
     openai_base = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1").strip()
-    gemini_model = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash").strip()
+    gemini_model = os.environ.get("GEMINI_MODEL", "gemini-3.8-flash").strip()
     openai_model = os.environ.get("OPENAI_MODEL", "gpt-4o-mini").strip()
 
     if gemini_key:
@@ -245,8 +245,11 @@ def _call_external_llm(system_prompt: str, user_prompt: str) -> Optional[Dict[st
 
     try:
         if cfg["provider"] == "gemini":
-            model = cfg["model"]
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={cfg['api_key']}"
+            primary_model = cfg["model"]
+            fallback_chain = []
+            for m in (primary_model, "gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-flash-lite-latest"):
+                if m and m not in fallback_chain:
+                    fallback_chain.append(m)
             payload = {
                 "system_instruction": {"parts": [{"text": system_prompt}]},
                 "contents": [{"role": "user", "parts": [{"text": user_prompt}]}],
@@ -255,16 +258,30 @@ def _call_external_llm(system_prompt: str, user_prompt: str) -> Optional[Dict[st
                     "responseMimeType": "application/json",
                 },
             }
-            req = urllib.request.Request(
-                url,
-                data=json.dumps(payload).encode("utf-8"),
-                headers={"Content-Type": "application/json"},
-                method="POST",
-            )
-            with urllib.request.urlopen(req, timeout=25) as resp:
-                body = json.loads(resp.read().decode("utf-8"))
-                text = body["candidates"][0]["content"]["parts"][0]["text"]
-                return json.loads(text)
+            payload_bytes = json.dumps(payload).encode("utf-8")
+            for model in fallback_chain:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+                req = urllib.request.Request(
+                    url,
+                    data=payload_bytes,
+                    headers={
+                        "Content-Type": "application/json",
+                        "x-goog-api-key": cfg["api_key"],
+                    },
+                    method="POST",
+                )
+                try:
+                    with urllib.request.urlopen(req, timeout=12) as resp:
+                        body = json.loads(resp.read().decode("utf-8"))
+                        text = body["candidates"][0]["content"]["parts"][0]["text"]
+                        return json.loads(text)
+                except urllib.error.HTTPError as http_err:
+                    if http_err.code in (404, 429, 500, 503):
+                        continue
+                    return None
+                except Exception:
+                    continue
+            return None
 
         elif cfg["provider"] == "openai":
             url = cfg["base_url"].rstrip("/") + "/chat/completions"

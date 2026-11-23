@@ -516,17 +516,187 @@ def _build_lesson_exercises_for_topic(
                 ],
             })
     else:
-        listening_items.append({
-            "id": f"L{lesson_num}_lis_1",
-            "title": f"Listening 1 – Lesson {lesson_num} Passage (Putonghua TTS)",
-            "audioUrl": "",
-            "audioText": rd_zh,
-            "audioSource": "tts",
+        w0 = word_entries[0] if word_entries else {"hanzi": "你好", "pinyin": "nǐ hǎo", "en": "hello", "vi": "xin chào"}
+        w1 = word_entries[1] if len(word_entries) > 1 else w0
+        w2 = word_entries[2] if len(word_entries) > 2 else w0
+        w0_en = w0.get("en") or w0["vi"]
+        w1_en = w1.get("en") or w1["vi"]
+        w2_en = w2.get("en") or w2["vi"]
+        listening_items = [
+            {
+                "id": f"L{lesson_num}_lis_1",
+                "title": f"Exercise 1 – Dialogue Listening (Lesson {lesson_num})",
+                "title_vi": f"Bài 1 – Nghe hội thoại chính (Bài {lesson_num})",
+                "audioUrl": "",
+                "audioText": rd_zh,
+                "audioSource": "tts",
+                "sourceTag": "ai_generated",
+                "targetHint_en": "Listen carefully to the full Lesson dialogue and answer the comprehension check.",
+                "targetHint": "Nghe kỹ toàn bộ bài khóa và trả lời câu hỏi đọc hiểu.",
+                "questions": rd_qs[:2],
+            },
+            {
+                "id": f"L{lesson_num}_lis_2",
+                "title": f"Exercise 2 – Key Vocabulary Audio Recognition",
+                "title_vi": f"Bài 2 – Nhận diện từ vựng trọng tâm qua âm thanh",
+                "audioUrl": "",
+                "audioText": f"{w0['hanzi']}。{w1['hanzi']}。{w2['hanzi']}。",
+                "audioSource": "tts",
+                "sourceTag": "extracted_from_pdf",
+                "targetHint_en": f"Listen to the key words from Lesson {lesson_num} and match their meanings.",
+                "targetHint": f"Nghe các từ trọng tâm của Bài {lesson_num} và chọn nghĩa đúng.",
+                "questions": [
+                    {
+                        "id": f"lq_{lesson_num}_2a", "type": "mcq",
+                        "question_en": f"What does the spoken word '{w0['hanzi']}' ({w0['pinyin']}) mean?",
+                        "options_en": [w0_en, "Airport (机场)", "Subway (地铁)", "Winter (冬天)"],
+                        "answer_en": w0_en,
+                        "explain_en": f"{w0['hanzi']} ({w0['pinyin']}) = {w0_en}.",
+                        "question": f"Từ vừa nghe '{w0['hanzi']}' ({w0['pinyin']}) có nghĩa là gì?",
+                        "options": [w0["vi"], "Sân bay", "Tàu điện ngầm", "Mùa đông"],
+                        "answer": w0["vi"],
+                        "explain": f"{w0['hanzi']} ({w0['pinyin']}) = {w0['vi']}.",
+                    },
+                    {
+                        "id": f"lq_{lesson_num}_2b", "type": "mcq",
+                        "question_en": f"What does the spoken word '{w1['hanzi']}' ({w1['pinyin']}) mean?",
+                        "options_en": [w1_en, "Hospital (医院)", "Coffee (咖啡)", "Basketball (篮球)"],
+                        "answer_en": w1_en,
+                        "explain_en": f"{w1['hanzi']} ({w1['pinyin']}) = {w1_en}.",
+                        "question": f"Từ vừa nghe '{w1['hanzi']}' ({w1['pinyin']}) có nghĩa là gì?",
+                        "options": [w1["vi"], "Bệnh viện", "Cà phê", "Bóng rổ"],
+                        "answer": w1["vi"],
+                        "explain": f"{w1['hanzi']} ({w1['pinyin']}) = {w1['vi']}.",
+                    },
+                ],
+            },
+            {
+                "id": f"L{lesson_num}_lis_3",
+                "title": f"Exercise 3 – Short Sentence Dictation & Detail",
+                "title_vi": f"Bài 3 – Nghe câu ngắn & Chi tiết thực tế",
+                "audioUrl": "",
+                "audioText": rd_zh.split("\n")[0],
+                "audioSource": "tts",
+                "sourceTag": "ai_generated",
+                "targetHint_en": "Listen to the opening sentence of the lesson at normal and slow speed.",
+                "targetHint": "Nghe câu mở đầu của bài học ở tốc độ thường và chậm.",
+                "questions": rd_qs[2:4] if len(rd_qs) >= 4 else rd_qs[:1],
+            },
+        ]
+
+    # Split into 3 clean, bite-sized exercises per skill so learners study one small task at a time!
+    w0 = word_entries[0] if word_entries else {"hanzi": "你好", "pinyin": "nǐ hǎo", "en": "hello", "vi": "xin chào"}
+    w1 = word_entries[1] if len(word_entries) > 1 else w0
+    w2 = word_entries[2] if len(word_entries) > 2 else w0
+    w3 = word_entries[3] if len(word_entries) > 3 else w1
+    w0_en = w0.get("en") or w0["vi"]
+    w1_en = w1.get("en") or w1["vi"]
+    w2_en = w2.get("en") or w2["vi"]
+    w3_en = w3.get("en") or w3["vi"]
+
+    ex2_zh = f"A: 你好！请问“{w0['hanzi']}”怎么读？\nB: 读“{w0.get('pinyin') or w0['hanzi']}”。\nA: 那“{w1['hanzi']}”是什么意思？\nB: 意思是“{w1_en}”。谢谢你的问题！"
+    ex2_py = f"A: Nǐ hǎo! Qǐngwèn \"{w0['hanzi']}\" zěnme dú?\nB: Dú \"{w0.get('pinyin') or w0['hanzi']}\".\nA: Nà \"{w1['hanzi']}\" shì shénme yìsi?\nB: Yìsi shì \"{w1_en}\". Xièxie nǐ de wèntí!"
+    ex2_en = f"A: Hello! Excuse me, how do you pronounce \"{w0['hanzi']}\"?\nB: It is pronounced \"{w0.get('pinyin') or w0['hanzi']}\".\nA: Then what does \"{w1['hanzi']}\" mean?\nB: It means \"{w1_en}\". Thank you for your question!"
+    ex2_vi = f"A: Xin chào! Xin hỏi từ \"{w0['hanzi']}\" đọc thế nào?\nB: Đọc là \"{w0.get('pinyin') or w0['hanzi']}\".\nA: Thế từ \"{w1['hanzi']}\" có nghĩa là gì?\nB: Nghĩa là \"{w1['vi']}\". Cảm ơn câu hỏi của bạn!"
+
+    ex3_zh = f"今天我复习了第{lesson_num}课。\n我记住的两个新词是“{w2['hanzi']}”和“{w3['hanzi']}”。\n我觉得用中文交流很有意思！"
+    ex3_py = f"Jīntiān wǒ fùxí le dì {lesson_num} kè.\nWǒ jìzhù de liǎng gè xīncí shì \"{w2.get('pinyin') or w2['hanzi']}\" hé \"{w3.get('pinyin') or w3['hanzi']}\".\nWǒ juéde yòng Zhōngwén jiāoliú hěn yǒu yìsi!"
+    ex3_en = f"Today I reviewed Lesson {lesson_num}.\nThe two new words I memorized are \"{w2['hanzi']}\" ({w2_en}) and \"{w3['hanzi']}\" ({w3_en}).\nI think communicating in Chinese is very interesting!"
+    ex3_vi = f"Hôm nay tôi đã ôn tập Bài {lesson_num}.\nHai từ mới tôi ghi nhớ được là \"{w2['hanzi']}\" ({w2['vi']}) và \"{w3['hanzi']}\" ({w3['vi']}).\nTôi thấy giao tiếp bằng tiếng Trung rất thú vị!"
+
+    reading_exercises = [
+        {
+            "id": f"hsk3_L{hsk_level}_L{lesson_num}_rd_1",
+            "title": f"Exercise 1 – Core Passage & Comprehension",
+            "title_vi": f"Bài 1 – Đoạn hội thoại chính & Đọc hiểu",
+            "sourceTag": rd_src,
+            "sourcePage": max(1, (lesson_num - 1) * 9 + 2),
+            "chinese": rd_zh,
+            "pinyin": rd_py,
+            "english": rd_en,
+            "vietnamese": rd_vi,
+            "questions": rd_qs[:3],
+        },
+        {
+            "id": f"hsk3_L{hsk_level}_L{lesson_num}_rd_2",
+            "title": f"Exercise 2 – Short Dialogue & Context Check",
+            "title_vi": f"Bài 2 – Hội thoại ngắn & Hiểu ngữ cảnh",
             "sourceTag": "ai_generated",
-            "targetHint_en": "Listen to the Putonghua TTS audio for this lesson and answer the comprehension questions.",
-            "targetHint": "Tài liệu PDF chưa kèm file MP3 riêng — sử dụng giọng đọc chuẩn Putonghua TTS (đánh dấu minh bạch).",
-            "questions": rd_qs[:2],
-        })
+            "sourcePage": max(1, (lesson_num - 1) * 9 + 4),
+            "chinese": ex2_zh,
+            "pinyin": ex2_py,
+            "english": ex2_en,
+            "vietnamese": ex2_vi,
+            "questions": [
+                {
+                    "id": f"rd2_{lesson_num}_1", "type": "mcq", "skillFocus": "detail",
+                    "question_en": f"Which word did Speaker A ask how to pronounce (怎么读)?",
+                    "options_en": [f"{w0['hanzi']} ({w0_en})", f"{w2['hanzi']} ({w2_en})", "飞机 (airplane)", "医院 (hospital)"],
+                    "answer_en": f"{w0['hanzi']} ({w0_en})",
+                    "explain_en": f"Speaker A asked: '请问“{w0['hanzi']}”怎么读？'",
+                    "question": f"Người A hỏi cách đọc (怎么读) của từ nào?",
+                    "options": [f"{w0['hanzi']} ({w0['vi']})", f"{w2['hanzi']} ({w2['vi']})", "飞机 (máy bay)", "医院 (bệnh viện)"],
+                    "answer": f"{w0['hanzi']} ({w0['vi']})",
+                    "explain": f"Người A hỏi: '请问“{w0['hanzi']}”怎么读？'",
+                },
+                {
+                    "id": f"rd2_{lesson_num}_2", "type": "tf", "skillFocus": "detail",
+                    "question_en": f"True or False: Speaker A also asked for the meaning (什么意思) of '{w1['hanzi']}'.",
+                    "options_en": ["True (正确)", "False (错误)"],
+                    "answer_en": "True (正确)",
+                    "explain_en": f"Line 3 says: '那“{w1['hanzi']}”是什么意思？'",
+                    "question": f"Đúng hay Sai: Người A cũng hỏi nghĩa (什么意思) của từ '{w1['hanzi']}'.",
+                    "options": ["Đúng (True)", "Sai (False)"],
+                    "answer": "Đúng (True)",
+                    "explain": f"Dòng 3 ghi rõ: '那“{w1['hanzi']}”是什么意思？'",
+                },
+            ] + (rd_qs[3:5] if len(rd_qs) >= 5 else []),
+        },
+        {
+            "id": f"hsk3_L{hsk_level}_L{lesson_num}_rd_3",
+            "title": f"Exercise 3 – Mini Review & Fill-in-the-Blank",
+            "title_vi": f"Bài 3 – Ôn tập ngắn & Điền từ vựng",
+            "sourceTag": "ai_generated",
+            "sourcePage": max(1, (lesson_num - 1) * 9 + 6),
+            "chinese": ex3_zh,
+            "pinyin": ex3_py,
+            "english": ex3_en,
+            "vietnamese": ex3_vi,
+            "questions": [
+                {
+                    "id": f"rd3_{lesson_num}_1", "type": "mcq", "skillFocus": "vocab_context",
+                    "question_en": f"What does '{w2['hanzi']}' ({w2['pinyin']}) mean?",
+                    "options_en": [w2_en, "Train station (火车站)", "Autumn (秋天)", "Tea cup (茶杯)"],
+                    "answer_en": w2_en,
+                    "explain_en": f"{w2['hanzi']} ({w2['pinyin']}) means {w2_en}.",
+                    "question": f"Từ '{w2['hanzi']}' ({w2['pinyin']}) có nghĩa là gì?",
+                    "options": [w2["vi"], "Ga tàu hỏa", "Mùa thu", "Tách trà"],
+                    "answer": w2["vi"],
+                    "explain": f"{w2['hanzi']} ({w2['pinyin']}) nghĩa là {w2['vi']}.",
+                },
+                {
+                    "id": f"rd3_{lesson_num}_2", "type": "fill", "skillFocus": "vocab_context",
+                    "question_en": f"Type the Simplified Chinese word meaning '{w3_en}' ({w3['pinyin']}):",
+                    "answer_en": w3["hanzi"],
+                    "explain_en": f"Correct Simplified Chinese: {w3['hanzi']} ({w3['pinyin']}).",
+                    "question": f"Gõ chữ Hán Giản thể có nghĩa '{w3['vi']}' ({w3['pinyin']}):",
+                    "answer": w3["hanzi"],
+                    "explain": f"Đáp án chuẩn: {w3['hanzi']} ({w3['pinyin']}).",
+                },
+                {
+                    "id": f"rd3_{lesson_num}_3", "type": "tf", "skillFocus": "inference",
+                    "question_en": "True or False: The writer thinks communicating in Chinese is interesting (很有意思).",
+                    "options_en": ["True (正确)", "False (错误)"],
+                    "answer_en": "True (正确)",
+                    "explain_en": "The last line states: '我觉得用中文交流很有意思！'",
+                    "question": "Đúng hay Sai: Người viết thấy giao tiếp bằng tiếng Trung rất thú vị (很有意思).",
+                    "options": ["Đúng (True)", "Sai (False)"],
+                    "answer": "Đúng (True)",
+                    "explain": "Câu cuối ghi: '我觉得用中文交流很有意思！'",
+                },
+            ],
+        },
+    ]
 
     return {
         "lessonNum": lesson_num,
@@ -535,27 +705,16 @@ def _build_lesson_exercises_for_topic(
         "sourceLabel": source_label,
         "sourcePage": max(1, (lesson_num - 1) * 9 + 1),
         "skills": {
-            "reading": [
-                {
-                    "id": f"hsk3_L{hsk_level}_L{lesson_num}_rd_1",
-                    "title": f"Reading 1 – {title}",
-                    "sourceTag": rd_src,
-                    "sourcePage": max(1, (lesson_num - 1) * 9 + 2),
-                    "chinese": rd_zh,
-                    "pinyin": rd_py,
-                    "english": rd_en,
-                    "vietnamese": rd_vi,
-                    "questions": rd_qs,
-                }
-            ],
+            "reading": reading_exercises,
             "listening": listening_items,
             "vocabulary": word_entries,
             "grammar": [
                 {
                     "id": f"hsk3_L{hsk_level}_L{lesson_num}_gr_1",
-                    "title": f"Core Grammar Point – Lesson {lesson_num}",
+                    "title": f"Exercise 1 – Mandarin Word Order (SVO + Time/Place)",
+                    "title_vi": f"Bài 1 – Trật tự từ chuẩn (Chủ ngữ + Thời gian/Địa điểm + Động từ)",
                     "sourceTag": "ai_explained",
-                    "formula": f"Subject + [Time / Place] + Verb ({word_entries[0]['hanzi']}...) + Object",
+                    "formula": f"Subject + [Time / Place] + Verb ({w0['hanzi']}...) + Object",
                     "explanation_en": f"Apply Lesson {lesson_num} vocabulary ({', '.join(w['hanzi'] for w in word_entries[:4])}) with standard Mandarin word order.",
                     "explanation": f"Áp dụng từ vựng bài {lesson_num} ({', '.join(w['hanzi'] for w in word_entries[:4])}) đúng trật tự chuẩn tiếng Trung Giản thể.",
                     "questions": [
@@ -572,27 +731,115 @@ def _build_lesson_exercises_for_topic(
                             "explain": "Thời gian (今天) và cụm địa điểm (在学校) luôn đứng TRƯỚC động từ chính (学习).",
                         }
                     ],
-                }
+                },
+                {
+                    "id": f"hsk3_L{hsk_level}_L{lesson_num}_gr_2",
+                    "title": f"Exercise 2 – Negation (不 vs 没) & Questions (吗)",
+                    "title_vi": f"Bài 2 – Phủ định (不 / 没) và Câu hỏi (吗)",
+                    "sourceTag": "ai_explained",
+                    "formula": "Subject + 不/没有 + Verb/Adj  |  Statement + 吗？",
+                    "explanation_en": "Use 不 for general/habitual negation and 没(有) to negate 有 (to have) or completed past actions.",
+                    "explanation": "Dùng 不 cho phủ định hiện tại/thói quen và dùng 没(有) để phủ định động từ 有 hoặc hành động đã xảy ra.",
+                    "questions": [
+                        {
+                            "id": f"gq_{lesson_num}_2",
+                            "type": "mcq",
+                            "question_en": "Choose the grammatically correct negation of '我有汉语书' (I have a Chinese book):",
+                            "options_en": ["我没有汉语书。", "我不有汉语书。", "我没是汉语书。", "我有不汉语书。"],
+                            "answer_en": "我没有汉语书。",
+                            "explain_en": "The verb 有 is ALWAYS negated with 没 (没有), never 不!",
+                            "question": "Chọn câu phủ định ĐÚNG của '我有汉语书' (Tôi có sách tiếng Hán):",
+                            "options": ["我没有汉语书。", "我不有汉语书。", "我没是汉语书。", "我有不汉语书。"],
+                            "answer": "我没有汉语书。",
+                            "explain": "Động từ 有 LUÔN đi với 没 (没有), tuyệt đối không dùng 不有!",
+                        }
+                    ],
+                },
+                {
+                    "id": f"hsk3_L{hsk_level}_L{lesson_num}_gr_3",
+                    "title": f"Exercise 3 – Using Lesson {lesson_num} Vocabulary in Context",
+                    "title_vi": f"Bài 3 – Điền từ & Cấu trúc câu Bài {lesson_num}",
+                    "sourceTag": "ai_generated",
+                    "formula": f"Key words: {w0['hanzi']} · {w1['hanzi']} · {w2['hanzi']}",
+                    "explanation_en": f"Practice recalling and typing key words from Lesson {lesson_num} inside a natural sentence.",
+                    "explanation": f"Luyện nhớ và điền đúng chữ Hán Giản thể trọng tâm của Bài {lesson_num}.",
+                    "questions": [
+                        {
+                            "id": f"gq_{lesson_num}_3",
+                            "type": "fill",
+                            "question_en": f"Type the Simplified Chinese word for '{w0_en}' ({w0['pinyin']}):",
+                            "answer_en": w0["hanzi"],
+                            "explain_en": f"Correct answer: {w0['hanzi']} ({w0['pinyin']}).",
+                            "question": f"Điền chữ Hán Giản thể cho nghĩa '{w0['vi']}' ({w0['pinyin']}):",
+                            "answer": w0["hanzi"],
+                            "explain": f"Đáp án chuẩn: {w0['hanzi']} ({w0['pinyin']}).",
+                        }
+                    ],
+                },
             ],
             "writing": [
                 {
                     "id": f"hsk3_L{hsk_level}_L{lesson_num}_wr_1",
-                    "title": f"Bài viết 1 – Đặt câu & Viết đoạn ngắn Bài {lesson_num}",
+                    "title": f"Exercise 1 – Single Sentence Builder ({w0['hanzi']})",
+                    "title_vi": f"Bài 1 – Đặt 1 câu chuẩn với từ '{w0['hanzi']}'",
                     "sourceTag": "ai_generated",
-                    "prompt": f"Hãy viết 2–3 câu tiếng Trung Giản thể sử dụng ít nhất 2 từ trong bài {lesson_num}: {', '.join(w['hanzi'] for w in word_entries[:5])}.",
-                    "targetWord": word_entries[0]["hanzi"],
+                    "prompt_en": f"Write 1–2 Simplified Chinese sentences using '{w0['hanzi']}' ({w0['pinyin']} – {w0_en}).",
+                    "prompt": f"Hãy viết 1–2 câu tiếng Trung Giản thể có sử dụng từ '{w0['hanzi']}' ({w0['pinyin']} – {w0['vi']}).",
+                    "targetWord": w0["hanzi"],
                     "hskLevel": hsk_level,
-                }
+                },
+                {
+                    "id": f"hsk3_L{hsk_level}_L{lesson_num}_wr_2",
+                    "title": f"Exercise 2 – Combine Two Key Words ({w1['hanzi']} & {w2['hanzi']})",
+                    "title_vi": f"Bài 2 – Viết 2 câu kết hợp '{w1['hanzi']}' và '{w2['hanzi']}'",
+                    "sourceTag": "ai_generated",
+                    "prompt_en": f"Write 2 connected sentences using both '{w1['hanzi']}' ({w1_en}) and '{w2['hanzi']}' ({w2_en}).",
+                    "prompt": f"Hãy viết 2 câu liên kết sử dụng cả '{w1['hanzi']}' ({w1['vi']}) và '{w2['hanzi']}' ({w2['vi']}).",
+                    "targetWord": w1["hanzi"],
+                    "hskLevel": hsk_level,
+                },
+                {
+                    "id": f"hsk3_L{hsk_level}_L{lesson_num}_wr_3",
+                    "title": f"Exercise 3 – Mini Paragraph (Lesson {lesson_num} Topic)",
+                    "title_vi": f"Bài 3 – Viết đoạn ngắn chủ đề Bài {lesson_num}",
+                    "sourceTag": "ai_generated",
+                    "prompt_en": f"Write a short 3-sentence paragraph about Lesson {lesson_num} using at least 3 words: {', '.join(w['hanzi'] for w in word_entries[:5])}.",
+                    "prompt": f"Viết đoạn ngắn 3 câu về chủ đề Bài {lesson_num}, dùng ít nhất 3 từ: {', '.join(w['hanzi'] for w in word_entries[:5])}.",
+                    "targetWord": w2["hanzi"],
+                    "hskLevel": hsk_level,
+                },
             ],
             "speaking": [
                 {
                     "id": f"hsk3_L{hsk_level}_L{lesson_num}_sp_1",
-                    "title": f"Bài nói 1 – Phản xạ giao tiếp Bài {lesson_num}",
+                    "title": f"Exercise 1 – Shadowing Opening Line",
+                    "title_vi": f"Bài 1 – Luyện đọc theo câu mở đầu",
                     "sourceTag": "ai_generated",
-                    "prompt": f"Luyện đọc to bài khóa và trả lời câu hỏi về chủ đề: {title}.",
+                    "prompt_en": f"Listen to the model audio and read aloud clearly with accurate 4-tone contour.",
+                    "prompt": f"Nghe mẫu và đọc to rõ ràng, chú ý giữ đúng cao độ 4 thanh điệu.",
                     "sampleQuestion": rd_zh.split("\n")[0][:60],
                     "hskLevel": hsk_level,
-                }
+                },
+                {
+                    "id": f"hsk3_L{hsk_level}_L{lesson_num}_sp_2",
+                    "title": f"Exercise 2 – Key Words Pronunciation Check",
+                    "title_vi": f"Bài 2 – Luyện phát âm cụm từ trọng tâm",
+                    "sourceTag": "ai_generated",
+                    "prompt_en": f"Read these Lesson {lesson_num} focus words aloud clearly and check your tone accuracy.",
+                    "prompt": f"Đọc to các từ trọng tâm Bài {lesson_num} và kiểm tra độ chuẩn phát âm.",
+                    "sampleQuestion": "、".join(w["hanzi"] for w in word_entries[:4]),
+                    "hskLevel": hsk_level,
+                },
+                {
+                    "id": f"hsk3_L{hsk_level}_L{lesson_num}_sp_3",
+                    "title": f"Exercise 3 – Free Speaking Reply (Lesson {lesson_num})",
+                    "title_vi": f"Bài 3 – Phản xạ trả lời tự do Bài {lesson_num}",
+                    "sourceTag": "ai_generated",
+                    "prompt_en": f"Answer in 1–2 natural Mandarin sentences using '{w0['hanzi']}' or '{w1['hanzi']}'.",
+                    "prompt": f"Trả lời bằng 1–2 câu tiếng Trung tự nhiên có dùng '{w0['hanzi']}' hoặc '{w1['hanzi']}'.",
+                    "sampleQuestion": (rd_zh.split("\n")[1] if len(rd_zh.split("\n")) > 1 else rd_zh)[:60],
+                    "hskLevel": hsk_level,
+                },
             ],
         },
     }
@@ -605,7 +852,7 @@ def ensure_hsk3_level1_seeded(get_db_fn: Callable[[], sqlite3.Connection], db_lo
         try:
             init_pdf_tables(conn)
             exists = conn.execute("SELECT id, course_json FROM pdf_courses WHERE hsk_level = 1 LIMIT 1").fetchone()
-            if exists and '"schemaVersion": 2' in (exists["course_json"] or ""):
+            if exists and '"schemaVersion": 3' in (exists["course_json"] or ""):
                 return
         finally:
             conn.close()
@@ -655,7 +902,7 @@ def ensure_hsk3_level1_seeded(get_db_fn: Callable[[], sqlite3.Connection], db_lo
         lessons.append(lesson_obj)
 
     course_payload = {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "hskLevel": 1,
         "code": "HSK 1 (3.0)",
         "title": "Khóa học HSK 1 (Chuẩn HSK 3.0 – 15 Lessons + 93 MP3 gốc)",

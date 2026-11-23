@@ -587,14 +587,17 @@ window.QLessonStudio = (function () {
   }
 
   function renderWritingEx(stage, lesson, ex) {
-    if (!ex) { stage.innerHTML = `<div class="card">Chưa có bài viết.</div>`; return; }
+    const vi = isViMode();
+    if (!ex) { stage.innerHTML = `<div class="card">${vi ? "Chưa có bài viết." : "No writing exercise yet."}</div>`; return; }
+    const promptTxt = (!vi && ex.prompt_en) ? ex.prompt_en : (ex.prompt || "");
+    const titleTxt = (vi && ex.title_vi) ? ex.title_vi : (ex.title || "");
     stage.innerHTML = `
       <div class="card">
         ${sourceTagBadge(ex.sourceTag)}
-        <h3 style="margin:6px 0;">🖋️ ${QCore.escapeHtml(ex.title)}</h3>
-        <div class="card-subtle" style="margin-bottom:12px;"><strong>Đề bài:</strong> ${QCore.escapeHtml(ex.prompt)}</div>
-        <textarea class="textarea-field hanzi-text" id="lwr-txt" rows="4" data-pinyin-ime="true" placeholder="Viết bài bằng Chữ Hán Giản thể..."></textarea>
-        <button class="btn btn-primary" style="margin-top:10px;" id="lwr-sub">👩‍🏫 Nộp bài & AI Chấm Rubric</button>
+        <h3 style="margin:6px 0;">🖋️ ${QCore.escapeHtml(titleTxt)}</h3>
+        <div class="card-subtle" style="margin-bottom:12px;"><strong>${vi ? "Đề bài:" : "Prompt:"}</strong> ${QCore.escapeHtml(promptTxt)}</div>
+        <textarea class="textarea-field hanzi-text" id="lwr-txt" rows="4" data-pinyin-ime="true" placeholder="${vi ? "Viết bài bằng Chữ Hán Giản thể..." : "Write in Simplified Chinese (Pinyin IME supported)..."}"></textarea>
+        <button class="btn btn-primary" style="margin-top:10px;" id="lwr-sub">👩‍🏫 ${vi ? "Nộp bài & AI Chấm Rubric" : "Submit & AI Evaluate"}</button>
         <div id="lwr-out" style="margin-top:12px;"></div>
       </div>
     `;
@@ -602,8 +605,8 @@ window.QLessonStudio = (function () {
       const text = (stage.querySelector("#lwr-txt").value || "").trim();
       if (!text) return;
       const out = stage.querySelector("#lwr-out");
-      out.innerHTML = `<div class="card-subtle">⏳ AI đang chấm bài viết theo rubric 7 tiêu chí...</div>`;
-      const res = await window.QAiTutor.evaluateSentenceSmart({ text, prompt: ex.prompt, targetWord: ex.targetWord || "", hskLevel: ex.hskLevel || 1 });
+      out.innerHTML = `<div class="card-subtle">⏳ ${vi ? "AI đang chấm bài viết theo rubric 7 tiêu chí..." : "AI is evaluating your Chinese writing..."}</div>`;
+      const res = await window.QAiTutor.evaluateSentenceSmart({ text, prompt: promptTxt, targetWord: ex.targetWord || "", hskLevel: ex.hskLevel || 1 });
       QCore.recordLessonExercise(ex.id, res.score || 70);
       QCore.updateSkillScore("writing", res.score || 70);
       out.innerHTML = window.QAiTutor.renderSentenceEvaluationCard(res);
@@ -611,17 +614,20 @@ window.QLessonStudio = (function () {
   }
 
   function renderSpeakingEx(stage, lesson, ex) {
-    if (!ex) { stage.innerHTML = `<div class="card">Chưa có bài nói.</div>`; return; }
+    const vi = isViMode();
+    if (!ex) { stage.innerHTML = `<div class="card">${vi ? "Chưa có bài nói." : "No speaking exercise yet."}</div>`; return; }
+    const promptTxt = (!vi && ex.prompt_en) ? ex.prompt_en : (ex.prompt || "");
+    const titleTxt = (vi && ex.title_vi) ? ex.title_vi : (ex.title || "");
     stage.innerHTML = `
       <div class="card">
         ${sourceTagBadge(ex.sourceTag)}
-        <h3 style="margin:6px 0;">🎙️ ${QCore.escapeHtml(ex.title)}</h3>
+        <h3 style="margin:6px 0;">🎙️ ${QCore.escapeHtml(titleTxt)}</h3>
         <div class="card-subtle" style="margin-bottom:12px;">
-          <div>${QCore.escapeHtml(ex.prompt)}</div>
-          ${ex.sampleQuestion ? `<div class="hanzi-text" style="font-size:20px;font-weight:700;margin-top:6px;">${QCore.escapeHtml(ex.sampleQuestion)} <button class="btn btn-soft btn-sm" id="lspk-hear">🔊</button></div>` : ""}
+          <div>${QCore.escapeHtml(promptTxt)}</div>
+          ${ex.sampleQuestion ? `<div class="hanzi-text" style="font-size:20px;font-weight:700;margin-top:8px;">${QCore.escapeHtml(ex.sampleQuestion)} <button class="btn btn-soft btn-sm" id="lspk-hear">🔊</button></div>` : ""}
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
-          <button class="btn btn-primary" id="lspk-rec">🎙️ Ghi âm câu trả lời (5 giây)</button>
+          <button class="btn btn-primary" id="lspk-rec">🎙️ ${vi ? "Ghi âm câu trả lời (5 giây)" : "Record Speaking (5s)"}</button>
         </div>
         <div id="lspk-out"></div>
       </div>
@@ -630,19 +636,333 @@ window.QLessonStudio = (function () {
     if (hear) hear.onclick = () => QCore.speakChinese(ex.sampleQuestion);
     stage.querySelector("#lspk-rec").onclick = () => {
       const out = stage.querySelector("#lspk-out");
-      out.innerHTML = `<div class="card-subtle" style="color:var(--accent-red);">🔴 Đang thu âm 5 giây...</div>`;
+      out.innerHTML = `<div class="card-subtle" style="color:var(--accent-red);">🔴 ${vi ? "Đang thu âm 5 giây..." : "Recording for 5 seconds..."}</div>`;
       QCore.captureLearnerVoice({
         durationMs: 5000,
         onAudioReady: (url, tr) => {
           QCore.recordLessonExercise(ex.id, 85);
           QCore.logDailyActivity("speakingMinutes", 1);
-          out.innerHTML = `<div class="card-subtle"><audio controls src="${url}" style="width:100%;height:38px;margin-bottom:6px;"></audio><div>${tr ? `✅ Nhận diện: "${QCore.escapeHtml(tr)}"` : "🎧 Đã lưu băng thu âm — hãy bấm Play đối chiếu phát âm!"}</div></div>`;
+          out.innerHTML = `<div class="card-subtle"><audio controls src="${url}" style="width:100%;height:38px;margin-bottom:6px;"></audio><div>${tr ? `✅ ${vi ? "Nhận diện" : "Recognized"}: "${QCore.escapeHtml(tr)}"` : (vi ? "🎧 Đã lưu băng thu âm — hãy bấm Play đối chiếu phát âm!" : "🎧 Recording saved — press Play to review your pronunciation!")}</div></div>`;
         }
       });
     };
   }
 
+  /* ---------- 3-LEVEL HIERARCHICAL SKILL FOLDER BROWSER (Skill -> Lesson Folder -> Exercise 1, 2, 3...) ---------- */
+  const SKILL_META = {
+    reading: { icon: "📰", en: "Reading", vi: "Luyện đọc", descEn: "Choose a Lesson folder, then pick one bite-sized reading exercise at a time.", descVi: "Chọn thư mục Lesson tương ứng giáo trình PDF, sau đó chọn từng bài đọc nhỏ (Bài 1, Bài 2, Bài 3...)." },
+    listening: { icon: "🎧", en: "Listening", vi: "Luyện nghe", descEn: "Choose a Lesson folder to practice individual audio tracks & listening drills.", descVi: "Chọn thư mục Lesson để luyện từng bài nghe nhỏ (Bài 1, Bài 2...) theo đúng tiến độ mỗi ngày." },
+    grammar: { icon: "🧩", en: "Grammar", vi: "Ngữ pháp", descEn: "Choose a Lesson folder to master one grammar point per exercise.", descVi: "Chọn thư mục Lesson để học từng điểm ngữ pháp chia nhỏ (Bài 1, Bài 2, Bài 3...)." },
+    writing: { icon: "🖋️", en: "Writing", vi: "Luyện viết", descEn: "Choose a Lesson folder and complete one focused writing task at a time.", descVi: "Chọn thư mục Lesson và luyện từng bài viết ngắn (Bài 1, Bài 2, Bài 3...)." },
+    speaking: { icon: "🎙️", en: "Speaking", vi: "Luyện nói", descEn: "Choose a Lesson folder for step-by-step shadowing and speaking drills.", descVi: "Chọn thư mục Lesson để luyện phát âm & phản xạ theo từng bài nhỏ." }
+  };
+
+  const folderState = {}; // skill -> { view: "lessons"|"exercises"|"practice", lessonIdx: 0, exIdx: 0, mode: "lessons"|"classic" }
+
+  function getFolderState(skill) {
+    if (!folderState[skill]) {
+      folderState[skill] = { view: "lessons", lessonIdx: 0, exIdx: 0, mode: "lessons" };
+    }
+    return folderState[skill];
+  }
+
+  async function ensureCourseLoaded(params = {}) {
+    let needFetch = !activeCourse;
+    if (params && params.hskLevel && Number(params.hskLevel) !== activeHsk) {
+      activeHsk = Number(params.hskLevel);
+      activeCourseId = params.courseId || null;
+      needFetch = true;
+    } else if (params && params.courseId && params.courseId !== activeCourseId) {
+      activeCourseId = params.courseId;
+      needFetch = true;
+    }
+    if (!needFetch) return true;
+    if (!QCore.getServerHealth().ok) return false;
+    try {
+      const qs = activeCourseId
+        ? `courseId=${encodeURIComponent(activeCourseId)}`
+        : `hskLevel=${encodeURIComponent(activeHsk)}`;
+      const res = await QCore.apiFetch(`/api/pdf/course?${qs}`);
+      activeCourse = res.course;
+      return Boolean(activeCourse);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  async function renderSkillFolder(container, skillKey, params = {}, legacyRenderer = null) {
+    const meta = SKILL_META[skillKey] || SKILL_META.reading;
+    const fState = getFolderState(skillKey);
+    if (params && params.resetFolder) {
+      fState.view = "lessons";
+      fState.mode = "lessons";
+    }
+    if (params && (params.materialId || params.classic)) {
+      fState.mode = "classic";
+    }
+
+    const vi = isViMode();
+    if (fState.mode === "classic" && typeof legacyRenderer === "function") {
+      container.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
+          <div class="tabs-bar">
+            <button class="tab-pill" id="sf-tab-lessons">📁 ${vi ? "Thư mục Lesson (HSK 3.0)" : "PDF Lesson Folders (HSK 3.0)"}</button>
+            <button class="tab-pill active" id="sf-tab-classic">📚 ${vi ? "Luyện tập tổng hợp & Tài liệu cá nhân" : "Classic & Personal Materials"}</button>
+          </div>
+        </div>
+        <div id="sf-legacy-host"></div>
+      `;
+      container.querySelector("#sf-tab-lessons").onclick = () => {
+        fState.mode = "lessons";
+        renderSkillFolder(container, skillKey, {}, legacyRenderer);
+      };
+      legacyRenderer(container.querySelector("#sf-legacy-host"));
+      return;
+    }
+
+    if (!activeCourse) {
+      container.innerHTML = `<div class="card" style="text-align:center;padding:38px;">⏳ ${vi ? "Đang mở thư mục bài học..." : "Loading lesson folders..."}</div>`;
+    }
+    const loaded = await ensureCourseLoaded(params);
+    if (!loaded || !activeCourse) {
+      if (typeof legacyRenderer === "function") {
+        legacyRenderer(container);
+        return;
+      }
+      container.innerHTML = `<div class="card" style="padding:28px;">⚠️ ${vi ? "Không tải được khóa học PDF." : "Unable to load PDF course."}</div>`;
+      return;
+    }
+
+    drawSkillFolderView(container, skillKey, legacyRenderer);
+  }
+
+  function drawSkillFolderView(container, skillKey, legacyRenderer) {
+    const vi = isViMode();
+    const meta = SKILL_META[skillKey] || SKILL_META.reading;
+    const fState = getFolderState(skillKey);
+    const st = QCore.getState();
+    const lp = (st && st.lessonProgress) || {};
+    const lessons = (activeCourse && activeCourse.lessons) || [];
+    if (fState.lessonIdx >= lessons.length) fState.lessonIdx = 0;
+
+    const topSwitcher = `
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
+        <div class="tabs-bar">
+          <button class="tab-pill active" id="sf-tab-lessons">📁 ${vi ? "Thư mục Lesson (HSK 3.0)" : "PDF Lesson Folders (HSK 3.0)"}</button>
+          ${typeof legacyRenderer === "function" ? `<button class="tab-pill" id="sf-tab-classic">📚 ${vi ? "Luyện tập tổng hợp & Tài liệu cá nhân" : "Classic & Personal Materials"}</button>` : ""}
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <span class="badge badge-jade">${QCore.escapeHtml(activeCourse.code || "HSK 1 (3.0)")}</span>
+          <button class="btn btn-outline btn-sm" id="sf-goto-pdf">📄 ${vi ? "Quản lý AI PDF" : "AI PDF Manager"}</button>
+        </div>
+      </div>
+    `;
+
+    // LEVEL 1: Clean Lesson Folder Grid (Lesson 1 .. Lesson 15)
+    if (fState.view === "lessons") {
+      container.innerHTML = `
+        ${topSwitcher}
+        <div class="page-header" style="margin-bottom:14px;">
+          <div>
+            <h2 style="margin:0;">${meta.icon} ${vi ? meta.vi : meta.en} — ${vi ? "Thư mục Lesson" : "Lesson Folders"}</h2>
+            <p style="margin:4px 0 0;">${vi ? meta.descVi : meta.descEn}</p>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;">
+          ${lessons.map((l, idx) => {
+            const exs = Array.isArray(l.skills && l.skills[skillKey]) ? l.skills[skillKey] : [];
+            const doneCnt = exs.filter((e) => lp[e.id] && lp[e.id].status === "completed").length;
+            const pct = exs.length ? Math.round((doneCnt / exs.length) * 100) : 0;
+            return `
+              <div class="card" data-open-lfolder="${idx}" style="padding:16px;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;gap:10px;border-color:${pct === 100 && exs.length ? "var(--primary)" : "var(--border-color)"};transition:transform .15s ease;">
+                <div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;">
+                    <span class="badge ${pct === 100 && exs.length ? "badge-jade" : "badge-blue"}">📁 Lesson ${l.lessonNum}</span>
+                    <span style="font-size:12px;font-weight:700;color:${doneCnt > 0 ? "var(--primary)" : "var(--text-muted)"};">${doneCnt}/${exs.length} ${vi ? "bài xong" : "done"}</span>
+                  </div>
+                  <div style="font-weight:700;font-size:15px;line-height:1.45;">${QCore.escapeHtml(l.title.replace(/^Lesson\s*\d+:\s*/i, ""))}</div>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);">
+                  <span>📄 ${exs.length} ${vi ? "bài tập nhỏ" : "exercises"}</span>
+                  <strong style="color:var(--primary);">${vi ? "Mở thư mục →" : "Open →"}</strong>
+                </div>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      `;
+
+      bindCommonFolderHeader(container, skillKey, legacyRenderer);
+      container.querySelectorAll("[data-open-lfolder]").forEach((card) => {
+        card.onclick = () => {
+          fState.lessonIdx = Number(card.getAttribute("data-open-lfolder"));
+          fState.view = "exercises";
+          drawSkillFolderView(container, skillKey, legacyRenderer);
+        };
+      });
+      return;
+    }
+
+    const lesson = lessons[fState.lessonIdx] || lessons[0];
+    const exList = (lesson && lesson.skills && Array.isArray(lesson.skills[skillKey])) ? lesson.skills[skillKey] : [];
+
+    // LEVEL 2: Bite-Sized Exercise List inside selected Lesson (Bài 1, Bài 2, Bài 3...)
+    if (fState.view === "exercises") {
+      container.innerHTML = `
+        ${topSwitcher}
+        <div class="card" style="padding:16px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+            <div>
+              <button class="btn btn-outline btn-sm" id="sf-back-lessons" style="margin-bottom:8px;">← ${vi ? `Quay lại danh sách Lesson ${meta.vi}` : `Back to ${meta.en} Lessons`}</button>
+              <h2 style="margin:0;font-size:19px;">📁 ${QCore.escapeHtml(lesson.title)} — ${meta.icon} ${vi ? meta.vi : meta.en}</h2>
+              <p style="margin:4px 0 0;font-size:13px;color:var(--text-secondary);">
+                ${vi ? `Chọn 1 bài tập nhỏ bên dưới để học tập trung (tổng ${exList.length} bài):` : `Pick one focused exercise below to study at your own pace (${exList.length} exercises):`}
+              </p>
+            </div>
+            <button class="btn btn-primary btn-sm" id="sf-ai-gen-ex">✨ ${vi ? `AI – Tạo thêm Bài ${exList.length + 1}` : `AI – Generate Exercise ${exList.length + 1}`}</button>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;">
+          ${exList.map((ex, idx) => {
+            const rec = lp[ex.id];
+            const exTitle = (vi && ex.title_vi) ? ex.title_vi : (ex.title || `${vi ? "Bài" : "Exercise"} ${idx + 1}`);
+            const qCnt = Array.isArray(ex.questions) ? ex.questions.length : 0;
+            return `
+              <div class="card" data-open-ex="${idx}" style="padding:18px;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;gap:12px;border-color:${rec && rec.status === "completed" ? "var(--primary)" : "var(--border-color)"};">
+                <div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;">
+                    <span class="badge badge-jade">${vi ? `Bài ${idx + 1}` : `Exercise ${idx + 1}`}</span>
+                    ${rec
+                      ? `<span class="badge ${rec.status === "completed" ? "badge-jade" : "badge-amber"}">${rec.status === "completed" ? "✅" : "🟡"} ${rec.bestScore}/100</span>`
+                      : `<span style="font-size:12px;color:var(--text-muted);">${vi ? "Chưa làm" : "Not started"}</span>`}
+                  </div>
+                  <div style="font-weight:700;font-size:15.5px;line-height:1.45;margin-bottom:6px;">${QCore.escapeHtml(exTitle)}</div>
+                  <div style="font-size:12.5px;color:var(--text-muted);">
+                    ${qCnt ? `📝 ${qCnt} ${vi ? "câu hỏi" : "questions"}` : (skillKey === "writing" ? (vi ? "🖋️ Luyện viết & AI chấm điểm" : "🖋️ Writing & AI Rubric") : (vi ? "🎙️ Luyện nói & Thu âm" : "🎙️ Speaking & Audio Check"))}
+                  </div>
+                </div>
+                <div style="display:flex;justify-content:flex-end;">
+                  <button class="btn btn-primary btn-sm">${rec ? (vi ? "Làm lại →" : "Practice Again →") : (vi ? "Bắt đầu làm →" : "Start Exercise →")}</button>
+                </div>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      `;
+
+      bindCommonFolderHeader(container, skillKey, legacyRenderer);
+      container.querySelector("#sf-back-lessons").onclick = () => {
+        fState.view = "lessons";
+        drawSkillFolderView(container, skillKey, legacyRenderer);
+      };
+      container.querySelectorAll("[data-open-ex]").forEach((card) => {
+        card.onclick = () => {
+          fState.exIdx = Number(card.getAttribute("data-open-ex"));
+          fState.view = "practice";
+          drawSkillFolderView(container, skillKey, legacyRenderer);
+        };
+      });
+      bindAiGenButton(container, "#sf-ai-gen-ex", lesson, skillKey, () => {
+        fState.exIdx = lesson.skills[skillKey].length - 1;
+        fState.view = "practice";
+        drawSkillFolderView(container, skillKey, legacyRenderer);
+      });
+      return;
+    }
+
+    // LEVEL 3: Distraction-Free Single-Exercise Workspace (ONLY 1 exercise on screen!)
+    if (fState.exIdx >= exList.length) fState.exIdx = 0;
+    const currentEx = exList[fState.exIdx];
+    const hasPrev = fState.exIdx > 0;
+    const hasNext = fState.exIdx + 1 < exList.length;
+
+    container.innerHTML = `
+      <div class="card" style="padding:12px 16px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <button class="btn btn-outline btn-sm" id="sf-back-exs">← ${vi ? `Danh sách bài tập (Lesson ${lesson.lessonNum})` : `Lesson ${lesson.lessonNum} Exercises`}</button>
+          <span style="font-size:13.5px;font-weight:700;color:var(--text-secondary);">
+            ${meta.icon} Lesson ${lesson.lessonNum} · ${vi ? `Bài ${fState.exIdx + 1}/${exList.length}` : `Exercise ${fState.exIdx + 1}/${exList.length}`}
+          </span>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          ${hasPrev ? `<button class="btn btn-outline btn-sm" id="sf-prev-ex">← ${vi ? "Bài trước" : "Prev"}</button>` : ""}
+          ${hasNext ? `<button class="btn btn-soft btn-sm" id="sf-next-ex">${vi ? "Bài tiếp theo →" : "Next Exercise →"}</button>` : ""}
+          <button class="btn btn-primary btn-sm" id="ls-ai-gen-btn">✨ ${vi ? "AI – Tạo bài mới" : "AI – New Exercise"}</button>
+        </div>
+      </div>
+      <div id="sf-practice-stage"></div>
+    `;
+
+    container.querySelector("#sf-back-exs").onclick = () => {
+      fState.view = "exercises";
+      drawSkillFolderView(container, skillKey, legacyRenderer);
+    };
+    const prevBtn = container.querySelector("#sf-prev-ex");
+    if (prevBtn) prevBtn.onclick = () => { fState.exIdx--; drawSkillFolderView(container, skillKey, legacyRenderer); };
+    const nextBtn = container.querySelector("#sf-next-ex");
+    if (nextBtn) nextBtn.onclick = () => { fState.exIdx++; drawSkillFolderView(container, skillKey, legacyRenderer); };
+
+    bindAiGenButton(container, "#ls-ai-gen-btn", lesson, skillKey, () => {
+      fState.exIdx = lesson.skills[skillKey].length - 1;
+      drawSkillFolderView(container, skillKey, legacyRenderer);
+    });
+
+    const stage = container.querySelector("#sf-practice-stage");
+    if (skillKey === "reading") renderReadingSplit(stage, lesson, currentEx, container);
+    else if (skillKey === "listening") renderListeningEx(stage, lesson, currentEx, container);
+    else if (skillKey === "grammar") renderGrammarEx(stage, lesson, currentEx, container);
+    else if (skillKey === "writing") renderWritingEx(stage, lesson, currentEx, container);
+    else renderSpeakingEx(stage, lesson, currentEx, container);
+  }
+
+  function bindCommonFolderHeader(container, skillKey, legacyRenderer) {
+    const fState = getFolderState(skillKey);
+    const classicBtn = container.querySelector("#sf-tab-classic");
+    if (classicBtn && typeof legacyRenderer === "function") {
+      classicBtn.onclick = () => {
+        fState.mode = "classic";
+        renderSkillFolder(container, skillKey, {}, legacyRenderer);
+      };
+    }
+    const pdfBtn = container.querySelector("#sf-goto-pdf");
+    if (pdfBtn) pdfBtn.onclick = () => window.QApp.navigate("ai-pdf");
+  }
+
+  function bindAiGenButton(container, selector, lesson, skillKey, onCreated) {
+    const btn = container.querySelector(selector);
+    if (!btn) return;
+    btn.onclick = async () => {
+      const vi = isViMode();
+      btn.disabled = true;
+      btn.textContent = vi ? "⏳ AI đang tạo bài tập mới..." : "⏳ Generating new exercise...";
+      try {
+        const currList = (lesson.skills && lesson.skills[skillKey]) || [];
+        const newEx = await QCore.apiFetch("/api/ai/generate-lesson-exercise", {
+          method: "POST",
+          body: {
+            skill: skillKey,
+            hskLevel: (activeCourse && activeCourse.hskLevel) || 1,
+            lessonTitle: lesson.title,
+            vocabWords: (lesson.skills && lesson.skills.vocabulary) || [],
+            wrongFocuses: lastWrongFocuses,
+            variantIndex: currList.length + 1
+          }
+        });
+        if (!Array.isArray(lesson.skills[skillKey])) lesson.skills[skillKey] = [];
+        lesson.skills[skillKey].push(newEx);
+        QCore.showToast(vi ? "✨ AI đã tạo xong bài tập mới!" : "✨ AI generated a new focused exercise!");
+        onCreated();
+      } catch (err) {
+        QCore.showToast("❌ " + err.message);
+        btn.disabled = false;
+      }
+    };
+  }
+
   return {
-    renderLessons
+    renderLessons,
+    renderSkillFolder
   };
 })();

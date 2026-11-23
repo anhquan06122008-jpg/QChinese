@@ -11,17 +11,15 @@ window.QApp = (function () {
     { id: "vocab", labelEn: "HSK Vocabulary", labelVi: "Kho từ vựng HSK", icon: "📚" },
     { id: "pinyin", labelEn: "Pinyin Lab", labelVi: "Phòng luyện Pinyin", icon: "🎵" },
     { id: "ai-tutor", labelEn: "QChinese AI Tutor", labelVi: "QChinese AI Tutor", icon: "🤖" },
-    { id: "ai-tournament", labelEn: "100-AI Arena", labelVi: "Đấu trường 100 AI", icon: "🏆" },
     { id: "ai-pdf", labelEn: "AI PDF · HSK 3.0", labelVi: "AI PDF · HSK 3.0", icon: "📄" },
-    { id: "lessons", labelEn: "Courses & Lessons", labelVi: "Khóa học & Lesson", icon: "🎓" },
     { id: "materials", labelEn: "My Materials", labelVi: "Kho tài liệu cá nhân", icon: "📁" },
     { id: "hanzi", labelEn: "Hanzi Studio", labelVi: "Học chữ Hán", icon: "✍️" },
     { id: "assessment", labelEn: "Placement Test", labelVi: "Đánh giá trình độ", icon: "🧭" },
-    { id: "grammar", labelEn: "Grammar", labelVi: "Ngữ pháp", icon: "🧩" },
-    { id: "listening", labelEn: "Listening", labelVi: "Luyện nghe", icon: "🎧" },
-    { id: "speaking", labelEn: "Speaking", labelVi: "Luyện nói", icon: "🎙️" },
     { id: "reading", labelEn: "Reading", labelVi: "Luyện đọc", icon: "📰" },
+    { id: "listening", labelEn: "Listening", labelVi: "Luyện nghe", icon: "🎧" },
+    { id: "grammar", labelEn: "Grammar", labelVi: "Ngữ pháp", icon: "🧩" },
     { id: "writing", labelEn: "Writing", labelVi: "Luyện viết", icon: "🖋️" },
+    { id: "speaking", labelEn: "Speaking", labelVi: "Luyện nói", icon: "🎙️" },
     { id: "notebook", labelEn: "Notebook", labelVi: "Sổ tay", icon: "📒" },
     { id: "analytics", labelEn: "Analytics", labelVi: "Thống kê tiến độ", icon: "📊" },
     { id: "settings", labelEn: "Settings", labelVi: "Cài đặt", icon: "⚙️" }
@@ -129,32 +127,29 @@ window.QApp = (function () {
       case "ai-tutor":
         QAiTutor.renderAiTutor(main, params);
         break;
-      case "ai-tournament":
-        QAiTournament.renderTournament(main);
-        break;
       case "ai-pdf":
         QAiPdfStudio.renderPdfStudio(main);
         break;
       case "lessons":
-        QLessonStudio.renderLessons(main, params);
+        QLessonStudio.renderSkillFolder(main, params.skill || "reading", params, (el) => QGrammarReadingWriting.renderReading(el, params));
         break;
       case "materials":
         QMaterialsHub.renderMaterials(main, params);
         break;
       case "grammar":
-        QGrammarReadingWriting.renderGrammar(main);
+        QLessonStudio.renderSkillFolder(main, "grammar", params, (el) => QGrammarReadingWriting.renderGrammar(el));
         break;
       case "listening":
-        QPinyinListening.renderListening(main, params);
+        QLessonStudio.renderSkillFolder(main, "listening", params, (el) => QPinyinListening.renderListening(el, params));
         break;
       case "speaking":
-        QGrammarReadingWriting.renderSpeaking(main, false, params);
+        QLessonStudio.renderSkillFolder(main, "speaking", params, (el) => QGrammarReadingWriting.renderSpeaking(el, false, params));
         break;
       case "reading":
-        QGrammarReadingWriting.renderReading(main, params);
+        QLessonStudio.renderSkillFolder(main, "reading", params, (el) => QGrammarReadingWriting.renderReading(el, params));
         break;
       case "writing":
-        QGrammarReadingWriting.renderWriting(main, params);
+        QLessonStudio.renderSkillFolder(main, "writing", params, (el) => QGrammarReadingWriting.renderWriting(el, params));
         break;
       case "notebook":
         QNotebookAnalyticsSettings.renderNotebook(main);

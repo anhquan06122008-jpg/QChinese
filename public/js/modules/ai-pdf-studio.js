@@ -152,10 +152,10 @@ window.QAiPdfStudio = (function () {
       };
     });
     container.querySelectorAll("[data-open-course]").forEach((b) => {
-      b.onclick = () => window.QApp.navigate("reading", { hskLevel: Number(b.getAttribute("data-open-course")), resetFolder: true });
+      b.onclick = () => window.QApp.navigate("course-hub", { hskLevel: Number(b.getAttribute("data-open-course")), resetHub: true });
     });
     container.querySelectorAll("[data-open-cid]").forEach((b) => {
-      b.onclick = () => window.QApp.navigate("reading", { courseId: b.getAttribute("data-open-cid"), hskLevel: Number(b.getAttribute("data-open-clvl")), resetFolder: true });
+      b.onclick = () => window.QApp.navigate("course-hub", { courseId: b.getAttribute("data-open-cid"), hskLevel: Number(b.getAttribute("data-open-clvl")), resetHub: true });
     });
     container.querySelectorAll("[data-pub-cid]").forEach((b) => {
       b.onclick = async () => {

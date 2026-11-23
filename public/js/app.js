@@ -31,7 +31,7 @@ window.QApp = (function () {
     const isVi = QCore.getUiLang() === "vi";
     navEl.innerHTML = NAV_ITEMS.map(
       (item) => `
-      <button class="nav-btn ${currentRoute === item.id ? "active" : ""}" data-route="${item.id}">
+      <button class="nav-btn ${(currentRoute === item.id || (currentRoute === "course-hub" && item.id === "ai-pdf")) ? "active" : ""}" data-route="${item.id}">
         <span class="nav-icon">${item.icon}</span>
         <span>${isVi ? item.labelVi : item.labelEn}</span>
       </button>
@@ -130,8 +130,9 @@ window.QApp = (function () {
       case "ai-pdf":
         QAiPdfStudio.renderPdfStudio(main);
         break;
+      case "course-hub":
       case "lessons":
-        QLessonStudio.renderSkillFolder(main, params.skill || "reading", params, (el) => QGrammarReadingWriting.renderReading(el, params));
+        QLessonStudio.renderCourseHub(main, params);
         break;
       case "materials":
         QMaterialsHub.renderMaterials(main, params);

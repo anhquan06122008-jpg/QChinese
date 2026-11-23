@@ -1051,8 +1051,287 @@ window.QLessonStudio = (function () {
     };
   }
 
+  /* ---------- COURSE HUB (QEnglish-style: AI PDF HSK 1 -> Lesson 1..15 -> 6 Skill Cards -> Exercise 1, 2, 3 -> Practice) ---------- */
+  const SKILL_CARDS_6 = [
+    { id: "reading", icon: "📄", en: "Reading", vi: "Reading", descEn: "Split-screen passage & bilingual comprehension questions", descVi: "Đọc hiểu chia đôi màn hình & bộ câu hỏi song ngữ" },
+    { id: "listening", icon: "🎧", en: "Listening", vi: "Listening", descEn: "Audio tracks, speed control & listening drills", descVi: "Audio chuẩn, chỉnh tốc độ & câu hỏi nghe hiểu" },
+    { id: "writing", icon: "✍️", en: "Writing", vi: "Writing", descEn: "Guided writing, Pinyin IME & AI rubric feedback", descVi: "Luyện viết câu/đoạn, gợi ý Pinyin & AI chấm điểm" },
+    { id: "speaking", icon: "🎙️", en: "Speaking", vi: "Speaking", descEn: "Shadowing, pronunciation & voice recording practice", descVi: "Luyện đọc theo mẫu, phát âm & thu giọng nói" },
+    { id: "vocabulary", icon: "📖", en: "Vocabulary", vi: "Vocabulary", descEn: "Lesson core words, Pinyin, audio & Notebook save", descVi: "Từ vựng trọng tâm của bài, Pinyin, loa & lưu Sổ tay" },
+    { id: "grammar", icon: "🧩", en: "Grammar", vi: "Grammar", descEn: "Core grammar patterns & targeted exercises", descVi: "Công thức ngữ pháp trọng tâm & bài tập trắc nghiệm" }
+  ];
+
+  const hubState = { view: "lessons", hskLevel: 1, courseId: null, lessonIdx: 0, skill: "reading", exIdx: 0 };
+
+  async function renderCourseHub(container, params = {}) {
+    const vi = isViMode();
+    if (params && params.resetHub) {
+      hubState.view = "lessons";
+      hubState.hskLevel = Number(params.hskLevel || 1);
+      hubState.courseId = params.courseId || null;
+      hubState.lessonIdx = 0;
+      hubState.exIdx = 0;
+    } else {
+      if (params && params.hskLevel) hubState.hskLevel = Number(params.hskLevel);
+      if (params && params.courseId) hubState.courseId = params.courseId;
+    }
+
+    if (!activeCourse || hubState.hskLevel !== activeHsk || (hubState.courseId && hubState.courseId !== activeCourseId)) {
+      container.innerHTML = `<div class="card" style="text-align:center;padding:38px;">⏳ ${vi ? "Đang mở khóa học HSK..." : "Loading HSK course..."}</div>`;
+    }
+    const ok = await ensureCourseLoaded({ hskLevel: hubState.hskLevel, courseId: hubState.courseId });
+    if (!ok || !activeCourse) {
+      container.innerHTML = `
+        <div class="card" style="padding:28px;">
+          <h3 style="margin:0 0 8px;">🔒 ${vi ? `HSK ${hubState.hskLevel} chưa có giáo trình` : `HSK ${hubState.hskLevel} is locked`}</h3>
+          <button class="btn btn-primary btn-sm" id="hub-back-pdf">← ${vi ? "Quay lại AI PDF · HSK 3.0" : "Back to AI PDF · HSK 3.0"}</button>
+        </div>
+      `;
+      container.querySelector("#hub-back-pdf").onclick = () => window.QApp.navigate("ai-pdf");
+      return;
+    }
+
+    drawCourseHub(container);
+  }
+
+  function drawCourseHub(container) {
+    const vi = isViMode();
+    const st = QCore.getState();
+    const lp = (st && st.lessonProgress) || {};
+    const lessons = (activeCourse && activeCourse.lessons) || [];
+    if (hubState.lessonIdx >= lessons.length) hubState.lessonIdx = 0;
+
+    // STEP 2 (Image 2): Inside HSK 1 -> Grid of Lesson 1..15 Folders
+    if (hubState.view === "lessons") {
+      container.innerHTML = `
+        <div class="page-header" style="margin-bottom:16px;">
+          <div>
+            <button class="btn btn-outline btn-sm" id="hub-to-pdf" style="margin-bottom:8px;">← ${vi ? "Quay lại AI PDF · HSK 3.0" : "Back to AI PDF · HSK 3.0"}</button>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px;">
+              <span class="badge badge-jade">${QCore.escapeHtml(activeCourse.code || `HSK ${hubState.hskLevel} (3.0)`)}</span>
+              <span class="badge badge-blue">📚 ${lessons.length} Lessons · 6 ${vi ? "kỹ năng" : "skills"}</span>
+            </div>
+            <h2 style="margin:0;">📁 ${QCore.escapeHtml(activeCourse.title || `HSK ${hubState.hskLevel}`)}</h2>
+            <p style="margin:4px 0 0;font-size:13px;">${vi ? "Chọn 1 Lesson bên dưới để xem đầy đủ 6 kỹ năng (Reading, Listening, Writing, Speaking, Vocabulary, Grammar)." : "Pick a Lesson folder below to access all 6 skills (Reading, Listening, Writing, Speaking, Vocabulary, Grammar)."}</p>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(275px,1fr));gap:12px;">
+          ${lessons.map((l, idx) => {
+            const comp = getLessonCompletion(l, lp);
+            return `
+              <div class="card" data-hub-lesson="${idx}" style="padding:16px;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;gap:10px;border-color:${comp.pct === 100 && comp.total ? "var(--primary)" : "var(--border-color)"};">
+                <div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;">
+                    <span class="badge ${comp.pct === 100 && comp.total ? "badge-jade" : "badge-blue"}">📁 Lesson ${l.lessonNum}</span>
+                    <span style="font-size:12px;font-weight:700;color:${comp.done > 0 ? "var(--primary)" : "var(--text-muted)"};">${comp.done}/${comp.total} ${vi ? "bài xong" : "done"}</span>
+                  </div>
+                  <div style="font-weight:700;font-size:15px;line-height:1.45;">${QCore.escapeHtml(l.title.replace(/^Lesson\s*\d+:\s*/i, ""))}</div>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);">
+                  <span>🧩 6 ${vi ? "kỹ năng" : "skills"} · ${comp.total} ${vi ? "bài tập" : "exercises"}</span>
+                  <strong style="color:var(--primary);">${vi ? "Mở thư mục →" : "Open →"}</strong>
+                </div>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      `;
+
+      container.querySelector("#hub-to-pdf").onclick = () => window.QApp.navigate("ai-pdf");
+      container.querySelectorAll("[data-hub-lesson]").forEach((card) => {
+        card.onclick = () => {
+          hubState.lessonIdx = Number(card.getAttribute("data-hub-lesson"));
+          hubState.view = "skills";
+          drawCourseHub(container);
+        };
+      });
+      return;
+    }
+
+    const lesson = lessons[hubState.lessonIdx] || lessons[0];
+
+    // STEP 3 (Image 3 — QEnglish style): Inside Lesson X -> 6-Skill Cards Grid (3x2)
+    if (hubState.view === "skills") {
+      const comp = getLessonCompletion(lesson, lp);
+      container.innerHTML = `
+        <div class="card" style="padding:16px;margin-bottom:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+            <div>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
+                <button class="btn btn-outline btn-sm" id="hub-back-lessons">← ${vi ? `Quay lại ${activeCourse.code || "HSK 1"}` : `Back to ${activeCourse.code || "HSK 1"} Lessons`}</button>
+                <span class="badge badge-jade">${vi ? `Hoàn thành ${comp.done}/${comp.total} (${comp.pct}%)` : `Completed ${comp.done}/${comp.total} (${comp.pct}%)`}</span>
+                <span class="badge badge-blue">📖 ${vi ? `Trang PDF ~${lesson.sourcePage || 1}` : `PDF Page ~${lesson.sourcePage || 1}`}</span>
+              </div>
+              <h2 style="margin:0;font-size:20px;">📁 ${QCore.escapeHtml(lesson.title)}</h2>
+              <p style="margin:4px 0 0;font-size:13px;color:var(--text-secondary);">${vi ? "Chọn kỹ năng bạn muốn luyện trong bài học này:" : "Choose a skill to study inside this lesson:"}</p>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(285px,1fr));gap:14px;">
+          ${SKILL_CARDS_6.map((sk) => {
+            const list = (lesson.skills && Array.isArray(lesson.skills[sk.id])) ? lesson.skills[sk.id] : [];
+            const isVocab = sk.id === "vocabulary";
+            const doneCnt = isVocab ? 0 : list.filter((e) => lp[e.id] && lp[e.id].status === "completed").length;
+            const pct = (!isVocab && list.length) ? Math.round((doneCnt / list.length) * 100) : 0;
+            return `
+              <div class="card" data-hub-skill="${sk.id}" style="padding:20px;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;gap:16px;border-color:${pct === 100 && list.length ? "var(--primary)" : "var(--border-color)"};transition:transform .15s ease;">
+                <div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                    <span style="font-size:30px;">${sk.icon}</span>
+                    <span class="badge badge-blue">${list.length} ${isVocab ? (vi ? "từ" : "words") : (vi ? "bài" : "exercises")}</span>
+                  </div>
+                  <div style="font-weight:800;font-size:19px;margin-bottom:6px;">${vi ? sk.vi : sk.en}</div>
+                  <div style="font-size:13px;color:var(--text-secondary);line-height:1.5;">${vi ? sk.descVi : sk.descEn}</div>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px solid var(--border-color);font-size:13px;">
+                  <span style="font-weight:700;color:var(--primary);">${isVocab ? `${list.length} ${vi ? "từ trọng tâm" : "core words"}` : (vi ? `Hoàn thành ${doneCnt}/${list.length} (${pct}%)` : `Completed ${doneCnt}/${list.length} (${pct}%)`)}</span>
+                  <strong style="color:var(--primary);">${vi ? "Vào học →" : "Start →"}</strong>
+                </div>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      `;
+
+      container.querySelector("#hub-back-lessons").onclick = () => {
+        hubState.view = "lessons";
+        drawCourseHub(container);
+      };
+      container.querySelectorAll("[data-hub-skill]").forEach((card) => {
+        card.onclick = () => {
+          hubState.skill = card.getAttribute("data-hub-skill");
+          hubState.exIdx = 0;
+          hubState.view = hubState.skill === "vocabulary" ? "practice" : "exercises";
+          drawCourseHub(container);
+        };
+      });
+      return;
+    }
+
+    const skKey = hubState.skill;
+    const skInfo = SKILL_CARDS_6.find((x) => x.id === skKey) || SKILL_CARDS_6[0];
+    const exList = (lesson.skills && Array.isArray(lesson.skills[skKey])) ? lesson.skills[skKey] : [];
+
+    // STEP 4 (Image 4): Inside Lesson X -> Skill Y -> Separate Exercise Cards (Bài 1, Bài 2, Bài 3...)
+    if (hubState.view === "exercises") {
+      container.innerHTML = `
+        <div class="card" style="padding:16px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+            <div>
+              <button class="btn btn-outline btn-sm" id="hub-back-skills" style="margin-bottom:8px;">← ${vi ? `Quay lại Lesson ${lesson.lessonNum} (6 kỹ năng)` : `Back to Lesson ${lesson.lessonNum} (6 Skills)`}</button>
+              <h2 style="margin:0;font-size:19px;">📁 ${QCore.escapeHtml(lesson.title)} — ${skInfo.icon} ${vi ? skInfo.vi : skInfo.en}</h2>
+              <p style="margin:4px 0 0;font-size:13px;color:var(--text-secondary);">
+                ${vi ? `Chọn 1 bài tập nhỏ bên dưới để làm tập trung (tổng ${exList.length} bài):` : `Pick one focused exercise below (${exList.length} exercises):`}
+              </p>
+            </div>
+            <button class="btn btn-primary btn-sm" id="hub-ai-gen">✨ ${vi ? `AI – Tạo thêm Bài ${exList.length + 1}` : `AI – Generate Exercise ${exList.length + 1}`}</button>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;">
+          ${exList.map((ex, idx) => {
+            const rec = lp[ex.id];
+            const exTitle = (vi && ex.title_vi) ? ex.title_vi : (ex.title || `${vi ? "Bài" : "Exercise"} ${idx + 1}`);
+            const qCnt = Array.isArray(ex.questions) ? ex.questions.length : 0;
+            return `
+              <div class="card" data-hub-ex="${idx}" style="padding:18px;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;gap:12px;border-color:${rec && rec.status === "completed" ? "var(--primary)" : "var(--border-color)"};">
+                <div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;">
+                    <span class="badge badge-jade">${vi ? `Bài ${idx + 1}` : `Exercise ${idx + 1}`}</span>
+                    ${rec
+                      ? `<span class="badge ${rec.status === "completed" ? "badge-jade" : "badge-amber"}">${rec.status === "completed" ? "✅" : "🟡"} ${rec.bestScore}/100</span>`
+                      : `<span style="font-size:12px;color:var(--text-muted);">${vi ? "Chưa làm" : "Not started"}</span>`}
+                  </div>
+                  <div style="font-weight:700;font-size:15.5px;line-height:1.45;margin-bottom:6px;">${QCore.escapeHtml(exTitle)}</div>
+                  <div style="font-size:12.5px;color:var(--text-muted);">
+                    ${qCnt ? `📝 ${qCnt} ${vi ? "câu hỏi" : "questions"}` : (skKey === "writing" ? (vi ? "🖋️ Luyện viết & AI chấm điểm" : "🖋️ Writing & AI Rubric") : (vi ? "🎙️ Luyện nói & Thu âm" : "🎙️ Speaking & Audio Check"))}
+                  </div>
+                </div>
+                <div style="display:flex;justify-content:flex-end;">
+                  <button class="btn btn-primary btn-sm">${rec ? (vi ? "Làm lại →" : "Practice Again →") : (vi ? "Bắt đầu làm →" : "Start Exercise →")}</button>
+                </div>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      `;
+
+      container.querySelector("#hub-back-skills").onclick = () => {
+        hubState.view = "skills";
+        drawCourseHub(container);
+      };
+      container.querySelectorAll("[data-hub-ex]").forEach((card) => {
+        card.onclick = () => {
+          hubState.exIdx = Number(card.getAttribute("data-hub-ex"));
+          hubState.view = "practice";
+          drawCourseHub(container);
+        };
+      });
+      bindAiGenButton(container, "#hub-ai-gen", lesson, skKey, () => {
+        hubState.exIdx = lesson.skills[skKey].length - 1;
+        hubState.view = "practice";
+        drawCourseHub(container);
+      });
+      return;
+    }
+
+    // STEP 5: Single Focused Exercise (or Vocabulary) Workspace
+    const isVocab = skKey === "vocabulary";
+    if (!isVocab && hubState.exIdx >= exList.length) hubState.exIdx = 0;
+    const currentEx = isVocab ? null : exList[hubState.exIdx];
+    const hasPrev = !isVocab && hubState.exIdx > 0;
+    const hasNext = !isVocab && hubState.exIdx + 1 < exList.length;
+
+    container.innerHTML = `
+      <div class="card" style="padding:12px 16px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <button class="btn btn-outline btn-sm" id="hub-back-up">
+            ← ${isVocab
+              ? (vi ? `Quay lại Lesson ${lesson.lessonNum} (6 kỹ năng)` : `Back to Lesson ${lesson.lessonNum} (6 Skills)`)
+              : (vi ? `Bài tập ${skInfo.vi} (Lesson ${lesson.lessonNum})` : `Lesson ${lesson.lessonNum} ${skInfo.en} Exercises`)}
+          </button>
+          <span style="font-size:13.5px;font-weight:700;color:var(--text-secondary);">
+            ${skInfo.icon} Lesson ${lesson.lessonNum} · ${skInfo.en}${!isVocab ? ` · ${vi ? `Bài ${hubState.exIdx + 1}/${exList.length}` : `Exercise ${hubState.exIdx + 1}/${exList.length}`}` : ""}
+          </span>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          ${hasPrev ? `<button class="btn btn-outline btn-sm" id="hub-prev-ex">← ${vi ? "Bài trước" : "Prev"}</button>` : ""}
+          ${hasNext ? `<button class="btn btn-soft btn-sm" id="hub-next-ex">${vi ? "Bài tiếp theo →" : "Next Exercise →"}</button>` : ""}
+          ${!isVocab ? `<button class="btn btn-primary btn-sm" id="ls-ai-gen-btn">✨ ${vi ? "AI – Tạo bài mới" : "AI – New Exercise"}</button>` : ""}
+        </div>
+      </div>
+      <div id="hub-practice-stage"></div>
+    `;
+
+    container.querySelector("#hub-back-up").onclick = () => {
+      hubState.view = isVocab ? "skills" : "exercises";
+      drawCourseHub(container);
+    };
+    const prevBtn = container.querySelector("#hub-prev-ex");
+    if (prevBtn) prevBtn.onclick = () => { hubState.exIdx--; drawCourseHub(container); };
+    const nextBtn = container.querySelector("#hub-next-ex");
+    if (nextBtn) nextBtn.onclick = () => { hubState.exIdx++; drawCourseHub(container); };
+    if (!isVocab) {
+      bindAiGenButton(container, "#ls-ai-gen-btn", lesson, skKey, () => {
+        hubState.exIdx = lesson.skills[skKey].length - 1;
+        drawCourseHub(container);
+      });
+    }
+
+    const stage = container.querySelector("#hub-practice-stage");
+    if (skKey === "reading") renderReadingSplit(stage, lesson, currentEx, container);
+    else if (skKey === "listening") renderListeningEx(stage, lesson, currentEx, container);
+    else if (skKey === "grammar") renderGrammarEx(stage, lesson, currentEx, container);
+    else if (skKey === "writing") renderWritingEx(stage, lesson, currentEx, container);
+    else if (skKey === "speaking") renderSpeakingEx(stage, lesson, currentEx, container);
+    else renderVocabEx(stage, lesson);
+  }
+
   return {
     renderLessons,
-    renderSkillFolder
+    renderSkillFolder,
+    renderCourseHub
   };
 })();

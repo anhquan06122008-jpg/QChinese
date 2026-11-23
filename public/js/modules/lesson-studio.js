@@ -657,26 +657,37 @@ window.QLessonStudio = (function () {
     speaking: { icon: "🎙️", en: "Speaking", vi: "Luyện nói", descEn: "Choose a Lesson folder for step-by-step shadowing and speaking drills.", descVi: "Chọn thư mục Lesson để luyện phát âm & phản xạ theo từng bài nhỏ." }
   };
 
-  const folderState = {}; // skill -> { view: "lessons"|"exercises"|"practice", lessonIdx: 0, exIdx: 0, mode: "lessons"|"classic" }
+  const folderState = {}; // skill -> { view: "levels"|"lessons"|"exercises"|"practice", hskLevel: 1, lessonIdx: 0, exIdx: 0, mode: "lessons"|"classic" }
+  let cachedOverview = null;
 
   function getFolderState(skill) {
     if (!folderState[skill]) {
-      folderState[skill] = { view: "lessons", lessonIdx: 0, exIdx: 0, mode: "lessons" };
+      folderState[skill] = { view: "levels", hskLevel: 1, lessonIdx: 0, exIdx: 0, mode: "lessons" };
     }
     return folderState[skill];
   }
 
-  async function ensureCourseLoaded(params = {}) {
-    let needFetch = !activeCourse;
-    if (params && params.hskLevel && Number(params.hskLevel) !== activeHsk) {
-      activeHsk = Number(params.hskLevel);
-      activeCourseId = params.courseId || null;
-      needFetch = true;
-    } else if (params && params.courseId && params.courseId !== activeCourseId) {
-      activeCourseId = params.courseId;
-      needFetch = true;
+  async function ensureOverviewLoaded() {
+    if (cachedOverview) return cachedOverview;
+    if (!QCore.getServerHealth().ok) return null;
+    try {
+      cachedOverview = await QCore.apiFetch("/api/pdf/overview");
+      return cachedOverview;
+    } catch (_) {
+      return null;
     }
-    if (!needFetch) return true;
+  }
+
+  async function ensureCourseLoaded(params = {}) {
+    const reqLvl = params && params.hskLevel ? Number(params.hskLevel) : activeHsk;
+    const reqCid = (params && params.courseId) || null;
+    const needFetch = !activeCourse || reqLvl !== activeHsk || (reqCid && reqCid !== activeCourseId);
+    if (needFetch) {
+      activeHsk = reqLvl;
+      activeCourseId = reqCid;
+    } else {
+      return true;
+    }
     if (!QCore.getServerHealth().ok) return false;
     try {
       const qs = activeCourseId
@@ -691,11 +702,15 @@ window.QLessonStudio = (function () {
   }
 
   async function renderSkillFolder(container, skillKey, params = {}, legacyRenderer = null) {
-    const meta = SKILL_META[skillKey] || SKILL_META.reading;
     const fState = getFolderState(skillKey);
     if (params && params.resetFolder) {
-      fState.view = "lessons";
       fState.mode = "lessons";
+      if (params.hskLevel || params.courseId) {
+        fState.hskLevel = Number(params.hskLevel || 1);
+        fState.view = "lessons";
+      } else {
+        fState.view = "levels";
+      }
     }
     if (params && (params.materialId || params.classic)) {
       fState.mode = "classic";
@@ -706,7 +721,7 @@ window.QLessonStudio = (function () {
       container.innerHTML = `
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
           <div class="tabs-bar">
-            <button class="tab-pill" id="sf-tab-lessons">📁 ${vi ? "Thư mục Lesson (HSK 3.0)" : "PDF Lesson Folders (HSK 3.0)"}</button>
+            <button class="tab-pill" id="sf-tab-lessons">📁 ${vi ? "Thư mục HSK (3.0)" : "HSK Folders (3.0)"}</button>
             <button class="tab-pill active" id="sf-tab-classic">📚 ${vi ? "Luyện tập tổng hợp & Tài liệu cá nhân" : "Classic & Personal Materials"}</button>
           </div>
         </div>
@@ -720,10 +735,19 @@ window.QLessonStudio = (function () {
       return;
     }
 
-    if (!activeCourse) {
+    if (fState.view === "levels") {
+      if (!cachedOverview) {
+        container.innerHTML = `<div class="card" style="text-align:center;padding:38px;">⏳ ${vi ? "Đang tải danh sách thư mục HSK..." : "Loading HSK folders..."}</div>`;
+      }
+      await ensureOverviewLoaded();
+      drawSkillFolderView(container, skillKey, legacyRenderer);
+      return;
+    }
+
+    if (!activeCourse || (params && params.hskLevel && Number(params.hskLevel) !== activeHsk)) {
       container.innerHTML = `<div class="card" style="text-align:center;padding:38px;">⏳ ${vi ? "Đang mở thư mục bài học..." : "Loading lesson folders..."}</div>`;
     }
-    const loaded = await ensureCourseLoaded(params);
+    const loaded = await ensureCourseLoaded({ hskLevel: fState.hskLevel, courseId: params && params.courseId });
     if (!loaded || !activeCourse) {
       if (typeof legacyRenderer === "function") {
         legacyRenderer(container);
@@ -742,29 +766,91 @@ window.QLessonStudio = (function () {
     const fState = getFolderState(skillKey);
     const st = QCore.getState();
     const lp = (st && st.lessonProgress) || {};
-    const lessons = (activeCourse && activeCourse.lessons) || [];
-    if (fState.lessonIdx >= lessons.length) fState.lessonIdx = 0;
 
     const topSwitcher = `
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
         <div class="tabs-bar">
-          <button class="tab-pill active" id="sf-tab-lessons">📁 ${vi ? "Thư mục Lesson (HSK 3.0)" : "PDF Lesson Folders (HSK 3.0)"}</button>
+          <button class="tab-pill active" id="sf-tab-lessons">📁 ${vi ? "Thư mục HSK (3.0)" : "HSK Folders (3.0)"}</button>
           ${typeof legacyRenderer === "function" ? `<button class="tab-pill" id="sf-tab-classic">📚 ${vi ? "Luyện tập tổng hợp & Tài liệu cá nhân" : "Classic & Personal Materials"}</button>` : ""}
         </div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          <span class="badge badge-jade">${QCore.escapeHtml(activeCourse.code || "HSK 1 (3.0)")}</span>
+          ${fState.view !== "levels" && activeCourse ? `<span class="badge badge-jade">${QCore.escapeHtml(activeCourse.code || `HSK ${fState.hskLevel} (3.0)`)}</span>` : ""}
           <button class="btn btn-outline btn-sm" id="sf-goto-pdf">📄 ${vi ? "Quản lý AI PDF" : "AI PDF Manager"}</button>
         </div>
       </div>
     `;
 
-    // LEVEL 1: Clean Lesson Folder Grid (Lesson 1 .. Lesson 15)
+    // LEVEL 0: Top-Level HSK Level Folders (HSK 1, HSK 2, ..., HSK 7–9)
+    if (fState.view === "levels") {
+      const levels = (cachedOverview && cachedOverview.levels) || [
+        { level: 1, code: "HSK 1", title: "HSK 3.0 – Level 1", unlocked: true },
+        { level: 2, code: "HSK 2", title: "HSK 3.0 – Level 2", unlocked: false },
+        { level: 3, code: "HSK 3", title: "HSK 3.0 – Level 3", unlocked: false },
+        { level: 4, code: "HSK 4", title: "HSK 3.0 – Level 4", unlocked: false },
+        { level: 5, code: "HSK 5", title: "HSK 3.0 – Level 5", unlocked: false },
+        { level: 6, code: "HSK 6", title: "HSK 3.0 – Level 6", unlocked: false },
+        { level: 7, code: "HSK 7–9", title: "HSK 3.0 – Level 7–9", unlocked: false }
+      ];
+      container.innerHTML = `
+        ${topSwitcher}
+        <div class="page-header" style="margin-bottom:14px;">
+          <div>
+            <h2 style="margin:0;">${meta.icon} ${vi ? meta.vi : meta.en} — ${vi ? "Chọn cấp độ HSK" : "Select HSK Folder"}</h2>
+            <p style="margin:4px 0 0;">${vi ? "Mở thư mục cấp độ (ví dụ HSK 1) để xem các Lesson và bài tập nhỏ bên trong." : "Open an HSK level folder (e.g. HSK 1) to browse Lessons and bite-sized exercises."}</p>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;">
+          ${levels.map((lv) => `
+            <div class="card" ${lv.unlocked ? `data-open-hsk="${lv.level}"` : `data-locked-hsk="${lv.level}"`} style="padding:20px;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;gap:12px;border-color:${lv.unlocked ? "var(--primary)" : "var(--border-color)"};opacity:${lv.unlocked ? "1" : "0.72"};">
+              <div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                  <span style="font-size:28px;">${lv.unlocked ? "📁" : "🔒"}</span>
+                  <span class="badge ${lv.unlocked ? "badge-jade" : "badge-amber"}">${lv.unlocked ? (vi ? "Đã mở khóa" : "Unlocked") : (vi ? "Đang khóa" : "Locked")}</span>
+                </div>
+                <div style="font-weight:800;font-size:20px;color:${lv.unlocked ? "var(--primary)" : "var(--text-muted)"};">${QCore.escapeHtml(lv.code)}</div>
+                <div style="font-size:13px;color:var(--text-secondary);margin-top:4px;">${QCore.escapeHtml(lv.title || "")}</div>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px solid var(--border-color);font-size:13px;">
+                ${lv.unlocked
+                  ? `<span style="color:var(--text-secondary);">📚 ${lv.level === 1 ? "15 Lessons" : (vi ? "Khóa học đã xuất bản" : "Published course")}</span><strong style="color:var(--primary);">${vi ? "Mở thư mục →" : "Open Folder →"}</strong>`
+                  : `<span style="color:var(--text-muted);">${vi ? "Tải PDF để mở khóa" : "Upload PDF to unlock"}</span><strong style="color:var(--text-secondary);">📄 PDF →</strong>`}
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      `;
+
+      bindCommonFolderHeader(container, skillKey, legacyRenderer);
+      container.querySelectorAll("[data-open-hsk]").forEach((card) => {
+        card.onclick = async () => {
+          fState.hskLevel = Number(card.getAttribute("data-open-hsk"));
+          fState.view = "lessons";
+          container.innerHTML = `<div class="card" style="text-align:center;padding:38px;">⏳ ${vi ? `Đang mở thư mục HSK ${fState.hskLevel}...` : `Opening HSK ${fState.hskLevel} folder...`}</div>`;
+          await ensureCourseLoaded({ hskLevel: fState.hskLevel });
+          drawSkillFolderView(container, skillKey, legacyRenderer);
+        };
+      });
+      container.querySelectorAll("[data-locked-hsk]").forEach((card) => {
+        card.onclick = () => {
+          QCore.showToast(vi ? "Hãy tải PDF giáo trình tương ứng trong AI PDF · HSK 3.0 để mở khóa cấp độ này!" : "Upload the corresponding PDF in AI PDF · HSK 3.0 to unlock this HSK level!");
+          window.QApp.navigate("ai-pdf");
+        };
+      });
+      return;
+    }
+
+    const lessons = (activeCourse && activeCourse.lessons) || [];
+    if (fState.lessonIdx >= lessons.length) fState.lessonIdx = 0;
+
+    // LEVEL 1: Clean Lesson Folder Grid (Lesson 1 .. Lesson 15) inside chosen HSK Level
     if (fState.view === "lessons") {
       container.innerHTML = `
         ${topSwitcher}
         <div class="page-header" style="margin-bottom:14px;">
           <div>
-            <h2 style="margin:0;">${meta.icon} ${vi ? meta.vi : meta.en} — ${vi ? "Thư mục Lesson" : "Lesson Folders"}</h2>
+            <button class="btn btn-outline btn-sm" id="sf-back-levels" style="margin-bottom:8px;">← ${vi ? "Quay lại thư mục HSK" : "Back to HSK Folders"}</button>
+            <h2 style="margin:0;">📁 ${QCore.escapeHtml(activeCourse.code || `HSK ${fState.hskLevel}`)} · ${meta.icon} ${vi ? meta.vi : meta.en} — ${vi ? "Thư mục Lesson" : "Lesson Folders"}</h2>
             <p style="margin:4px 0 0;">${vi ? meta.descVi : meta.descEn}</p>
           </div>
         </div>
@@ -794,6 +880,10 @@ window.QLessonStudio = (function () {
       `;
 
       bindCommonFolderHeader(container, skillKey, legacyRenderer);
+      container.querySelector("#sf-back-levels").onclick = () => {
+        fState.view = "levels";
+        drawSkillFolderView(container, skillKey, legacyRenderer);
+      };
       container.querySelectorAll("[data-open-lfolder]").forEach((card) => {
         card.onclick = () => {
           fState.lessonIdx = Number(card.getAttribute("data-open-lfolder"));

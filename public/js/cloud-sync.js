@@ -642,6 +642,43 @@ window.QCloud = (function () {
     for (const dk of ["srs", "hanziProgress", "vocabSubSkills", "phoneticErrors", "readingNotes", "lessonProgress", "dailyLogs"]) {
       out[dk] = Object.assign({}, remoteSt[dk] || {}, localSt[dk] || {});
     }
+
+    // Deep-merge externalLibraryProgress (6 External Skills independent of AI PDF HSK 3.0)
+    const lExt = localSt.externalLibraryProgress || {};
+    const rExt = remoteSt.externalLibraryProgress || {};
+    out.externalLibraryProgress = {};
+    for (const sk of ["reading", "listening", "grammar", "writing", "speaking"]) {
+      const lb = lExt[sk] || {};
+      const rb = rExt[sk] || {};
+      const cSet = new Set([...(rb.completedIds || []), ...(lb.completedIds || [])]);
+      const scoresById = Object.assign({}, rb.scoresById || {}, lb.scoresById || {});
+      for (const id of Object.keys(scoresById)) {
+        scoresById[id] = Math.max(Number((rb.scoresById && rb.scoresById[id]) || 0), Number((lb.scoresById && lb.scoresById[id]) || 0));
+      }
+      const attemptsById = Object.assign({}, rb.attemptsById || {}, lb.attemptsById || {});
+      out.externalLibraryProgress[sk] = {
+        completedIds: Array.from(cSet),
+        scoresById,
+        attemptsById
+      };
+      if (sk === "writing") {
+        const lt = lb.translation || {};
+        const rt = rb.translation || {};
+        const tcSet = new Set([...(rt.completedIds || []), ...(lt.completedIds || [])]);
+        const tScores = Object.assign({}, rt.scores || {}, lt.scores || {});
+        for (const id of Object.keys(tScores)) {
+          tScores[id] = Math.max(Number((rt.scores && rt.scores[id]) || 0), Number((lt.scores && lt.scores[id]) || 0));
+        }
+        out.externalLibraryProgress.writing.translation = {
+          drafts: Object.assign({}, rt.drafts || {}, lt.drafts || {}),
+          completedIds: Array.from(tcSet),
+          scores: tScores,
+          history: mergeById(lt.history || [], rt.history || [], "id"),
+          weakFocuses: Array.from(new Set([...(rt.weakFocuses || []), ...(lt.weakFocuses || [])])),
+          lastLessonId: lt.lastLessonId || rt.lastLessonId || "tr_hsk1_01"
+        };
+      }
+    }
     return out;
   }
 

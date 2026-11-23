@@ -138,19 +138,19 @@ window.QApp = (function () {
         QMaterialsHub.renderMaterials(main, params);
         break;
       case "grammar":
-        QLessonStudio.renderSkillFolder(main, "grammar", params, (el) => QGrammarReadingWriting.renderGrammar(el));
+        QGrammarReadingWriting.renderGrammar(main, params);
         break;
       case "listening":
-        QLessonStudio.renderSkillFolder(main, "listening", params, (el) => QPinyinListening.renderListening(el, params));
+        QPinyinListening.renderListening(main, params);
         break;
       case "speaking":
-        QLessonStudio.renderSkillFolder(main, "speaking", params, (el) => QGrammarReadingWriting.renderSpeaking(el, false, params));
+        QGrammarReadingWriting.renderSpeaking(main, false, params);
         break;
       case "reading":
-        QLessonStudio.renderSkillFolder(main, "reading", params, (el) => QGrammarReadingWriting.renderReading(el, params));
+        QGrammarReadingWriting.renderReading(main, params);
         break;
       case "writing":
-        QLessonStudio.renderSkillFolder(main, "writing", params, (el) => QGrammarReadingWriting.renderWriting(el, params));
+        QGrammarReadingWriting.renderWriting(main, params);
         break;
       case "notebook":
         QNotebookAnalyticsSettings.renderNotebook(main);

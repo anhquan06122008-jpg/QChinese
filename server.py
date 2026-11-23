@@ -780,14 +780,46 @@ class QChineseRequestHandler(BaseHTTPRequestHandler):
             if not re.match(r"^[0-9]{1,2}-[0-9]{1,2}\.mp3$", fname):
                 self._send_json(400, {"error": "Tên file audio không hợp lệ."})
                 return
-            audio_path = (LOCAL_HSK1_MP3_DIR / fname).resolve()
-            if not audio_path.exists() or not str(audio_path).startswith(str(LOCAL_HSK1_MP3_DIR.resolve())):
+            repo_mp3_dir = (PUBLIC_DIR / "audio" / "hsk1").resolve()
+            candidates = [
+                (repo_mp3_dir, (repo_mp3_dir / fname).resolve()),
+                (LOCAL_HSK1_MP3_DIR.resolve() if LOCAL_HSK1_MP3_DIR.exists() else repo_mp3_dir, (LOCAL_HSK1_MP3_DIR / fname).resolve() if LOCAL_HSK1_MP3_DIR.exists() else (repo_mp3_dir / fname).resolve()),
+            ]
+            audio_path = None
+            for base_d, cand_p in candidates:
+                if cand_p.exists() and str(cand_p).startswith(str(base_d)):
+                    audio_path = cand_p
+                    break
+            if not audio_path:
                 self._send_json(404, {"error": "Không tìm thấy file MP3 giáo trình trên server này."})
                 return
             mp3_bytes = audio_path.read_bytes()
+            total_len = len(mp3_bytes)
+            range_hdr = (self.headers.get("Range") or "").strip()
+            m_range = re.match(r"^bytes=(\d*)-(\d*)$", range_hdr)
+            if m_range:
+                start_str, end_str = m_range.group(1), m_range.group(2)
+                start = int(start_str) if start_str else 0
+                end = int(end_str) if end_str else total_len - 1
+                start = max(0, min(start, total_len - 1))
+                end = max(start, min(end, total_len - 1))
+                chunk = mp3_bytes[start : end + 1]
+                self.send_response(206)
+                self.send_header("Content-Type", "audio/mpeg")
+                self.send_header("Accept-Ranges", "bytes")
+                self.send_header("Content-Range", f"bytes {start}-{end}/{total_len}")
+                self.send_header("Content-Length", str(len(chunk)))
+                self.send_header("Cache-Control", "public, max-age=86400")
+                for k, v in self._cors_headers().items():
+                    self.send_header(k, v)
+                self.end_headers()
+                self.wfile.write(chunk)
+                return
+
             self.send_response(200)
             self.send_header("Content-Type", "audio/mpeg")
-            self.send_header("Content-Length", str(len(mp3_bytes)))
+            self.send_header("Accept-Ranges", "bytes")
+            self.send_header("Content-Length", str(total_len))
             self.send_header("Cache-Control", "public, max-age=86400")
             for k, v in self._cors_headers().items():
                 self.send_header(k, v)

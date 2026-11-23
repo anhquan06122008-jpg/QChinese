@@ -172,11 +172,17 @@ def _load_hsk3_l1_vocab(root_dir: Path) -> Dict[str, Dict[str, Any]]:
         return {}
 
 
-def _scan_local_hsk1_mp3s() -> Dict[int, List[str]]:
+def _scan_local_hsk1_mp3s(root_dir: Optional[Path] = None) -> Dict[int, List[str]]:
     by_lesson: Dict[int, List[str]] = {}
-    if not LOCAL_HSK1_MP3_DIR.exists():
+    repo_root = root_dir or Path(__file__).resolve().parent.parent
+    candidates = [
+        repo_root / "public" / "audio" / "hsk1",
+        LOCAL_HSK1_MP3_DIR,
+    ]
+    target_dir = next((d for d in candidates if d.exists() and list(d.glob("*.mp3"))), None)
+    if not target_dir:
         return by_lesson
-    for f in sorted(LOCAL_HSK1_MP3_DIR.glob("*.mp3")):
+    for f in sorted(target_dir.glob("*.mp3")):
         parts = f.stem.split("-")
         if len(parts) >= 2 and parts[0].isdigit():
             by_lesson.setdefault(int(parts[0]), []).append(f.name)
@@ -486,18 +492,51 @@ def _build_lesson_exercises_for_topic(
             },
         ]
 
+    # Build structured speaker-separated transcript lines from lesson dialogue & key words
+    zh_lines = [ln.strip() for ln in rd_zh.split("\n") if ln.strip()]
+    py_lines = [ln.strip() for ln in rd_py.split("\n") if ln.strip()]
+    en_lines = [ln.strip() for ln in rd_en.split("\n") if ln.strip()]
+    vi_lines = [ln.strip() for ln in rd_vi.split("\n") if ln.strip()]
+    speakers_cycle = ["明安", "兰英", "王老师", "同学"]
+    base_transcript_lines = []
+    for li, zline in enumerate(zh_lines):
+        base_transcript_lines.append({
+            "speaker": speakers_cycle[li % 2] if len(zh_lines) > 1 else "课文",
+            "chinese": zline,
+            "pinyin": py_lines[li] if li < len(py_lines) else "",
+            "english": en_lines[li] if li < len(en_lines) else "",
+            "vietnamese": vi_lines[li] if li < len(vi_lines) else "",
+        })
+
     # Listening items linked directly to REAL MP3 tracks when present!
     listening_items = []
     if mp3_tracks:
         for idx, trk in enumerate(mp3_tracks[:6]):
             w_ref = word_entries[idx % len(word_entries)]
+            w_next = word_entries[(idx + 1) % len(word_entries)]
             w_ref_en = w_ref.get("en") or w_ref["vi"]
+            track_lines = list(base_transcript_lines)
+            track_lines.append({
+                "speaker": "生词重点",
+                "chinese": f"{w_ref['hanzi']} · {w_next['hanzi']}",
+                "pinyin": f"{w_ref['pinyin']} · {w_next['pinyin']}",
+                "english": f"{w_ref_en} · {w_next.get('en') or w_next['vi']}",
+                "vietnamese": f"{w_ref['vi']} · {w_next['vi']}",
+            })
             listening_items.append({
                 "id": f"L{lesson_num}_lis_{idx + 1}",
+                "contentSource": "AI_PDF_HSK3",
+                "courseType": "hsk3_pdf_curriculum",
                 "title": f"Listening {idx + 1} – Track {trk}",
+                "title_vi": f"Bài nghe {idx + 1} – Audio gốc {trk} (Lesson {lesson_num})",
+                "audioFile": trk,
                 "audioUrl": f"api/pdf/audio?file={trk}",
+                "staticAudioUrl": f"public/audio/hsk1/{trk}",
                 "audioSource": "real_mp3",
                 "sourceTag": "extracted_from_pdf",
+                "transcriptSource": "extracted_from_pdf" if custom_passage else "curriculum_aligned",
+                "transcriptLabel": f"Transcript đối chiếu Bài {lesson_num} (Giáo trình New HSK 1 3.0 · Track {trk})",
+                "transcriptLines": track_lines,
                 "targetHint_en": f"Listen to New HSK 1 (3.0) track {trk}, focusing on '{w_ref['hanzi']}' ({w_ref['pinyin']} – {w_ref_en}).",
                 "targetHint": f"Nghe track {trk} của giáo trình New HSK 1 (3.0), chú ý từ trọng tâm '{w_ref['hanzi']}' ({w_ref['pinyin']} – {w_ref['vi']}).",
                 "questions": [
@@ -512,7 +551,8 @@ def _build_lesson_exercises_for_topic(
                         "options": [w_ref["vi"], "Cửa hàng bách hóa", "Tàu điện ngầm", "Bệnh viện nhân dân"],
                         "answer": w_ref["vi"],
                         "explain": f"Track {trk} thuộc Bài {lesson_num} giáo trình New HSK 1 (3.0); từ trọng tâm: {w_ref['hanzi']} ({w_ref['pinyin']}) = {w_ref['vi']}.",
-                    }
+                    },
+                    rd_qs[idx % len(rd_qs)],
                 ],
             })
     else:
@@ -525,24 +565,40 @@ def _build_lesson_exercises_for_topic(
         listening_items = [
             {
                 "id": f"L{lesson_num}_lis_1",
+                "contentSource": "AI_PDF_HSK3",
+                "courseType": "hsk3_pdf_curriculum",
                 "title": f"Exercise 1 – Dialogue Listening (Lesson {lesson_num})",
                 "title_vi": f"Bài 1 – Nghe hội thoại chính (Bài {lesson_num})",
+                "audioFile": "",
                 "audioUrl": "",
                 "audioText": rd_zh,
                 "audioSource": "tts",
-                "sourceTag": "ai_generated",
+                "sourceTag": "extracted_from_pdf" if custom_passage else "ai_generated",
+                "transcriptSource": "extracted_from_pdf" if custom_passage else "ai_generated",
+                "transcriptLabel": "Transcript trích xuất từ tài liệu PDF" if custom_passage else "Transcript AI tạo từ nội dung bài học (cho phép kiểm tra lại)",
+                "transcriptLines": base_transcript_lines,
                 "targetHint_en": "Listen carefully to the full Lesson dialogue and answer the comprehension check.",
                 "targetHint": "Nghe kỹ toàn bộ bài khóa và trả lời câu hỏi đọc hiểu.",
                 "questions": rd_qs[:2],
             },
             {
                 "id": f"L{lesson_num}_lis_2",
+                "contentSource": "AI_PDF_HSK3",
+                "courseType": "hsk3_pdf_curriculum",
                 "title": f"Exercise 2 – Key Vocabulary Audio Recognition",
                 "title_vi": f"Bài 2 – Nhận diện từ vựng trọng tâm qua âm thanh",
+                "audioFile": "",
                 "audioUrl": "",
                 "audioText": f"{w0['hanzi']}。{w1['hanzi']}。{w2['hanzi']}。",
                 "audioSource": "tts",
                 "sourceTag": "extracted_from_pdf",
+                "transcriptSource": "extracted_from_pdf",
+                "transcriptLabel": f"Transcript từ vựng trọng tâm Bài {lesson_num}",
+                "transcriptLines": [
+                    {"speaker": "词语 1", "chinese": w0["hanzi"], "pinyin": w0["pinyin"], "english": w0_en, "vietnamese": w0["vi"]},
+                    {"speaker": "词语 2", "chinese": w1["hanzi"], "pinyin": w1["pinyin"], "english": w1_en, "vietnamese": w1["vi"]},
+                    {"speaker": "词语 3", "chinese": w2["hanzi"], "pinyin": w2["pinyin"], "english": w2_en, "vietnamese": w2["vi"]},
+                ],
                 "targetHint_en": f"Listen to the key words from Lesson {lesson_num} and match their meanings.",
                 "targetHint": f"Nghe các từ trọng tâm của Bài {lesson_num} và chọn nghĩa đúng.",
                 "questions": [
@@ -572,12 +628,18 @@ def _build_lesson_exercises_for_topic(
             },
             {
                 "id": f"L{lesson_num}_lis_3",
+                "contentSource": "AI_PDF_HSK3",
+                "courseType": "hsk3_pdf_curriculum",
                 "title": f"Exercise 3 – Short Sentence Dictation & Detail",
                 "title_vi": f"Bài 3 – Nghe câu ngắn & Chi tiết thực tế",
+                "audioFile": "",
                 "audioUrl": "",
                 "audioText": rd_zh.split("\n")[0],
                 "audioSource": "tts",
                 "sourceTag": "ai_generated",
+                "transcriptSource": "ai_generated",
+                "transcriptLabel": "Transcript câu mở đầu (AI trích từ bài khóa)",
+                "transcriptLines": base_transcript_lines[:2],
                 "targetHint_en": "Listen to the opening sentence of the lesson at normal and slow speed.",
                 "targetHint": "Nghe câu mở đầu của bài học ở tốc độ thường và chậm.",
                 "questions": rd_qs[2:4] if len(rd_qs) >= 4 else rd_qs[:1],
@@ -852,13 +914,13 @@ def ensure_hsk3_level1_seeded(get_db_fn: Callable[[], sqlite3.Connection], db_lo
         try:
             init_pdf_tables(conn)
             exists = conn.execute("SELECT id, course_json FROM pdf_courses WHERE hsk_level = 1 LIMIT 1").fetchone()
-            if exists and '"schemaVersion": 3' in (exists["course_json"] or ""):
+            if exists and '"schemaVersion": 4' in (exists["course_json"] or ""):
                 return
         finally:
             conn.close()
 
     vocab_map = _load_hsk3_l1_vocab(root_dir)
-    mp3_by_lesson = _scan_local_hsk1_mp3s()
+    mp3_by_lesson = _scan_local_hsk1_mp3s(root_dir)
     now = _utc_now()
 
     seed_docs = []
@@ -902,7 +964,9 @@ def ensure_hsk3_level1_seeded(get_db_fn: Callable[[], sqlite3.Connection], db_lo
         lessons.append(lesson_obj)
 
     course_payload = {
-        "schemaVersion": 3,
+        "schemaVersion": 4,
+        "contentSource": "AI_PDF_HSK3",
+        "courseType": "hsk3_pdf_curriculum",
         "hskLevel": 1,
         "code": "HSK 1 (3.0)",
         "title": "Khóa học HSK 1 (Chuẩn HSK 3.0 – 15 Lessons + 93 MP3 gốc)",

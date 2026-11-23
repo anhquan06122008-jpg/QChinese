@@ -67,6 +67,25 @@ window.QCore = (function () {
       pronunciationSessions: 0,
       materials: [],
       lessonProgress: {},
+      externalLibraryProgress: {
+        reading: { completedIds: [], scoresById: {}, attemptsById: {} },
+        listening: { completedIds: [], scoresById: {}, attemptsById: {} },
+        grammar: { completedIds: [], scoresById: {}, attemptsById: {} },
+        writing: {
+          completedIds: [],
+          scoresById: {},
+          translation: {
+            drafts: {},
+            completedIds: [],
+            scores: {},
+            history: [],
+            weakFocuses: [],
+            lastLessonId: "tr_hsk1_01"
+          }
+        },
+        speaking: { completedIds: [], scoresById: {}, attemptsById: {} },
+        vocabulary: { completedTopics: [], scoresByTopic: {} }
+      },
       aiHistory: [],
       writingSubmissions: [],
       speakingSessions: 0,
@@ -117,6 +136,64 @@ window.QCore = (function () {
     st.pronunciationSessions = Number(st.pronunciationSessions || 0);
     st.materials = Array.isArray(st.materials) ? st.materials : [];
     st.lessonProgress = st.lessonProgress && typeof st.lessonProgress === "object" ? st.lessonProgress : {};
+    st.externalLibraryProgress = st.externalLibraryProgress && typeof st.externalLibraryProgress === "object"
+      ? st.externalLibraryProgress
+      : def.externalLibraryProgress;
+    ["reading", "listening", "grammar", "writing", "speaking"].forEach((sk) => {
+      if (!st.externalLibraryProgress[sk] || typeof st.externalLibraryProgress[sk] !== "object") {
+        st.externalLibraryProgress[sk] = { completedIds: [], scoresById: {}, attemptsById: {} };
+      }
+      const box = st.externalLibraryProgress[sk];
+      box.completedIds = Array.isArray(box.completedIds) ? box.completedIds : [];
+      box.scoresById = box.scoresById && typeof box.scoresById === "object" ? box.scoresById : {};
+      box.attemptsById = box.attemptsById && typeof box.attemptsById === "object" ? box.attemptsById : {};
+    });
+    if (!st.externalLibraryProgress.writing.translation || typeof st.externalLibraryProgress.writing.translation !== "object") {
+      st.externalLibraryProgress.writing.translation = Object.assign({}, def.externalLibraryProgress.writing.translation);
+    } else {
+      const tr = st.externalLibraryProgress.writing.translation;
+      tr.drafts = tr.drafts && typeof tr.drafts === "object" ? tr.drafts : {};
+      tr.completedIds = Array.isArray(tr.completedIds) ? tr.completedIds : [];
+      tr.scores = tr.scores && typeof tr.scores === "object" ? tr.scores : {};
+      tr.history = Array.isArray(tr.history) ? tr.history : [];
+      tr.weakFocuses = Array.isArray(tr.weakFocuses) ? tr.weakFocuses : [];
+      tr.lastLessonId = tr.lastLessonId || "tr_hsk1_01";
+    }
+    if (!st.externalLibraryProgress.vocabulary || typeof st.externalLibraryProgress.vocabulary !== "object") {
+      st.externalLibraryProgress.vocabulary = { completedTopics: [], scoresByTopic: {} };
+    }
+
+    // SAFE DATA MIGRATION: Separate AI PDF HSK 3.0 IDs (hsk3_*, L\d+_*) from External Library IDs
+    const isPdfExerciseId = (id) => /^(hsk3_|L\d+_)/i.test(String(id || ""));
+    [
+      ["readingCompleted", "reading"],
+      ["listeningCompleted", "listening"],
+      ["grammarCompleted", "grammar"]
+    ].forEach(([arrKey, sk]) => {
+      const cleanExternal = [];
+      (st[arrKey] || []).forEach((id) => {
+        if (isPdfExerciseId(id)) {
+          if (!st.lessonProgress[id]) {
+            st.lessonProgress[id] = {
+              status: "completed",
+              bestScore: 100,
+              lastScore: 100,
+              attempts: 1,
+              contentSource: "AI_PDF_HSK3",
+              updatedAt: new Date().toISOString(),
+              history: []
+            };
+          }
+        } else if (id) {
+          if (!cleanExternal.includes(id)) cleanExternal.push(id);
+          if (!st.externalLibraryProgress[sk].completedIds.includes(id)) {
+            st.externalLibraryProgress[sk].completedIds.push(id);
+          }
+        }
+      });
+      st[arrKey] = cleanExternal;
+    });
+
     st.aiHistory = Array.isArray(st.aiHistory) ? st.aiHistory : [];
     st.writingSubmissions = Array.isArray(st.writingSubmissions) ? st.writingSubmissions : [];
     st.skillScores = Object.assign({}, def.skillScores, st.skillScores || {});
@@ -871,12 +948,20 @@ window.QCore = (function () {
 
   function recordLessonExercise(exId, score, wrongFocuses = []) {
     if (!appState || !exId) return;
-    const prev = appState.lessonProgress[exId] || { status: "not_started", bestScore: 0, lastScore: 0, attempts: 0, history: [] };
+    const prev = appState.lessonProgress[exId] || {
+      status: "not_started",
+      bestScore: 0,
+      lastScore: 0,
+      attempts: 0,
+      contentSource: "AI_PDF_HSK3",
+      history: []
+    };
     const s = Math.max(0, Math.min(100, Math.round(Number(score || 0))));
     prev.attempts += 1;
     prev.lastScore = s;
     prev.bestScore = Math.max(prev.bestScore || 0, s);
     prev.status = s >= 60 ? "completed" : "in_progress";
+    prev.contentSource = "AI_PDF_HSK3";
     prev.updatedAt = new Date().toISOString();
     prev.history = Array.isArray(prev.history) ? prev.history : [];
     prev.history.unshift({ date: prev.updatedAt, score: s, wrongFocuses });
@@ -884,6 +969,41 @@ window.QCore = (function () {
     appState.lessonProgress[exId] = prev;
     saveState(true);
     return prev;
+  }
+
+  function recordExternalExercise(skill, exId, score, meta = {}) {
+    if (!appState || !skill || !exId) return;
+    if (!appState.externalLibraryProgress || !appState.externalLibraryProgress[skill]) return;
+    const box = appState.externalLibraryProgress[skill];
+    const s = Math.max(0, Math.min(100, Math.round(Number(score || 0))));
+    box.scoresById = box.scoresById || {};
+    box.attemptsById = box.attemptsById || {};
+    box.completedIds = Array.isArray(box.completedIds) ? box.completedIds : [];
+
+    box.scoresById[exId] = Math.max(Number(box.scoresById[exId] || 0), s);
+    box.attemptsById[exId] = (Number(box.attemptsById[exId] || 0)) + 1;
+    if (s >= 60 && !box.completedIds.includes(exId)) {
+      box.completedIds.push(exId);
+    }
+
+    if (skill === "reading" && s >= 60 && !appState.readingCompleted.includes(exId)) {
+      appState.readingCompleted.push(exId);
+    } else if (skill === "listening" && s >= 60 && !appState.listeningCompleted.includes(exId)) {
+      appState.listeningCompleted.push(exId);
+    } else if (skill === "grammar" && s >= 60 && !appState.grammarCompleted.includes(exId)) {
+      appState.grammarCompleted.push(exId);
+    }
+
+    updateSkillScore(skill, s);
+    saveState(true);
+    return {
+      id: exId,
+      skill,
+      contentSource: "EXTERNAL_LIBRARY",
+      bestScore: box.scoresById[exId],
+      attempts: box.attemptsById[exId],
+      meta
+    };
   }
 
   function recordHanziPractice(hanzi, accuracyScore) {
@@ -1213,6 +1333,7 @@ window.QCore = (function () {
     deleteMaterial,
     recordMaterialPractice,
     recordLessonExercise,
+    recordExternalExercise,
     logAiHistory,
     recordHanziPractice,
     addToNotebook,

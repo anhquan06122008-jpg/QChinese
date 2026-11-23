@@ -389,10 +389,6 @@ window.QLessonStudio = (function () {
       lastWrongFocuses = missed;
       QCore.recordLessonExercise(ex.id, score, missed);
       QCore.updateSkillScore("reading", score);
-      if (score >= 60 && !QCore.getState().readingCompleted.includes(ex.id)) {
-        QCore.getState().readingCompleted.push(ex.id);
-        QCore.saveState(true);
-      }
 
       const sumBox = stage.querySelector("#lrd-summary");
       sumBox.innerHTML = `
@@ -412,31 +408,196 @@ window.QLessonStudio = (function () {
     };
   }
 
-  /* ---------- LISTENING WITH REAL NEW HSK 1 (3.0) MP3 TRACKS ---------- */
+  /* ---------- LISTENING INSIDE AI PDF HSK 3.0 (QEnglish-style Full Audio Player + Collapsible Synced Transcript) ---------- */
+  let lisPlaybackRate = 1.0;
+  let lisTranscriptOpen = false;
+  let lisActiveLineIdx = -1;
+
+  function fmtTime(sec) {
+    const s = Math.max(0, Math.floor(Number(sec) || 0));
+    const m = Math.floor(s / 60);
+    const rem = s % 60;
+    return `${String(m).padStart(2, "0")}:${String(rem).padStart(2, "0")}`;
+  }
+
+  function buildTranscriptLinesForEx(lesson, ex) {
+    if (Array.isArray(ex.transcriptLines) && ex.transcriptLines.length > 0) {
+      return ex.transcriptLines;
+    }
+    const rd0 = (lesson.skills && lesson.skills.reading && lesson.skills.reading[0]) || null;
+    const rawZh = String(ex.audioText || (rd0 && rd0.chinese) || "").trim();
+    const rawPy = String((rd0 && rd0.pinyin) || "").trim();
+    const rawVi = String((rd0 && rd0.vietnamese) || "").trim();
+    const rawEn = String((rd0 && rd0.english) || "").trim();
+    if (!rawZh) return [];
+    const zLines = rawZh.split("\n").map((x) => x.trim()).filter(Boolean);
+    const pLines = rawPy.split("\n").map((x) => x.trim()).filter(Boolean);
+    const vLines = rawVi.split("\n").map((x) => x.trim()).filter(Boolean);
+    const eLines = rawEn.split("\n").map((x) => x.trim()).filter(Boolean);
+    const spk = ["明安", "兰英", "王老师", "同学"];
+    return zLines.map((zl, idx) => ({
+      speaker: zLines.length > 1 ? spk[idx % 2] : "课文",
+      chinese: zl,
+      pinyin: pLines[idx] || "",
+      vietnamese: vLines[idx] || "",
+      english: eLines[idx] || ""
+    }));
+  }
+
+  function resolveMp3Src(ex) {
+    if (ex.audioFile) {
+      const isFileProto = typeof window !== "undefined" && window.location && window.location.protocol === "file:";
+      if (isFileProto) return `public/audio/hsk1/${ex.audioFile}`;
+    }
+    if (ex.audioUrl) return QCore.resolveApiUrl(ex.audioUrl);
+    if (ex.staticAudioUrl) return ex.staticAudioUrl;
+    return "";
+  }
+
   function renderListeningEx(stage, lesson, ex, parentContainer) {
     const vi = isViMode();
     if (!ex) { stage.innerHTML = `<div class="card">${vi ? "Chưa có bài nghe." : "No listening exercise yet."}</div>`; return; }
     const hintText = (!vi && ex.targetHint_en) ? ex.targetHint_en : (ex.targetHint || "");
+    const tLines = buildTranscriptLinesForEx(lesson, ex);
+    const mp3Src = resolveMp3Src(ex);
+    const trackName = ex.audioFile || (ex.audioUrl ? ex.audioUrl.split("file=")[1] : "") || "HSK 3.0 Audio";
+    const isAiTrans = ex.transcriptSource === "ai_generated";
+
     stage.innerHTML = `
-      <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+      <div class="card" style="padding:20px;">
+        <!-- Header matching QEnglish Screenshot 5 -->
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
           <div>
-            ${sourceTagBadge(ex.sourceTag)}
-            <h3 style="margin:6px 0 0;">🎧 ${QCore.escapeHtml(ex.title)}</h3>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px;">
+              ${sourceTagBadge(ex.sourceTag)}
+              <span class="badge badge-blue">📖 ${vi ? `Nguồn PDF (Tr.${lesson.sourcePage || 1})` : `PDF Source (P.${lesson.sourcePage || 1})`}</span>
+            </div>
+            <h3 style="margin:4px 0 0;font-size:18.5px;">🎧 [Listening – HSK ${activeCourse ? activeCourse.hskLevel : 1} – Lesson ${lesson.lessonNum}] ${QCore.escapeHtml(vi && ex.title_vi ? ex.title_vi : ex.title)}</h3>
           </div>
           <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-            <button class="btn btn-outline btn-sm" id="llis-q-lang">${vi ? "🌐 ZH–EN" : "🇻🇳 Trung–Việt"}</button>
-            ${[0.75, 1.0, 1.25].map((s) => `<button class="btn btn-outline btn-sm" data-lspd="${s}">x${s}</button>`).join("")}
+            <button class="btn btn-outline btn-sm" id="llis-q-lang">${vi ? "🌐 Switch to ZH–EN" : "🇻🇳 Đổi sang Trung–Việt"}</button>
           </div>
         </div>
 
-        ${ex.audioUrl ? `
-          <audio id="ls-mp3-player" controls src="${QCore.escapeHtml(QCore.resolveApiUrl(ex.audioUrl))}" style="width:100%;margin-bottom:12px;"></audio>
-        ` : `
-          <div style="margin-bottom:12px;">
-            <button class="btn btn-primary" id="ls-tts-play">🔊 ${vi ? "Nghe bài đọc (Putonghua TTS)" : "Play Passage (Putonghua TTS)"}</button>
+        <!-- QEnglish-style Rich Audio Player Box -->
+        <div style="padding:16px 18px;border-radius:16px;background:rgba(16,185,129,0.08);border:1.5px solid rgba(16,185,129,0.35);margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;font-size:13px;">
+            <span style="font-weight:800;color:var(--primary);">
+              🎧 ${mp3Src ? `Audio bản xứ gốc: <code style="color:var(--text-main);font-weight:700;">${QCore.escapeHtml(trackName)}</code>` : "Audio bài học (Putonghua TTS)"}
+            </span>
+            <span id="ls-audio-status" style="font-size:12px;font-weight:700;color:#10b981;">
+              ✅ Audio Ready · Sẵn sàng phát giọng bản xứ
+            </span>
           </div>
-        `}
+
+          ${mp3Src ? `
+            <audio id="ls-mp3-player" preload="metadata" src="${QCore.escapeHtml(mp3Src)}" style="display:none;"></audio>
+          ` : ""}
+
+          <!-- Custom Interactive Control Bar (Play/Pause, Time, Draggable Seek Slider, Volume) -->
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 14px;border-radius:999px;background:var(--bg-surface);border:1px solid var(--border-color);margin-bottom:12px;">
+            <button type="button" class="btn btn-primary btn-sm" id="ls-play-pause" style="border-radius:999px;min-width:42px;height:36px;padding:0 12px;font-size:14px;">
+              ▶
+            </button>
+
+            <div style="font-family:monospace;font-size:13.5px;font-weight:700;color:var(--text-main);min-width:95px;text-align:center;">
+              <span id="ls-time-curr">00:00</span> / <span id="ls-time-dur">01:28</span>
+            </div>
+
+            <input
+              type="range"
+              id="ls-seek-slider"
+              min="0"
+              max="100"
+              step="0.1"
+              value="0"
+              aria-label="Thanh tiến trình âm thanh"
+              style="flex:1;min-width:140px;accent-color:var(--primary);cursor:pointer;height:6px;"
+            />
+
+            <div style="display:flex;align-items:center;gap:6px;">
+              <button type="button" class="btn btn-outline btn-sm" id="ls-mute-btn" style="padding:4px 8px;border:none;font-size:15px;" title="Bật/Tắt tiếng">🔊</button>
+              <input
+                type="range"
+                id="ls-vol-slider"
+                min="0"
+                max="1"
+                step="0.05"
+                value="1"
+                aria-label="Điều chỉnh âm lượng"
+                style="width:72px;accent-color:var(--primary);cursor:pointer;height:5px;"
+              />
+            </div>
+          </div>
+
+          <!-- Rewind -5s & 5 Speed Controls (0.75x, 1.0x, 1.25x, 1.5x, 2.0x) -->
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+              <button type="button" class="btn btn-outline btn-sm" id="ls-rewind-5" style="font-weight:700;">
+                ⏪ -5s (-5 giây)
+              </button>
+              ${[0.75, 1.0, 1.25, 1.5, 2.0].map((spd) => `
+                <button
+                  type="button"
+                  class="btn ${lisPlaybackRate === spd ? "btn-primary" : "btn-outline"} btn-sm"
+                  data-lspd="${spd}"
+                  style="font-weight:700;min-width:54px;"
+                >${spd}x</button>
+              `).join("")}
+            </div>
+            <span style="font-size:12px;color:var(--text-muted);">
+              Tốc độ hiện tại: <strong id="ls-rate-label" style="color:var(--primary);">${lisPlaybackRate}x</strong>
+            </span>
+          </div>
+        </div>
+
+        <!-- Collapsible Transcript / Phụ đề Box right below the Audio Player -->
+        <div style="margin-bottom:16px;border-radius:14px;border:1px solid var(--border-color);background:var(--bg-subtle);overflow:hidden;">
+          <div style="padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <button type="button" class="btn ${lisTranscriptOpen ? "btn-primary" : "btn-outline"} btn-sm" id="ls-toggle-transcript" style="font-weight:700;">
+                📜 ${lisTranscriptOpen ? "ẨN PHỤ ĐỀ" : "HIỂN THỊ PHỤ ĐỀ"}
+              </button>
+              <span style="font-size:12.5px;color:var(--text-secondary);font-weight:600;">
+                ${QCore.escapeHtml(ex.transcriptLabel || "Xem / Ẩn Transcript gốc từ bài học PDF")}
+              </span>
+            </div>
+            <span class="badge ${isAiTrans ? "badge-amber" : "badge-jade"}" style="font-size:11.5px;">
+              ${isAiTrans ? "🤖 Transcript AI tạo từ bài học (cho phép kiểm tra lại)" : "📄 Transcript từ giáo trình HSK 3.0"}
+            </span>
+          </div>
+
+          <div id="ls-transcript-body" style="display:${lisTranscriptOpen ? "block" : "none"};padding:14px;border-top:1px solid var(--border-color);max-height:300px;overflow-y:auto;background:var(--bg-surface);">
+            ${tLines.length > 0 ? `
+              <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">
+                💡 Bấm vào từng câu bên dưới để phát âm thanh từ vị trí tương ứng. Khi audio chạy, câu đang phát sẽ tự động làm nổi bật:
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px;" id="ls-transcript-list">
+                ${tLines.map((ln, lIdx) => `
+                  <div
+                    class="card-subtle ls-ts-row"
+                    data-ts-idx="${lIdx}"
+                    style="padding:10px 12px;cursor:pointer;transition:all .18s ease;border-left:4px solid ${lisActiveLineIdx === lIdx ? "var(--primary)" : "transparent"};background:${lisActiveLineIdx === lIdx ? "rgba(16,185,129,0.12)" : "var(--bg-subtle)"};"
+                  >
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">
+                      <div style="flex:1;min-width:200px;">
+                        <span style="font-weight:800;color:var(--primary);font-size:13.5px;margin-right:6px;">${QCore.escapeHtml(ln.speaker || `Câu ${lIdx + 1}`)}:</span>
+                        <span class="hanzi-text" style="font-size:18px;font-weight:700;">${QCore.escapeHtml(ln.chinese)}</span>
+                        ${ln.pinyin ? `<div class="pinyin-text" style="font-size:13.5px;color:var(--primary);margin-top:3px;">${QCore.escapeHtml(ln.pinyin)}</div>` : ""}
+                      </div>
+                      <div style="font-size:13px;color:var(--text-secondary);text-align:right;">
+                        ${ln.english ? `<div>🇬🇧 ${QCore.escapeHtml(ln.english)}</div>` : ""}
+                        ${ln.vietnamese ? `<div>🇻🇳 ${QCore.escapeHtml(ln.vietnamese)}</div>` : ""}
+                      </div>
+                    </div>
+                  </div>
+                `).join("")}
+              </div>
+            ` : `
+              <div style="font-size:13.5px;color:var(--text-muted);">Chưa có dữ liệu phụ đề cho bài nghe này.</div>
+            `}
+          </div>
+        </div>
 
         <div class="card-subtle" style="margin-bottom:14px;font-size:13.5px;">💡 ${QCore.escapeHtml(hintText)}</div>
 
@@ -473,16 +634,173 @@ window.QLessonStudio = (function () {
       if (window.QApp && typeof QApp.refreshCurrentView === "function") QApp.refreshCurrentView();
     };
 
+    // Toggle Transcript Button
+    const togTransBtn = stage.querySelector("#ls-toggle-transcript");
+    const transBody = stage.querySelector("#ls-transcript-body");
+    if (togTransBtn && transBody) {
+      togTransBtn.onclick = () => {
+        lisTranscriptOpen = !lisTranscriptOpen;
+        transBody.style.display = lisTranscriptOpen ? "block" : "none";
+        togTransBtn.textContent = `📜 ${lisTranscriptOpen ? "ẨN PHỤ ĐỀ" : "HIỂN THỊ PHỤ ĐỀ"}`;
+        togTransBtn.className = `btn ${lisTranscriptOpen ? "btn-primary" : "btn-outline"} btn-sm`;
+      };
+    }
+
     const player = stage.querySelector("#ls-mp3-player");
+    const playPauseBtn = stage.querySelector("#ls-play-pause");
+    const currTimeEl = stage.querySelector("#ls-time-curr");
+    const durTimeEl = stage.querySelector("#ls-time-dur");
+    const seekSlider = stage.querySelector("#ls-seek-slider");
+    const volSlider = stage.querySelector("#ls-vol-slider");
+    const muteBtn = stage.querySelector("#ls-mute-btn");
+    const rewindBtn = stage.querySelector("#ls-rewind-5");
+    const statusEl = stage.querySelector("#ls-audio-status");
+
+    function highlightTranscriptRow(activeIdx) {
+      if (activeIdx === lisActiveLineIdx) return;
+      lisActiveLineIdx = activeIdx;
+      const rows = stage.querySelectorAll(".ls-ts-row");
+      rows.forEach((r, idx) => {
+        const isAct = idx === activeIdx;
+        r.style.borderLeftColor = isAct ? "var(--primary)" : "transparent";
+        r.style.background = isAct ? "rgba(16,185,129,0.14)" : "var(--bg-subtle)";
+        if (isAct && lisTranscriptOpen) {
+          r.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+      });
+    }
+
+    if (player) {
+      player.playbackRate = lisPlaybackRate;
+
+      // Fallback to static path if API route fails (e.g. offline or static server)
+      player.addEventListener("error", () => {
+        if (ex.audioFile && !player.getAttribute("data-retried-static")) {
+          player.setAttribute("data-retried-static", "1");
+          player.src = `audio/hsk1/${ex.audioFile}`;
+          player.load();
+        } else if (ex.audioFile && player.getAttribute("data-retried-static") === "1") {
+          player.setAttribute("data-retried-static", "2");
+          player.src = `public/audio/hsk1/${ex.audioFile}`;
+          player.load();
+        }
+      });
+
+      player.addEventListener("loadedmetadata", () => {
+        if (player.duration && isFinite(player.duration)) {
+          durTimeEl.textContent = fmtTime(player.duration);
+          seekSlider.max = String(player.duration);
+        }
+      });
+
+      player.addEventListener("timeupdate", () => {
+        currTimeEl.textContent = fmtTime(player.currentTime);
+        if (player.duration && isFinite(player.duration)) {
+          durTimeEl.textContent = fmtTime(player.duration);
+          seekSlider.max = String(player.duration);
+          seekSlider.value = String(player.currentTime);
+          if (tLines.length > 0) {
+            const ratio = player.currentTime / Math.max(1, player.duration);
+            const idx = Math.min(tLines.length - 1, Math.floor(ratio * tLines.length));
+            highlightTranscriptRow(idx);
+          }
+        }
+      });
+
+      player.addEventListener("play", () => {
+        playPauseBtn.textContent = "⏸";
+        if (statusEl) statusEl.textContent = `🔊 Đang phát (${player.playbackRate}x)`;
+      });
+
+      player.addEventListener("pause", () => {
+        playPauseBtn.textContent = "▶";
+        if (statusEl) statusEl.textContent = "⏸ Đã tạm dừng";
+      });
+
+      player.addEventListener("ended", () => {
+        playPauseBtn.textContent = "▶";
+        highlightTranscriptRow(-1);
+        if (statusEl) statusEl.textContent = "✅ Đã phát xong";
+      });
+
+      playPauseBtn.onclick = () => {
+        if (player.paused) {
+          player.playbackRate = lisPlaybackRate;
+          player.play().catch(() => {
+            QCore.speakChinese(tLines.map((x) => x.chinese).join("。"), { rate: lisPlaybackRate });
+          });
+        } else {
+          player.pause();
+        }
+      };
+
+      seekSlider.addEventListener("input", () => {
+        const targetSec = Number(seekSlider.value);
+        currTimeEl.textContent = fmtTime(targetSec);
+        if (player.duration && isFinite(player.duration)) {
+          player.currentTime = targetSec;
+        }
+      });
+
+      rewindBtn.onclick = () => {
+        player.currentTime = Math.max(0, (player.currentTime || 0) - 5);
+        currTimeEl.textContent = fmtTime(player.currentTime);
+      };
+
+      volSlider.addEventListener("input", () => {
+        player.volume = Number(volSlider.value);
+        player.muted = player.volume === 0;
+        muteBtn.textContent = player.muted ? "🔇" : "🔊";
+      });
+
+      muteBtn.onclick = () => {
+        player.muted = !player.muted;
+        muteBtn.textContent = player.muted ? "🔇" : "🔊";
+      };
+    } else {
+      // TTS fallback mode when no MP3 file is linked
+      durTimeEl.textContent = fmtTime(Math.max(15, tLines.length * 4));
+      playPauseBtn.onclick = () => {
+        const text = ex.audioText || tLines.map((x) => x.chinese).join("。");
+        QCore.speakChinese(text, { rate: lisPlaybackRate });
+      };
+      rewindBtn.onclick = () => {
+        const text = ex.audioText || tLines.map((x) => x.chinese).join("。");
+        QCore.speakChinese(text, { rate: lisPlaybackRate });
+      };
+    }
+
+    // Speed buttons (0.75x, 1.0x, 1.25x, 1.5x, 2.0x)
     stage.querySelectorAll("[data-lspd]").forEach((b) => {
       b.onclick = () => {
         const rate = Number(b.getAttribute("data-lspd"));
+        lisPlaybackRate = rate;
         if (player) player.playbackRate = rate;
-        else if (ex.audioText) QCore.speakChinese(ex.audioText, { rate });
+        const rateLbl = stage.querySelector("#ls-rate-label");
+        if (rateLbl) rateLbl.textContent = `${rate}x`;
+        stage.querySelectorAll("[data-lspd]").forEach((btn) => {
+          const r = Number(btn.getAttribute("data-lspd"));
+          btn.className = `btn ${r === rate ? "btn-primary" : "btn-outline"} btn-sm`;
+        });
       };
     });
-    const ttsBtn = stage.querySelector("#ls-tts-play");
-    if (ttsBtn) ttsBtn.onclick = () => QCore.speakChinese(ex.audioText || ex.chinese || "");
+
+    // Clicking a transcript sentence jumps audio to that sentence's timestamp (or speaks it)
+    stage.querySelectorAll("[data-ts-idx]").forEach((row) => {
+      row.onclick = () => {
+        const idx = Number(row.getAttribute("data-ts-idx"));
+        highlightTranscriptRow(idx);
+        if (player && player.duration && isFinite(player.duration) && tLines.length > 0) {
+          player.currentTime = (idx / tLines.length) * player.duration;
+          player.playbackRate = lisPlaybackRate;
+          player.play().catch(() => {
+            if (tLines[idx]) QCore.speakChinese(tLines[idx].chinese, { rate: lisPlaybackRate });
+          });
+        } else if (tLines[idx]) {
+          QCore.speakChinese(tLines[idx].chinese, { rate: lisPlaybackRate });
+        }
+      };
+    });
 
     stage.querySelector("#llis-submit").onclick = () => {
       const qs = ex.questions || [];

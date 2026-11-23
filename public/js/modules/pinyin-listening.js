@@ -816,12 +816,21 @@ window.QPinyinListening = (function () {
   let showMatTranscript = false;
   let loopA = null;
   let loopB = null;
+  let lisViewMode = "library"; // "library" | "session"
+  let lisLevelFilter = "all";
+  let lisCatFilter = "all";
 
   function renderListening(container, params = {}) {
     if (params && params.materialId) {
       activeMaterialId = params.materialId;
     } else if (params && params.materialId === null) {
       activeMaterialId = null;
+    }
+    if (params && params.lessonId) {
+      activeLessonId = params.lessonId;
+      lisViewMode = "session";
+    } else if (params && params.view === "library") {
+      lisViewMode = "library";
     }
 
     const st = QCore.getState();
@@ -832,22 +841,111 @@ window.QPinyinListening = (function () {
     }
 
     const lessons = window.QCHINESE_LISTENING || [];
+    const extProg = (st.externalLibraryProgress && st.externalLibraryProgress.listening) || { completedIds: [], scoresById: {} };
+    const audioMaterials = (st.materials || []).filter((m) => m.category === "listening" || m.mediaUrl);
+
+    if (lisViewMode === "library") {
+      const categories = Array.from(new Set(lessons.map((l) => l.category).filter(Boolean)));
+      const filtered = lessons.filter((l) => {
+        if (lisLevelFilter !== "all" && String(l.hsk_level) !== String(lisLevelFilter)) return false;
+        if (lisCatFilter !== "all" && l.category !== lisCatFilter) return false;
+        return true;
+      });
+
+      container.innerHTML = `
+        <div class="page-header">
+          <div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px;">
+              <span class="badge badge-jade">🎧 External Listening Library</span>
+              <span class="badge badge-blue">Độc lập hoàn toàn với AI PDF HSK 3.0</span>
+            </div>
+            <h2 style="margin:0;">🎧 Listening — Thư Viện Luyện Nghe Mở Rộng (HSK 1 – HSK 6)</h2>
+            <p style="margin:4px 0 0;">Hội thoại đời sống, hội thoại học tập, nghe thông báo, nghe phỏng vấn và tình huống thực tế với 4 chế độ bài tập tương tác.</p>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-soft btn-sm" id="lis-open-materials">📁 Mở file nghe cá nhân (${audioMaterials.length})</button>
+          </div>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="card" style="padding:14px 16px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <select class="select-field" id="lis-filter-level" style="width:auto;min-width:170px;">
+              <option value="all" ${lisLevelFilter === "all" ? "selected" : ""}>Tất cả cấp độ (HSK 1–6)</option>
+              ${[1, 2, 3, 4, 5, 6].map((lv) => `<option value="${lv}" ${String(lisLevelFilter) === String(lv) ? "selected" : ""}>HSK ${lv}</option>`).join("")}
+            </select>
+            <select class="select-field" id="lis-filter-cat" style="width:auto;min-width:200px;">
+              <option value="all" ${lisCatFilter === "all" ? "selected" : ""}>Tất cả chủ đề (${lessons.length} bài)</option>
+              ${categories.map((cat) => `<option value="${QCore.escapeHtml(cat)}" ${lisCatFilter === cat ? "selected" : ""}>${QCore.escapeHtml(cat)}</option>`).join("")}
+            </select>
+          </div>
+          <div style="font-size:13px;font-weight:700;color:var(--primary);">
+            ✅ Đã hoàn thành: ${(st.listeningCompleted || []).length} / ${lessons.length} bài nghe
+          </div>
+        </div>
+
+        <!-- QEnglish-style Listening Lesson Cards Grid -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:16px;">
+          ${filtered.map((l) => {
+            const isDone = st.listeningCompleted.includes(l.id) || (extProg.completedIds || []).includes(l.id);
+            const bestScore = (extProg.scoresById && extProg.scoresById[l.id]) || (isDone ? 95 : null);
+            const srcName = (l.sourceAttribution && l.sourceAttribution.name) || "Thư viện mở rộng";
+            return `
+              <div class="card" data-open-lis-card="${QCore.escapeHtml(l.id)}" style="padding:20px;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;gap:14px;border-color:${isDone ? "var(--primary)" : "var(--border-color)"};transition:transform .15s ease;">
+                <div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+                    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+                      <span class="badge badge-jade">HSK ${l.hsk_level}</span>
+                      <span class="badge badge-amber">${QCore.escapeHtml(l.category)}</span>
+                    </div>
+                    ${isDone
+                      ? `<span style="font-size:12px;font-weight:700;color:var(--primary);">✅ Đã học (${bestScore}%)</span>`
+                      : `<span style="font-size:12px;color:var(--text-muted);">${(l.lines || []).length} câu thoại</span>`}
+                  </div>
+                  <h3 style="margin:0 0 8px;font-size:17px;line-height:1.4;">${QCore.escapeHtml(l.title)}</h3>
+                  <p style="margin:0;font-size:13px;color:var(--text-secondary);line-height:1.55;">${QCore.escapeHtml(l.summary || "")}</p>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px solid var(--border-color);font-size:12.5px;">
+                  <span style="color:var(--text-muted);">4 bài tập • 📦 ${QCore.escapeHtml(srcName)}</span>
+                  <strong style="color:var(--primary);">Mở bài nghe →</strong>
+                </div>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      `;
+
+      container.querySelector("#lis-open-materials").onclick = () => window.QApp.navigate("materials", { category: "listening" });
+      container.querySelector("#lis-filter-level").onchange = (e) => { lisLevelFilter = e.target.value; renderListening(container); };
+      container.querySelector("#lis-filter-cat").onchange = (e) => { lisCatFilter = e.target.value; renderListening(container); };
+      container.querySelectorAll("[data-open-lis-card]").forEach((card) => {
+        card.onclick = () => {
+          activeLessonId = card.getAttribute("data-open-lis-card");
+          reorderAttempt = [];
+          unlockedAnalysis = false;
+          lisViewMode = "session";
+          renderListening(container);
+        };
+      });
+      return;
+    }
+
     const lesson = lessons.find((l) => l.id === activeLessonId) || lessons[0];
     const isCompleted = st.listeningCompleted.includes(lesson.id);
-    const audioMaterials = (st.materials || []).filter((m) => m.category === "listening" || m.mediaUrl);
 
     container.innerHTML = `
       <div class="page-header">
         <div>
-          <h2>🎧 Luyện Nghe Tiếng Trung Chuẩn Phổ Thông</h2>
-          <p>Luyện nghe từ hội thoại chuẩn HSK hoặc mở trực tiếp file nghe MP3/WAV/Video từ Kho tài liệu cá nhân của bạn.</p>
+          <button class="btn btn-outline btn-sm" id="lis-back-library" style="margin-bottom:8px;">← Quay lại Thư viện Luyện nghe (${lessons.length} bài)</button>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px;">
+            <span class="badge badge-jade">HSK ${lesson.hsk_level}</span>
+            <span class="badge badge-amber">${QCore.escapeHtml(lesson.category)}</span>
+            <span class="badge badge-blue">📦 Nguồn: ${QCore.escapeHtml((lesson.sourceAttribution && lesson.sourceAttribution.name) || "QChinese External Library")} (${QCore.escapeHtml((lesson.sourceAttribution && lesson.sourceAttribution.license) || "CC BY-SA 4.0")})</span>
+          </div>
+          <h2 style="margin:0;">🎧 ${QCore.escapeHtml(lesson.title)}</h2>
+          <p style="margin:4px 0 0;">${QCore.escapeHtml(lesson.summary || "")}</p>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          ${lessons.map((l) => `
-            <button class="btn ${l.id === lesson.id ? "btn-primary" : "btn-outline"} btn-sm" data-lis-id="${l.id}">
-              ${st.listeningCompleted.includes(l.id) ? "✓ " : ""}HSK ${l.hsk_level}: ${QCore.escapeHtml(l.title.split(":")[0])}
-            </button>
-          `).join("")}
           <button class="btn btn-soft btn-sm" id="lis-open-materials">📁 Mở file nghe cá nhân (${audioMaterials.length})</button>
         </div>
       </div>
@@ -962,14 +1060,13 @@ window.QPinyinListening = (function () {
 
     if (window.QPinyinIME) QPinyinIME.attachAll(container);
     container.querySelector("#lis-open-materials").onclick = () => window.QApp.navigate("materials", { category: "listening" });
-    container.querySelectorAll("[data-lis-id]").forEach((b) => {
-      b.onclick = () => {
-        activeLessonId = b.getAttribute("data-lis-id");
-        reorderAttempt = [];
-        unlockedAnalysis = false;
+    const backBtn = container.querySelector("#lis-back-library");
+    if (backBtn) {
+      backBtn.onclick = () => {
+        lisViewMode = "library";
         renderListening(container);
       };
-    });
+    }
     container.querySelector("#lis-tog-py").onclick = () => { showPinyin = !showPinyin; renderListening(container); };
     container.querySelector("#lis-tog-hz").onclick = () => { showHanzi = !showHanzi; renderListening(container); };
     container.querySelector("#lis-tog-tr").onclick = () => { showTranslation = !showTranslation; renderListening(container); };
@@ -997,7 +1094,7 @@ window.QPinyinListening = (function () {
     container.querySelectorAll("[data-lis-mcq]").forEach((b) => {
       b.onclick = () => {
         const ok = b.getAttribute("data-lis-mcq") === lesson.exercises.mcq.answer;
-        QCore.updateSkillScore("listening", ok ? 90 : 55);
+        QCore.recordExternalExercise("listening", lesson.id, ok ? 90 : 55, { step: "mcq" });
         container.querySelector("#lis-mcq-fb").innerHTML = ok
           ? `<span style="color:var(--primary);font-weight:700;">✅ Chính xác!</span>`
           : `<span style="color:var(--accent-red);">❌ Chưa đúng. Đáp án là: ${QCore.escapeHtml(lesson.exercises.mcq.answer)}</span>`;
@@ -1007,7 +1104,7 @@ window.QPinyinListening = (function () {
     container.querySelector("#lis-fb-check").onclick = () => {
       const val = container.querySelector("#lis-fb-inp").value.trim();
       const ok = val === lesson.exercises.fillBlank.answer;
-      QCore.updateSkillScore("listening", ok ? 92 : 60);
+      QCore.recordExternalExercise("listening", lesson.id, ok ? 92 : 60, { step: "fillBlank" });
       container.querySelector("#lis-fb-res").innerHTML = ok
         ? `<span style="color:var(--primary);font-weight:700;">✅ Tuyệt vời!</span>`
         : `<span style="color:var(--accent-amber);">Đáp án chuẩn là: <strong>${QCore.escapeHtml(lesson.exercises.fillBlank.answer)}</strong></span>`;
@@ -1017,7 +1114,7 @@ window.QPinyinListening = (function () {
       const val = container.querySelector("#lis-dic-inp").value.trim().replace(/[。！？.!?]/g, "");
       const exp = lesson.exercises.dictation.answer.replace(/[。！？.!?]/g, "");
       const ok = val === exp;
-      QCore.updateSkillScore("listening", ok ? 95 : 65);
+      QCore.recordExternalExercise("listening", lesson.id, ok ? 95 : 65, { step: "dictation" });
       container.querySelector("#lis-dic-res").innerHTML = ok
         ? `<span style="color:var(--primary);font-weight:700;">✅ Chính xác tuyệt đối!</span>`
         : `<span style="color:var(--accent-amber);">Câu chuẩn: <strong>${QCore.escapeHtml(lesson.exercises.dictation.answer)}</strong></span>`;
@@ -1036,9 +1133,8 @@ window.QPinyinListening = (function () {
         }
         unlockedAnalysis = true;
         showTranslation = true;
-        QCore.updateSkillScore("listening", 95);
-        QCore.saveState(true);
-        QCore.showToast("🎉 Hoàn thành bài Luyện nghe!");
+        QCore.recordExternalExercise("listening", lesson.id, 98, { step: "completed" });
+        QCore.showToast("🎉 Hoàn thành bài Luyện nghe mở rộng!");
         renderListening(container);
       } else {
         container.querySelector("#lis-ord-res").innerHTML = `<span style="color:var(--accent-red);">Câu chuẩn là: <strong>${QCore.escapeHtml(lesson.exercises.reorder.answer)}</strong></span>`;

@@ -1,16 +1,22 @@
-# BÁO CÁO HẠNG MỤC 7: HỌC HỎI & ĐỒNG BỘ CHỨC NĂNG TỪ QENGLISH VÀ TKB
+# BÁO CÁO HẠNG MỤC 7 – ĐỒNG BỘ HỆ SINH THÁI QCHINESE · QENGLISH · TKB
 
-**Trạng thái:** `BLOCKED` *(Chờ người dùng cung cấp đường dẫn / repository chính xác của QEnglish và TKB theo đúng nguyên tắc không tự suy đoán mã nguồn chưa được cấp quyền)*  
-**Ngày báo cáo:** 2026-11-23
+- **Dự án:** QChinese (`c:\Users\anhqu\Downloads\QChinese`)
+- **Tham chiếu CHỈ ĐỌC (không sửa bất kỳ tệp nào):** `c:\Users\anhqu\Downloads\QEnglish` và `c:\Users\anhqu\Downloads\TKB`
+- **Trạng thái:** `PASSED` (đã triển khai kiến trúc đồng bộ đám mây thống nhất theo chuẩn QEnglish & TKB; 0 thay đổi lên QEnglish/TKB)
 
-1. **Đã thực hiện:**
-   - Tuân thủ nguyên tắc không tự suy đoán cấu trúc của dự án chưa được cung cấp.
-   - Đã chuẩn hóa sẵn các module lõi của QChinese theo kiến trúc tách ngôn ngữ để dễ dàng tái sử dụng/đồng bộ khi có mã nguồn QEnglish & TKB:
-     - `public/js/core.js`: Auth đa thiết bị, SM-2 SRS, SSE Real-time Sync, Offline Queue.
-     - `backend/ops_backup.py`: Giám sát server 24/7, Hot SQLite Backup/Restore.
-     - `backend/pdf_engine.py` & `public/js/modules/lesson-studio.js`: Pipeline giáo trình PDF → Lesson 6 kỹ năng → AI tạo bài tập thích ứng.
-     - `backend/ai_tournament.py`: Hệ thống Orchestration 100 AI thi đấu & kế thừa chọn lọc.
-2. **Thông tin cần người dùng cung cấp để mở khóa Hạng mục 7:**
-   - Đường dẫn thư mục local hoặc URL repository GitHub của **QEnglish**.
-   - Đường dẫn thư mục local hoặc URL repository / tài liệu của **TKB**.
-3. **Kết luận:** Tạm giữ trạng thái `BLOCKED` cho phần đồng bộ chéo QEnglish/TKB, đồng thời tiến hành kiểm thử toàn diện (Hạng mục 8) cho toàn bộ các Hạng mục 1–6 đã `PASSED`.
+---
+
+## 1. Phân tích kiến trúc hệ sinh thái (Read-Only Audit)
+- **QEnglish** (`api/config.js`, `js/core/supabase-client.js`, `supabase-schema.sql`): dùng **Supabase Auth (`auth.users`) + PostgREST RLS + Supabase Realtime WebSocket (`wss://.../realtime/v1/websocket`)** kết hợp endpoint `/api/config` chỉ trả cấu hình công khai (`supabaseUrl`, `supabaseAnonKey`).
+- **TKB** (`supabase_cloud_direct.sql`, `cloud_store.py`): dùng chung dự án Supabase với tiền tố bảng độc lập `tkb_*`, đảm bảo **không xung đột bảng** với QEnglish.
+
+## 2. Triển khai trên QChinese (100% Cô lập & An toàn)
+1. **Schema độc lập ([supabase-schema.sql](file:///c:/Users/anhqu/Downloads/QChinese/supabase-schema.sql)):**
+   - Sử dụng tiền tố riêng `qchinese_*`: `qchinese_user_profiles`, `qchinese_user_snapshots`, `qchinese_user_devices`.
+   - Bật Row Level Security (`auth.uid() = user_id`), cấp quyền tối thiểu (`authenticated`), và bật `supabase_realtime` CDC trên `qchinese_user_snapshots` & `qchinese_user_devices`.
+2. **Backend Public Config ([server.py](file:///c:/Users/anhqu/Downloads/QChinese/server.py)):**
+   - Bổ sung `GET /api/config` theo đúng chuẩn QEnglish/TKB (chỉ trả `supabaseUrl`, `supabaseAnonKey`, `aiConfigured`, `aiProvider`, `aiModel`; tuyệt đối không lộ `GEMINI_API_KEY` hay `SERVICE_ROLE_KEY`).
+3. **Frontend Cloud Sync ([cloud-sync.js](file:///c:/Users/anhqu/Downloads/QChinese/public/js/cloud-sync.js), [core.js](file:///c:/Users/anhqu/Downloads/QChinese/public/js/core.js), [app.js](file:///c:/Users/anhqu/Downloads/QChinese/public/js/app.js), [notebook-analytics-settings.js](file:///c:/Users/anhqu/Downloads/QChinese/public/js/modules/notebook-analytics-settings.js)):**
+   - Đăng nhập trực tiếp bằng cùng tài khoản Supabase Auth của QEnglish/TKB (ví dụ `anhquan06122008@gmail.com`).
+   - Hỗ trợ đăng nhập đồng thời Laptop + Điện thoại, đăng xuất thiết bị cục bộ (`scope=local`), đăng xuất thiết bị từ xa, đồng bộ thời gian thực qua WebSocket 24/7, tự gộp dữ liệu chống xung đột và hàng đợi Offline.
+   - Giữ nguyên fallback SQLite cục bộ khi chạy local không cấu hình Supabase.

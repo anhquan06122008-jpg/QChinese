@@ -255,13 +255,17 @@ window.QApp = (function () {
   }
 
   /* Multi-User Authentication Modal Gate */
-  function showAuthGate() {
+  function showAuthGate(initialMode = "login") {
     const gate = document.getElementById("auth-modal");
     if (!gate) return;
-    let authTab = "login"; // "login" | "register"
+    const cloudMode = QCore.isCloudAuthMode();
+    let authTab = initialMode === "recovery-reset" ? "recovery-reset" : "login"; // "login" | "register" | "recover" | "recovery-reset"
 
     function drawAuth() {
       gate.classList.add("open");
+      const idLabel = cloudMode ? "Email" : "Tên tài khoản (viết liền không dấu, vd: minh_an)";
+      const idPlaceholder = cloudMode ? "vd: anhquan06122008@gmail.com" : "Nhập tên tài khoản...";
+      const idType = cloudMode ? "email" : "text";
       gate.innerHTML = `
         <div class="modal-card" style="max-width:440px;">
           <div style="text-align:center;margin-bottom:16px;">
@@ -269,16 +273,24 @@ window.QApp = (function () {
             <h2 style="margin:0;font-size:21px;">CHINESE PERSONAL TUTOR</h2>
             <div style="color:var(--primary);font-weight:700;font-size:13.5px;margin-top:2px;">AI 汉语私人教师 · Tiếng Trung Giản Thể</div>
             <p style="font-size:12.5px;color:var(--text-secondary);margin:6px 0 0;">
-              Mỗi người học có một tài khoản & mật khẩu riêng — chia sẻ web cho bạn bè học cùng thoải mái mà không lo trùng tiến độ!
+              ${cloudMode
+                ? "Đăng nhập bằng tài khoản Cloud (dùng chung hệ sinh thái QEnglish · TKB) để tự động đồng bộ tiến độ 24/7."
+                : "Mỗi người học có một tài khoản & mật khẩu riêng — chia sẻ web cho bạn bè học cùng thoải mái mà không lo trùng tiến độ!"}
             </p>
           </div>
 
           ${
-            authTab === "recover"
+            authTab === "recover" || authTab === "recovery-reset"
               ? `
             <div style="text-align:center;margin-bottom:14px;">
               <div style="font-size:15px;font-weight:700;color:var(--text-primary);">🔑 Khôi phục mật khẩu</div>
-              <div style="font-size:12.5px;color:var(--text-muted);margin-top:2px;">Nhập tên tài khoản và mã khôi phục đã lưu để đặt mật khẩu mới</div>
+              <div style="font-size:12.5px;color:var(--text-muted);margin-top:2px;">
+                ${authTab === "recovery-reset"
+                  ? "Nhập mật khẩu mới cho tài khoản của bạn"
+                  : cloudMode
+                    ? "Nhập Email đã đăng ký để nhận liên kết đặt lại mật khẩu"
+                    : "Nhập tên tài khoản và mã khôi phục đã lưu để đặt mật khẩu mới"}
+              </div>
             </div>
           `
               : `
@@ -293,39 +305,59 @@ window.QApp = (function () {
           <div id="auth-ok" style="color:var(--primary);font-size:13px;margin-bottom:10px;display:none;"></div>
 
           <div style="display:flex;flex-direction:column;gap:10px;">
-            <label style="font-size:13px;font-weight:600;">Tên tài khoản (viết liền không dấu, vd: minh_an)
-              <input class="input-field" id="auth-user" placeholder="Nhập tên tài khoản...">
-            </label>
-
             ${
-              authTab === "register"
+              authTab === "recovery-reset"
                 ? `
-              <label style="font-size:13px;font-weight:600;">Tên gọi hiển thị của bạn (vd: Minh An)
-                <input class="input-field" id="auth-disp" placeholder="Giáo viên AI sẽ chào bạn bằng tên này...">
-              </label>
-            `
-                : ""
-            }
-
-            ${
-              authTab === "recover"
-                ? `
-              <label style="font-size:13px;font-weight:600;">Mã khôi phục (QCN-XXXX-XXXX-XXXX)
-                <input class="input-field" id="auth-reckey" placeholder="Nhập mã khôi phục đã lưu...">
-              </label>
               <label style="font-size:13px;font-weight:600;">Mật khẩu mới (tối thiểu 6 ký tự)
                 <input type="password" class="input-field" id="auth-pw" placeholder="Nhập mật khẩu mới...">
               </label>
             `
                 : `
-              <label style="font-size:13px;font-weight:600;">Mật khẩu (tối thiểu 6 ký tự)
-                <input type="password" class="input-field" id="auth-pw" placeholder="Nhập mật khẩu bảo mật...">
+              <label style="font-size:13px;font-weight:600;">${idLabel}
+                <input type="${idType}" class="input-field" id="auth-user" placeholder="${idPlaceholder}">
               </label>
+
+              ${
+                authTab === "register"
+                  ? `
+                <label style="font-size:13px;font-weight:600;">Tên gọi hiển thị của bạn (vd: Anh Quân)
+                  <input class="input-field" id="auth-disp" placeholder="Giáo viên AI sẽ chào bạn bằng tên này...">
+                </label>
+              `
+                  : ""
+              }
+
+              ${
+                authTab === "recover"
+                  ? cloudMode
+                    ? ""
+                    : `
+                  <label style="font-size:13px;font-weight:600;">Mã khôi phục (QCN-XXXX-XXXX-XXXX)
+                    <input class="input-field" id="auth-reckey" placeholder="Nhập mã khôi phục đã lưu...">
+                  </label>
+                  <label style="font-size:13px;font-weight:600;">Mật khẩu mới (tối thiểu 6 ký tự)
+                    <input type="password" class="input-field" id="auth-pw" placeholder="Nhập mật khẩu mới...">
+                  </label>
+                `
+                  : `
+                <label style="font-size:13px;font-weight:600;">Mật khẩu (tối thiểu 6 ký tự)
+                  <input type="password" class="input-field" id="auth-pw" placeholder="Nhập mật khẩu bảo mật...">
+                </label>
+              `
+              }
             `
             }
 
             <button class="btn btn-primary" style="margin-top:6px;width:100%;padding:12px;font-weight:700;" id="auth-submit">
-              ${authTab === "login" ? "Đăng nhập" : authTab === "register" ? "Tạo tài khoản" : "Đặt lại mật khẩu"}
+              ${
+                authTab === "login"
+                  ? "Đăng nhập"
+                  : authTab === "register"
+                    ? "Tạo tài khoản"
+                    : authTab === "recover" && cloudMode
+                      ? "Gửi liên kết khôi phục"
+                      : "Đặt lại mật khẩu"
+              }
             </button>
 
             ${
@@ -337,7 +369,7 @@ window.QApp = (function () {
                 </button>
               </div>
             `
-                : authTab === "recover"
+                : authTab === "recover" || authTab === "recovery-reset"
                 ? `
               <div style="text-align:center;margin-top:2px;">
                 <button type="button" id="auth-back-login" style="background:none;border:none;color:var(--primary);font-size:13px;font-weight:600;cursor:pointer;padding:4px 8px;">
@@ -371,24 +403,38 @@ window.QApp = (function () {
       };
 
       const doSubmit = async () => {
-        const u = gate.querySelector("#auth-user").value.trim();
-        const pw = gate.querySelector("#auth-pw").value;
+        const uEl = gate.querySelector("#auth-user");
+        const pwEl = gate.querySelector("#auth-pw");
+        const u = uEl ? uEl.value.trim() : "";
+        const pw = pwEl ? pwEl.value : "";
         const dispEl = gate.querySelector("#auth-disp");
         const recEl = gate.querySelector("#auth-reckey");
         const disp = dispEl ? dispEl.value.trim() : u;
         const errBox = gate.querySelector("#auth-err");
         const okBox = gate.querySelector("#auth-ok");
+        const submitBtn = gate.querySelector("#auth-submit");
         errBox.style.display = "none";
         if (okBox) okBox.style.display = "none";
+        if (submitBtn) submitBtn.disabled = true;
 
         try {
+          if (authTab === "recovery-reset" && cloudMode && window.QCloud) {
+            const msg = await QCloud.updatePasswordWithRecovery(pw);
+            if (okBox) { okBox.textContent = "✅ " + msg; okBox.style.display = "block"; }
+            return;
+          }
           if (authTab === "recover") {
+            if (cloudMode && window.QCloud) {
+              const msg = await QCloud.sendPasswordReset(u);
+              if (okBox) { okBox.textContent = "✅ " + msg; okBox.style.display = "block"; }
+              return;
+            }
             const res = await QCore.apiFetch("/api/auth/recover-password", {
               method: "POST",
               body: { username: u, recoveryKey: recEl ? recEl.value.trim() : "", newPassword: pw }
             });
             if (okBox) {
-              okBox.textContent = "✅ " + (res.message || "Đặt lại mật khẩu thành công! Hãy chuyển sang tab Đăng nhập.");
+              okBox.textContent = "✅ " + (res.message || "Đặt lại mật khẩu thành công! Hãy quay lại Đăng nhập.");
               okBox.style.display = "block";
             }
             return;
@@ -397,6 +443,10 @@ window.QApp = (function () {
             await QCore.loginAccount(u, pw);
           } else {
             const usr = await QCore.registerAccount(u, disp || u, pw);
+            if (usr && usr.needsVerification) {
+              if (okBox) { okBox.textContent = "✅ " + usr.message; okBox.style.display = "block"; }
+              return;
+            }
             if (usr && usr.recoveryKey) {
               QCore.showToast(`🔑 Mã khôi phục của bạn: ${usr.recoveryKey} (hãy lưu lại!)`);
             }
@@ -407,13 +457,18 @@ window.QApp = (function () {
         } catch (err) {
           errBox.textContent = "⚠️ " + err.message;
           errBox.style.display = "block";
+        } finally {
+          if (submitBtn) submitBtn.disabled = false;
         }
       };
 
       gate.querySelector("#auth-submit").onclick = doSubmit;
-      gate.querySelector("#auth-pw").addEventListener("keydown", (e) => {
-        if (e.key === "Enter") doSubmit();
-      });
+      const pwInput = gate.querySelector("#auth-pw") || gate.querySelector("#auth-user");
+      if (pwInput) {
+        pwInput.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") doSubmit();
+        });
+      }
     }
 
     drawAuth();
@@ -450,7 +505,7 @@ window.QApp = (function () {
     const session = await QCore.initSession();
     if (!session.authenticated) {
       renderSidebar();
-      showAuthGate();
+      showAuthGate(session.recoveryMode ? "recovery-reset" : "login");
     } else {
       navigate("dashboard");
     }

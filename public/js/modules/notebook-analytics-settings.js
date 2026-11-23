@@ -643,28 +643,31 @@ window.QNotebookAnalyticsSettings = (function () {
       };
     }
 
-    if (health.ok) {
+    const canManageSessions = health.ok || QCore.isCloudAuthMode();
+    if (canManageSessions) {
       const loadSessions = async () => {
         const box = container.querySelector("#set-sessions-list");
         if (!box) return;
         try {
-          const data = await QCore.apiFetch("/api/auth/sessions");
-          const list = data.sessions || [];
-          box.innerHTML = list.length
+          const list = await QCore.listDeviceSessions();
+          const cloudNote = QCore.isCloudAuthMode()
+            ? `<div class="card-subtle" style="font-size:12.5px;border-left:3px solid var(--primary);margin-bottom:6px;">☁️ <strong>Supabase Cloud 24/7</strong> · ${window.QCloud && QCloud.isRealtimeConnected() ? "Đang kết nối Realtime WebSocket" : "Đang đồng bộ Cloud"} (hệ sinh thái QChinese · QEnglish · TKB)</div>`
+            : "";
+          box.innerHTML = cloudNote + (list.length
             ? list.map((s) => `
                 <div class="card-subtle" style="padding:10px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;">
                   <div>
                     <strong>${QCore.escapeHtml(s.deviceName)}</strong>
                     ${s.isCurrent ? `<span class="badge badge-jade" style="margin-left:6px;">Thiết bị hiện tại</span>` : ""}
-                    <div style="font-size:11.5px;color:var(--text-muted);">IP: ${QCore.escapeHtml(s.ipAddress)} · Hoạt động: ${new Date(s.lastActiveAt).toLocaleString("vi-VN")}</div>
+                    <div style="font-size:11.5px;color:var(--text-muted);">${QCore.escapeHtml(s.ipAddress)} · Hoạt động: ${new Date(s.lastActiveAt).toLocaleString("vi-VN")}</div>
                   </div>
                   <button class="btn btn-outline btn-sm" data-rev-sid="${QCore.escapeHtml(s.sessionId)}">Đăng xuất</button>
                 </div>
               `).join("")
-            : `<div class="card-subtle" style="font-size:13px;">Không có phiên hoạt động nào.</div>`;
+            : `<div class="card-subtle" style="font-size:13px;">Không có phiên hoạt động nào.</div>`);
           box.querySelectorAll("[data-rev-sid]").forEach((b) => {
             b.onclick = async () => {
-              const res = await QCore.apiFetch("/api/auth/sessions/revoke", { method: "POST", body: { sessionId: b.getAttribute("data-rev-sid") } });
+              const res = await QCore.revokeDeviceSession(b.getAttribute("data-rev-sid"));
               if (res.revokedCurrent) {
                 await QCore.logoutAccount();
                 window.QApp.showAuthGate();
@@ -681,19 +684,33 @@ window.QNotebookAnalyticsSettings = (function () {
       loadSessions();
 
       container.querySelector("#set-revoke-others").onclick = async () => {
-        const res = await QCore.apiFetch("/api/auth/sessions/revoke-all", { method: "POST", body: { keepCurrent: true } });
+        const res = await QCore.revokeAllDeviceSessions(true);
         QCore.showToast(`Đã đăng xuất ${res.revokedCount || 0} thiết bị khác!`);
         loadSessions();
       };
       container.querySelector("#set-revoke-all").onclick = async () => {
-        await QCore.apiFetch("/api/auth/sessions/revoke-all", { method: "POST", body: { keepCurrent: false } });
+        await QCore.revokeAllDeviceSessions(false);
         await QCore.logoutAccount();
         window.QApp.showAuthGate();
       };
-      container.querySelector("#set-regen-rec").onclick = async () => {
-        const res = await QCore.apiFetch("/api/auth/recovery-key/regenerate", { method: "POST", body: {} });
-        container.querySelector("#set-rec-out").innerHTML = `<div style="padding:8px 10px;background:var(--bg-accent-soft);border-radius:8px;"><strong>Mã khôi phục mới (chỉ hiện 1 lần, hãy lưu lại):</strong><br/><code style="font-size:15px;font-weight:800;">${QCore.escapeHtml(res.recoveryKey)}</code></div>`;
-      };
+      const regenBtn = container.querySelector("#set-regen-rec");
+      if (regenBtn && !QCore.isCloudAuthMode()) {
+        regenBtn.onclick = async () => {
+          const res = await QCore.apiFetch("/api/auth/recovery-key/regenerate", { method: "POST", body: {} });
+          container.querySelector("#set-rec-out").innerHTML = `<div style="padding:8px 10px;background:var(--bg-accent-soft);border-radius:8px;"><strong>Mã khôi phục mới (chỉ hiện 1 lần, hãy lưu lại):</strong><br/><code style="font-size:15px;font-weight:800;">${QCore.escapeHtml(res.recoveryKey)}</code></div>`;
+        };
+      } else if (regenBtn && QCore.isCloudAuthMode()) {
+        regenBtn.textContent = "📧 Khôi phục qua Email Cloud";
+        regenBtn.disabled = false;
+        regenBtn.onclick = async () => {
+          try {
+            const msg = await QCloud.sendPasswordReset(user.email || user.username);
+            container.querySelector("#set-rec-out").innerHTML = `<div style="padding:8px 10px;background:var(--bg-accent-soft);border-radius:8px;">✅ ${QCore.escapeHtml(msg)}</div>`;
+          } catch (err) {
+            QCore.showToast(err.message);
+          }
+        };
+      }
     }
 
     container.querySelector("#set-save-account").onclick = async () => {
@@ -704,12 +721,9 @@ window.QNotebookAnalyticsSettings = (function () {
       p.name = newDisp;
       QCore.saveState(true);
 
-      if (health.ok) {
+      if (health.ok || QCore.isCloudAuthMode()) {
         try {
-          await QCore.apiFetch("/api/auth/profile", {
-            method: "POST",
-            body: { displayName: newDisp, currentPassword: currPw, newPassword: newPw }
-          });
+          await QCore.updateUserProfile(newDisp, currPw, newPw);
           QCore.showToast("Đã lưu thông tin tài khoản thành công!");
           window.QApp.refreshTopbar();
           renderSettings(container);

@@ -724,11 +724,32 @@ class QChineseRequestHandler(BaseHTTPRequestHandler):
 
         if route == "/api/health":
             cfg = get_ai_config()
+            sb_url = os.environ.get("SUPABASE_URL", "").strip().rstrip("/")
+            sb_anon = os.environ.get("SUPABASE_ANON_KEY", "").strip()
             self._send_json(200, {
                 "ok": True,
                 "aiConfigured": cfg["configured"],
                 "aiProvider": cfg["provider"],
                 "aiModel": cfg["model"],
+                "cloudAuthConfigured": bool(sb_url and sb_anon),
+            })
+            return
+
+        if route == "/api/config":
+            cfg = get_ai_config()
+            sb_url = os.environ.get("SUPABASE_URL", "").strip().rstrip("/")
+            sb_anon = os.environ.get("SUPABASE_ANON_KEY", "").strip()
+            auth_ok = bool(sb_url and sb_anon)
+            self._send_json(200, {
+                "ok": True,
+                "aiConfigured": cfg["configured"],
+                "aiProvider": cfg["provider"],
+                "aiModel": cfg["model"],
+                "authConfigured": auth_ok,
+                "supabaseUrl": sb_url if auth_ok else "",
+                "supabaseAnonKey": sb_anon if auth_ok else "",
+                "ecosystem": "QChinese · QEnglish · TKB",
+                "checkedAt": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             })
             return
 
@@ -1029,8 +1050,8 @@ class QChineseRequestHandler(BaseHTTPRequestHandler):
             display_name = (body.get("displayName") or username).strip()
             password = body.get("password") or ""
 
-            if not re.match(r"^[a-zA-Z0-9_.\-]{3,32}$", username):
-                self._send_json(400, {"error": "Tên đăng nhập cần từ 3–32 ký tự (chữ cái không dấu, số, dấu chấm hoặc gạch dưới)."})
+            if not re.match(r"^[a-zA-Z0-9_.@+\-]{3,64}$", username):
+                self._send_json(400, {"error": "Tên đăng nhập/Email cần từ 3–64 ký tự hợp lệ (chữ không dấu, số, @, ., _, -)."})
                 return
             if len(password) < 6:
                 self._send_json(400, {"error": "Mật khẩu cần tối thiểu 6 ký tự để bảo vệ tài khoản học tập."})

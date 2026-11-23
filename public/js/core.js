@@ -207,7 +207,12 @@ window.QCore = (function () {
     return `qchinese_offline_sync_${String(username || "guest").toLowerCase()}`;
   }
 
+  function isCloudAuthMode() {
+    return Boolean(window.QCloud && QCloud.isCloudMode());
+  }
+
   function disconnectRealtimeSync() {
+    if (window.QCloud) QCloud.disconnectRealtime();
     if (syncSource) {
       try { syncSource.close(); } catch (_) {}
       syncSource = null;
@@ -219,7 +224,8 @@ window.QCore = (function () {
     if (!currentUser || !remoteState) return;
     if (remoteVersion && remoteVersion <= stateVersion) return;
     stateVersion = remoteVersion || stateVersion + 1;
-    appState = ensureStateIntegrity(remoteState, currentUser.displayName);
+    const merged = (window.QCloud && appState) ? QCloud.mergeStates(appState, remoteState) : remoteState;
+    appState = ensureStateIntegrity(merged, currentUser.displayName);
     localStorage.setItem(localUserKey(currentUser.username), JSON.stringify(appState));
     applyTheme(appState.profile.theme);
     if (window.QApp && typeof window.QApp.refreshTopbar === "function") {
@@ -236,7 +242,17 @@ window.QCore = (function () {
   }
 
   async function pullLatestState() {
-    if (!serverHealth.ok || !currentUser || !getAuthToken()) return;
+    if (!currentUser) return;
+    if (isCloudAuthMode()) {
+      try {
+        const snap = await QCloud.fetchSnapshot();
+        if (snap.ok && snap.state && (snap.revision || 0) > stateVersion) {
+          applyRemoteState(snap.state, snap.revision, false);
+        }
+      } catch (_) {}
+      return;
+    }
+    if (!serverHealth.ok || !getAuthToken()) return;
     try {
       const res = await apiFetch("/api/user/state");
       if (res && res.state && (res.version || 0) > stateVersion) {
@@ -246,10 +262,22 @@ window.QCore = (function () {
   }
 
   async function flushOfflineQueue() {
-    if (!serverHealth.ok || !currentUser || !navigator.onLine) return;
+    if (!currentUser || !navigator.onLine) return;
     const qKey = offlineQueueKey(currentUser.username);
     const pending = JSON.parse(localStorage.getItem(qKey) || "null");
     if (!pending || !pending.state) return;
+    if (isCloudAuthMode()) {
+      try {
+        const res = await QCloud.pushSnapshot(pending.state);
+        if (res.ok) {
+          localStorage.removeItem(qKey);
+          if (res.revision) stateVersion = res.revision;
+          showToast("☁️ Đã đồng bộ thay đổi offline lên Supabase Cloud!");
+        }
+      } catch (_) {}
+      return;
+    }
+    if (!serverHealth.ok) return;
     try {
       const res = await apiFetch("/api/user/state", {
         method: "POST",
@@ -266,7 +294,22 @@ window.QCore = (function () {
 
   function connectRealtimeSync() {
     disconnectRealtimeSync();
-    if (!serverHealth.ok || !currentUser || !window.EventSource) return;
+    if (!currentUser) return;
+    if (isCloudAuthMode()) {
+      QCloud.connectRealtime(
+        (remoteState, rev) => applyRemoteState(remoteState, rev, true),
+        async () => {
+          showToast("⚠️ Thiết bị này đã được đăng xuất từ thiết bị khác.");
+          await logoutAccount(true);
+          if (window.QApp && typeof window.QApp.showAuthGate === "function") {
+            window.QApp.showAuthGate();
+          }
+        }
+      );
+      syncConnected = true;
+      return;
+    }
+    if (!serverHealth.ok || !window.EventSource) return;
     const tok = getAuthToken();
     if (!tok) return;
     const url = resolveApiUrl(`api/sync/stream?token=${encodeURIComponent(tok)}`);
@@ -301,18 +344,64 @@ window.QCore = (function () {
       connectRealtimeSync();
     });
     document.addEventListener("visibilitychange", () => {
-      if (!document.hidden && currentUser && serverHealth.ok) {
+      if (!document.hidden && currentUser && (serverHealth.ok || isCloudAuthMode())) {
         flushOfflineQueue();
         pullLatestState();
       }
     });
   }
 
+  async function hydrateCloudWorkspace(userObj, forceReactivateDevice = false) {
+    currentUser = userObj;
+    const devRes = await QCloud.registerCurrentDevice(forceReactivateDevice);
+    if (devRes && devRes.revoked) {
+      await QCloud.signOut(true);
+      currentUser = null;
+      return { authenticated: false, error: "Phiên thiết bị này đã bị đăng xuất từ xa. Vui lòng đăng nhập lại." };
+    }
+    const localRaw = JSON.parse(localStorage.getItem(localUserKey(userObj.username)) || "null");
+    const snap = await QCloud.fetchSnapshot();
+    let baseState = null;
+    if (snap.ok && snap.state) {
+      stateVersion = snap.revision || 1;
+      baseState = localRaw ? QCloud.mergeStates(localRaw, snap.state) : snap.state;
+    } else {
+      stateVersion = 1;
+      baseState = localRaw || createDefaultState(userObj.displayName);
+    }
+    appState = ensureStateIntegrity(baseState, userObj.displayName);
+    if (userObj.displayName && (!appState.profile.name || appState.profile.name === "Học viên")) {
+      appState.profile.name = userObj.displayName;
+    }
+    localStorage.setItem(localUserKey(userObj.username), JSON.stringify(appState));
+    applyTheme(appState.profile.theme);
+    startStudyTimer();
+    connectRealtimeSync();
+    if (snap.ok && !snap.state) {
+      QCloud.pushSnapshot(appState).catch(() => {});
+    }
+    return { authenticated: true, user: currentUser };
+  }
+
   async function initSession() {
+    if (window.QCloud) {
+      await QCloud.initConfig(getApiBase());
+    }
     try {
       serverHealth = await apiFetch("/api/health");
     } catch (_) {
       serverHealth = { ok: false, aiConfigured: false, aiProvider: "local-offline" };
+    }
+
+    if (isCloudAuthMode()) {
+      const res = await QCloud.restoreSession();
+      if (res.recoveryMode) {
+        return { authenticated: false, recoveryMode: true };
+      }
+      if (res.restored && res.user) {
+        return await hydrateCloudWorkspace(res.user, false);
+      }
+      return { authenticated: false, error: res.error || "" };
     }
 
     if (serverHealth.ok) {
@@ -347,6 +436,14 @@ window.QCore = (function () {
   }
 
   async function registerAccount(username, displayName, password) {
+    if (isCloudAuthMode()) {
+      const r = await QCloud.signUp(username, displayName, password);
+      if (r.needsVerification) {
+        return { needsVerification: true, message: r.message };
+      }
+      await hydrateCloudWorkspace(r.user, true);
+      return r.user;
+    }
     if (serverHealth.ok) {
       const res = await apiFetch("/api/auth/register", {
         method: "POST",
@@ -381,6 +478,11 @@ window.QCore = (function () {
   }
 
   async function loginAccount(username, password) {
+    if (isCloudAuthMode()) {
+      const userObj = await QCloud.signIn(username, password);
+      await hydrateCloudWorkspace(userObj, true);
+      return userObj;
+    }
     if (serverHealth.ok) {
       const res = await apiFetch("/api/auth/login", {
         method: "POST",
@@ -412,10 +514,12 @@ window.QCore = (function () {
     }
   }
 
-  async function logoutAccount() {
+  async function logoutAccount(localOnly = false) {
     if (studyInterval) clearInterval(studyInterval);
     disconnectRealtimeSync();
-    if (serverHealth.ok) {
+    if (isCloudAuthMode()) {
+      await QCloud.signOut(localOnly);
+    } else if (serverHealth.ok && !localOnly) {
       try { await apiFetch("/api/auth/logout", { method: "POST", body: {} }); } catch (_) {}
     }
     setAuthToken("");
@@ -425,18 +529,71 @@ window.QCore = (function () {
     stateVersion = 1;
   }
 
+  async function listDeviceSessions() {
+    if (isCloudAuthMode()) {
+      return await QCloud.listActiveDevices();
+    }
+    if (serverHealth.ok) {
+      const d = await apiFetch("/api/auth/sessions");
+      return d.sessions || [];
+    }
+    return [];
+  }
+
+  async function revokeDeviceSession(sessionId) {
+    if (isCloudAuthMode()) {
+      return await QCloud.revokeDevice(sessionId);
+    }
+    return await apiFetch("/api/auth/sessions/revoke", { method: "POST", body: { sessionId } });
+  }
+
+  async function revokeAllDeviceSessions(keepCurrent = true) {
+    if (isCloudAuthMode()) {
+      return await QCloud.revokeAllDevices(keepCurrent);
+    }
+    return await apiFetch("/api/auth/sessions/revoke-all", { method: "POST", body: { keepCurrent } });
+  }
+
+  async function updateUserProfile(displayName, currentPassword, newPassword) {
+    if (isCloudAuthMode()) {
+      const r = await QCloud.updateAccountProfile(displayName, newPassword);
+      if (currentUser && displayName) currentUser.displayName = displayName;
+      return r;
+    }
+    if (serverHealth.ok) {
+      return await apiFetch("/api/auth/profile", {
+        method: "POST",
+        body: { displayName, currentPassword, newPassword }
+      });
+    }
+    return { ok: true };
+  }
+
   function saveState(immediate = false) {
     if (!appState || !currentUser) return;
     localStorage.setItem(localUserKey(currentUser.username), JSON.stringify(appState));
     if (window.QApp && typeof window.QApp.refreshTopbar === "function") {
       window.QApp.refreshTopbar();
     }
-    if (!serverHealth.ok) return;
+    if (!isCloudAuthMode() && !serverHealth.ok) return;
 
     if (syncTimer) clearTimeout(syncTimer);
     const mutationId = "mut_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7);
     const qKey = offlineQueueKey(currentUser.username);
     const pushFn = async () => {
+      if (isCloudAuthMode()) {
+        try {
+          const res = await QCloud.pushSnapshot(appState);
+          if (res.ok) {
+            localStorage.removeItem(qKey);
+            if (res.revision) stateVersion = res.revision;
+          }
+        } catch (e) {
+          localStorage.setItem(qKey, JSON.stringify({ state: appState, baseVersion: stateVersion, mutationId, savedAt: Date.now() }));
+          console.warn("Cloud offline sync queued:", e.message);
+        }
+        return;
+      }
       try {
         const res = await apiFetch("/api/user/state", {
           method: "POST",
@@ -962,9 +1119,14 @@ window.QCore = (function () {
   return {
     todayStr,
     initSession,
+    isCloudAuthMode,
     registerAccount,
     loginAccount,
     logoutAccount,
+    listDeviceSessions,
+    revokeDeviceSession,
+    revokeAllDeviceSessions,
+    updateUserProfile,
     apiFetch,
     getApiBase,
     setApiBase,

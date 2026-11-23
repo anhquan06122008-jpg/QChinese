@@ -211,62 +211,279 @@ def _build_lesson_exercises_for_topic(
         else:
             word_entries.append({"hanzi": w, "pinyin": "", "vi": "Từ trọng tâm bài học", "en": "", "pos": "từ vựng", "sourceTag": "extracted_from_pdf"})
 
-    # Rich reading passage (uses custom extracted passage if uploaded PDF has text, or structured HSK 1 lesson text)
+    # Rich reading passage (line-by-line aligned Chinese, Pinyin, English & Vietnamese + bilingual ZH-EN / ZH-VI questions)
     default_passages = {
-        1: ("你好！我是明安。认识你很高兴！\n你好！我叫兰英。你是越南人吗？\n是的，我是越南人。对不起，请问您贵姓？\n没关系，我姓王。谢谢你！\n不客气，再见！",
-            "Nǐ hǎo! Wǒ shì Míng'ān. Rènshi nǐ hěn gāoxìng! Nǐ hǎo! Wǒ jiào Lányīng. Nǐ shì Yuènán rén ma? Shì de, wǒ shì Yuènán rén. Duìbuqǐ, qǐngwèn nín guìxìng? Méi guānxi, wǒ xìng Wáng. Xièxie nǐ! Bú kèqi, zàijiàn!",
-            "Xin chào! Tôi là Minh An. Rất vui được quen biết bạn! Xin chào! Tôi tên là Lan Anh. Bạn là người Việt Nam phải không? Đúng vậy, tôi là người Việt Nam. Xin lỗi, xin hỏi quý danh của ngài? Không sao đâu, tôi họ Vương. Cảm ơn bạn! Đừng khách sáo, tạm biệt!",
+        1: (
+            "你好！我是明安。认识你很高兴！\n你好！我叫兰英。你是越南人吗？\n是的，我是越南人。对不起，请问您贵姓？\n没关系，我姓王。谢谢你！\n不客气，再见！",
+            "Nǐ hǎo! Wǒ shì Míng'ān. Rènshi nǐ hěn gāoxìng!\nNǐ hǎo! Wǒ jiào Lányīng. Nǐ shì Yuènán rén ma?\nShì de, wǒ shì Yuènán rén. Duìbuqǐ, qǐngwèn nín guìxìng?\nMéi guānxi, wǒ xìng Wáng. Xièxie nǐ!\nBú kèqi, zàijiàn!",
+            "Hello! I am Ming'an. Nice to meet you!\nHello! My name is Lanying. Are you Vietnamese?\nYes, I am Vietnamese. Excuse me, may I ask your surname?\nNo problem, my surname is Wang. Thank you!\nYou're welcome, goodbye!",
+            "Xin chào! Tôi là Minh An. Rất vui được quen biết bạn!\nXin chào! Tôi tên là Lan Anh. Bạn là người Việt Nam phải không?\nĐúng vậy, tôi là người Việt Nam. Xin lỗi, xin hỏi quý danh của ngài?\nKhông sao đâu, tôi họ Vương. Cảm ơn bạn!\nĐừng khách sáo, tạm biệt!",
             [
-                {"id": "q1", "type": "mcq", "skillFocus": "main_idea", "question": "Đoạn hội thoại trên chủ yếu nói về chủ đề gì?", "options": ["Chào hỏi, làm quen và hỏi họ tên", "Đi mua sắm ở siêu thị", "Hỏi đường đến bệnh viện", "Kể về thời tiết mùa hè"], "answer": "Chào hỏi, làm quen và hỏi họ tên", "explain": "Hai nhân vật chào nhau (你好), giới thiệu tên (明安, 兰英), hỏi quốc tịch và họ (姓王)."},
-                {"id": "q2", "type": "tf", "skillFocus": "detail", "question": "Đúng hay Sai: Minh An (明安) là người Việt Nam.", "options": ["Đúng (True)", "Sai (False)"], "answer": "Đúng (True)", "explain": "Trong bài có câu: '是的，我是越南人。' (Đúng vậy, tôi là người Việt Nam)."},
-                {"id": "q3", "type": "mcq", "skillFocus": "detail", "question": "Lan Anh (兰英) mang họ gì?", "options": ["Họ Vương (王)", "Họ Lý (李)", "Họ Trương (张)", "Bài không nhắc đến"], "answer": "Họ Vương (王)", "explain": "Trong bài Lan Anh trả lời: '我姓王。' (Tôi họ Vương)."},
-                {"id": "q4", "type": "fill", "skillFocus": "vocab_context", "question": "Điền cụm từ đáp lại lời xin lỗi '对不起' trong bài: ______ (không sao đâu)", "answer": "没关系", "explain": "Cặp giao tiếp chuẩn HSK 1: 对不起 (Xin lỗi) → 没关系 (Không sao đâu)."},
-                {"id": "q5", "type": "mcq", "skillFocus": "detail", "question": "Khi người khác nói '谢谢你' (Cảm ơn bạn), trong bài đáp lại bằng câu nào?", "options": ["不客气 (Đừng khách sáo)", "再见 (Tạm biệt)", "对不起 (Xin lỗi)", "请问 (Xin hỏi)"], "answer": "不客气 (Đừng khách sáo)", "explain": "Câu cuối bài: '谢谢你！— 不客气，再见！'."},
-            ]),
-        2: ("大家好！我叫林南，我是越南大学生。我在河内大学学习汉语。我的汉语老师姓李，她是中国人。她很热情，也很耐心。我很喜欢学习汉语，每天都练习读汉字和说中文。",
-            "Dàjiā hǎo! Wǒ jiào Lín Nán, wǒ shì Yuènán dàxuéshēng. Wǒ zài Hénèi Dàxué xuéxí Hànyǔ. Wǒ de Hànyǔ lǎoshī xìng Lǐ, tā shì Zhōngguó rén. Tā hěn rèqíng, yě hěn nàixīn. Wǒ hěn xǐhuan xuéxí Hànyǔ, měitiān dōu liànxí dú Hànzì hé shuō Zhōngwén.",
-            "Chào mọi người! Tôi tên là Lâm Nam, tôi là sinh viên đại học Việt Nam. Tôi học tiếng Hán ở Đại học Hà Nội. Giáo viên tiếng Hán của tôi họ Lý, cô ấy là người Trung Quốc. Cô ấy rất nhiệt tình và kiên nhẫn. Tôi rất thích học tiếng Hán, mỗi ngày đều luyện đọc chữ Hán và nói tiếng Trung.",
+                {
+                    "id": "q1", "type": "mcq", "skillFocus": "main_idea",
+                    "question_en": "What is the main topic of the dialogue? (这段对话的主要话题是什么？)",
+                    "options_en": ["Greeting, self-introduction, and asking surnames (打招呼与问姓名)", "Shopping at a supermarket (在超市购物)", "Asking directions to a hospital (问去医院的路)", "Talking about summer weather (谈论夏天天气)"],
+                    "answer_en": "Greeting, self-introduction, and asking surnames (打招呼与问姓名)",
+                    "explain_en": "The two speakers greet each other (你好), introduce their names (明安, 兰英), and ask about nationality and surname (姓王).",
+                    "question": "Đoạn hội thoại trên chủ yếu nói về chủ đề gì?",
+                    "options": ["Chào hỏi, làm quen và hỏi họ tên", "Đi mua sắm ở siêu thị", "Hỏi đường đến bệnh viện", "Kể về thời tiết mùa hè"],
+                    "answer": "Chào hỏi, làm quen và hỏi họ tên",
+                    "explain": "Hai nhân vật chào nhau (你好), giới thiệu tên (明安, 兰英), hỏi quốc tịch và họ (姓王).",
+                },
+                {
+                    "id": "q2", "type": "tf", "skillFocus": "detail",
+                    "question_en": "True or False: Ming'an (明安) is Vietnamese (越南人).",
+                    "options_en": ["True (正确)", "False (错误)"],
+                    "answer_en": "True (正确)",
+                    "explain_en": "Ming'an explicitly replies: '是的，我是越南人。' (Yes, I am Vietnamese.)",
+                    "question": "Đúng hay Sai: Minh An (明安) là người Việt Nam.",
+                    "options": ["Đúng (True)", "Sai (False)"],
+                    "answer": "Đúng (True)",
+                    "explain": "Trong bài có câu: '是的，我是越南人。' (Đúng vậy, tôi là người Việt Nam).",
+                },
+                {
+                    "id": "q3", "type": "mcq", "skillFocus": "detail",
+                    "question_en": "What is Lanying's (兰英) surname (姓)?",
+                    "options_en": ["Wang (王)", "Li (李)", "Zhang (张)", "Not mentioned (未提及)"],
+                    "answer_en": "Wang (王)",
+                    "explain_en": "Lanying answers: '我姓王。' (My surname is Wang.)",
+                    "question": "Lan Anh (兰英) mang họ gì?",
+                    "options": ["Họ Vương (王)", "Họ Lý (李)", "Họ Trương (张)", "Bài không nhắc đến"],
+                    "answer": "Họ Vương (王)",
+                    "explain": "Trong bài Lan Anh trả lời: '我姓王。' (Tôi họ Vương).",
+                },
+                {
+                    "id": "q4", "type": "fill", "skillFocus": "vocab_context",
+                    "question_en": "Fill in the Chinese phrase used to reply to '对不起' (Sorry): ______ (No problem / It's okay)",
+                    "answer_en": "没关系",
+                    "explain_en": "Standard HSK 1 pair: 对不起 (Sorry) → 没关系 (It's okay / No problem).",
+                    "question": "Điền cụm từ đáp lại lời xin lỗi '对不起' trong bài: ______ (không sao đâu)",
+                    "answer": "没关系",
+                    "explain": "Cặp giao tiếp chuẩn HSK 1: 对不起 (Xin lỗi) → 没关系 (Không sao đâu).",
+                },
+                {
+                    "id": "q5", "type": "mcq", "skillFocus": "detail",
+                    "question_en": "In the dialogue, how do you reply to '谢谢你' (Thank you)?",
+                    "options_en": ["不客气 (You're welcome)", "再见 (Goodbye)", "对不起 (Sorry)", "请问 (Excuse me)"],
+                    "answer_en": "不客气 (You're welcome)",
+                    "explain_en": "The final lines say: '谢谢你！— 不客气，再见！' (Thank you! — You're welcome, goodbye!)",
+                    "question": "Khi người khác nói '谢谢你' (Cảm ơn bạn), trong bài đáp lại bằng câu nào?",
+                    "options": ["不客气 (Đừng khách sáo)", "再见 (Tạm biệt)", "对不起 (Xin lỗi)", "请问 (Xin hỏi)"],
+                    "answer": "不客气 (Đừng khách sáo)",
+                    "explain": "Câu cuối bài: '谢谢你！— 不客气，再见！'.",
+                },
+            ],
+        ),
+        2: (
+            "大家好！我叫林南，我是越南大学生。\n我在河内大学学习汉语。\n我的汉语老师姓李，她是中国人。\n她很热情，也很耐心。\n我很喜欢学习汉语，每天都练习读汉字和说中文。",
+            "Dàjiā hǎo! Wǒ jiào Lín Nán, wǒ shì Yuènán dàxuéshēng.\nWǒ zài Hénèi Dàxué xuéxí Hànyǔ.\nWǒ de Hànyǔ lǎoshī xìng Lǐ, tā shì Zhōngguó rén.\nTā hěn rèqíng, yě hěn nàixīn.\nWǒ hěn xǐhuan xuéxí Hànyǔ, měitiān dōu liànxí dú Hànzì hé shuō Zhōngwén.",
+            "Hello everyone! My name is Lin Nan, I am a Vietnamese university student.\nI study Chinese at Hanoi University.\nMy Chinese teacher's surname is Li, and she is Chinese.\nShe is very warm-hearted and patient.\nI really like learning Chinese and practice reading characters and speaking Mandarin every day.",
+            "Chào mọi người! Tôi tên là Lâm Nam, tôi là sinh viên đại học Việt Nam.\nTôi học tiếng Hán ở Đại học Hà Nội.\nGiáo viên tiếng Hán của tôi họ Lý, cô ấy là người Trung Quốc.\nCô ấy rất nhiệt tình và kiên nhẫn.\nTôi rất thích học tiếng Hán, mỗi ngày đều luyện đọc chữ Hán và nói tiếng Trung.",
             [
-                {"id": "q1", "type": "mcq", "skillFocus": "main_idea", "question": "Ý chính của đoạn văn là gì?", "options": ["Giới thiệu bản thân, trường học và cô giáo tiếng Hán", "Lịch trình du lịch Bắc Kinh", "Thực đơn món ăn Trung Quốc", "Cuộc họp ở công ty"], "answer": "Giới thiệu bản thân, trường học và cô giáo tiếng Hán", "explain": "Tác giả giới thiệu tên (林南), nghề nghiệp (大学生), nơi học và cô giáo họ Lý."},
-                {"id": "q2", "type": "mcq", "skillFocus": "detail", "question": "Cô giáo tiếng Hán của Lâm Nam là người nước nào?", "options": ["Trung Quốc (中国人)", "Việt Nam (越南人)", "Anh (英国人)", "Nhật Bản (日本人)"], "answer": "Trung Quốc (中国人)", "explain": "Câu trong bài: '我的汉语老师姓李，她是中国人。'"},
-                {"id": "q3", "type": "tf", "skillFocus": "detail", "question": "Đúng hay Sai: Lâm Nam chỉ học tiếng Hán vào cuối tuần.", "options": ["Đúng (True)", "Sai (False)"], "answer": "Sai (False)", "explain": "Bài viết nói rõ '每天都练习读汉字和说中文' (mỗi ngày đều luyện tập)."},
-                {"id": "q4", "type": "fill", "skillFocus": "vocab_context", "question": "Điền 2 chữ Hán chỉ 'giáo viên' xuất hiện trong bài: 我的汉语______姓李。", "answer": "老师", "explain": "老师 (lǎoshī) nghĩa là giáo viên."},
-                {"id": "q5", "type": "mcq", "skillFocus": "inference", "question": "Nhận xét nào đúng về tính cách của cô giáo Lý?", "options": ["Nhiệt tình và kiên nhẫn (热情、耐心)", "Khó tính và hay bận rộn", "Ít nói và nghiêm khắc", "Bài không miêu tả tính cách"], "answer": "Nhiệt tình và kiên nhẫn (热情、耐心)", "explain": "Trong bài ghi: '她很热情，也很耐心。'"},
-            ]),
+                {
+                    "id": "q1", "type": "mcq", "skillFocus": "main_idea",
+                    "question_en": "What is the main idea of the passage? (这段短文的主旨是什么？)",
+                    "options_en": ["Self-introduction, university, and Chinese teacher (自我介绍与汉语老师)", "A travel plan to Beijing (北京旅游计划)", "A Chinese food menu (中国菜菜单)", "A company meeting (公司会议)"],
+                    "answer_en": "Self-introduction, university, and Chinese teacher (自我介绍与汉语老师)",
+                    "explain_en": "The writer introduces their name (林南), status (大学生), university, and Teacher Li.",
+                    "question": "Ý chính của đoạn văn là gì?",
+                    "options": ["Giới thiệu bản thân, trường học và cô giáo tiếng Hán", "Lịch trình du lịch Bắc Kinh", "Thực đơn món ăn Trung Quốc", "Cuộc họp ở công ty"],
+                    "answer": "Giới thiệu bản thân, trường học và cô giáo tiếng Hán",
+                    "explain": "Tác giả giới thiệu tên (林南), nghề nghiệp (大学生), nơi học và cô giáo họ Lý.",
+                },
+                {
+                    "id": "q2", "type": "mcq", "skillFocus": "detail",
+                    "question_en": "What is Lin Nan's Chinese teacher's nationality (国籍)?",
+                    "options_en": ["Chinese (中国人)", "Vietnamese (越南人)", "British (英国人)", "Japanese (日本人)"],
+                    "answer_en": "Chinese (中国人)",
+                    "explain_en": "The passage states: '我的汉语老师姓李，她是中国人。'",
+                    "question": "Cô giáo tiếng Hán của Lâm Nam là người nước nào?",
+                    "options": ["Trung Quốc (中国人)", "Việt Nam (越南人)", "Anh (英国人)", "Nhật Bản (日本人)"],
+                    "answer": "Trung Quốc (中国人)",
+                    "explain": "Câu trong bài: '我的汉语老师姓李，她是中国人。'",
+                },
+                {
+                    "id": "q3", "type": "tf", "skillFocus": "detail",
+                    "question_en": "True or False: Lin Nan only practices Chinese on weekends.",
+                    "options_en": ["True (正确)", "False (错误)"],
+                    "answer_en": "False (错误)",
+                    "explain_en": "The text says '每天都练习读汉字和说中文' (practices every day).",
+                    "question": "Đúng hay Sai: Lâm Nam chỉ học tiếng Hán vào cuối tuần.",
+                    "options": ["Đúng (True)", "Sai (False)"],
+                    "answer": "Sai (False)",
+                    "explain": "Bài viết nói rõ '每天都练习读汉字和说中文' (mỗi ngày đều luyện tập).",
+                },
+                {
+                    "id": "q4", "type": "fill", "skillFocus": "vocab_context",
+                    "question_en": "Fill in the 2 Chinese characters for 'teacher': 我的汉语______姓李。",
+                    "answer_en": "老师",
+                    "explain_en": "老师 (lǎoshī) means teacher.",
+                    "question": "Điền 2 chữ Hán chỉ 'giáo viên' xuất hiện trong bài: 我的汉语______姓李。",
+                    "answer": "老师",
+                    "explain": "老师 (lǎoshī) nghĩa là giáo viên.",
+                },
+                {
+                    "id": "q5", "type": "mcq", "skillFocus": "inference",
+                    "question_en": "Which description best matches Teacher Li's personality?",
+                    "options_en": ["Warm and patient (热情、耐心)", "Strict and busy (严格、忙)", "Quiet and shy (安静、害羞)", "Not described (未描述)"],
+                    "answer_en": "Warm and patient (热情、耐心)",
+                    "explain_en": "The passage states: '她很热情，也很耐心。' (She is very warm and patient.)",
+                    "question": "Nhận xét nào đúng về tính cách của cô giáo Lý?",
+                    "options": ["Nhiệt tình và kiên nhẫn (热情、耐心)", "Khó tính và hay bận rộn", "Ít nói và nghiêm khắc", "Bài không miêu tả tính cách"],
+                    "answer": "Nhiệt tình và kiên nhẫn (热情、耐心)",
+                    "explain": "Trong bài ghi: '她很热情，也很耐心。'",
+                },
+            ],
+        ),
     }
 
     if custom_passage:
         rd_zh = custom_passage[:1200]
-        rd_py = "Bấm nút Loa hoặc bấm từng chữ để tra Pinyin & nghe chuẩn Putonghua."
+        rd_py = "Click Listen or tap characters for Pinyin & Putonghua pronunciation."
+        rd_en = "Content extracted directly from your uploaded PDF document."
         rd_vi = "Nội dung trích xuất trực tiếp từ tài liệu PDF bạn tải lên."
         rd_src = "extracted_from_pdf"
-        w0 = word_entries[0] if word_entries else {"hanzi": "汉语", "vi": "tiếng Hán"}
-        w1 = word_entries[1] if len(word_entries) > 1 else {"hanzi": "学习", "vi": "học tập"}
+        w0 = word_entries[0] if word_entries else {"hanzi": "汉语", "vi": "tiếng Hán", "en": "Chinese language"}
+        w1 = word_entries[1] if len(word_entries) > 1 else {"hanzi": "学习", "vi": "học tập", "en": "to study"}
+        w0_en = w0.get("en") or w0["vi"]
+        w1_en = w1.get("en") or w1["vi"]
         rd_qs = [
-            {"id": "q1", "type": "mcq", "skillFocus": "main_idea", "question": f"Chủ đề chính của {title} liên quan mật thiết nhất đến từ khóa nào?", "options": [f"{w0['hanzi']} ({w0['vi']})", "Kinh tế vĩ mô", "Luật hàng hải", "Thiên văn học"], "answer": f"{w0['hanzi']} ({w0['vi']})", "explain": f"Từ trọng tâm '{w0['hanzi']}' xuất hiện trực tiếp trong nội dung PDF của bài học."},
-            {"id": "q2", "type": "tf", "skillFocus": "detail", "question": f"Đúng hay Sai: Từ '{w0['hanzi']}' xuất hiện trong đoạn văn gốc.", "options": ["Đúng (True)", "Sai (False)"], "answer": "Đúng (True)" if w0["hanzi"] in rd_zh else "Sai (False)", "explain": "Kiểm chứng trực tiếp đối chiếu với văn bản trích xuất từ PDF."},
-            {"id": "q3", "type": "fill", "skillFocus": "vocab_context", "question": f"Gõ chữ Hán Giản thể tương ứng với nghĩa '{w1['vi']}':", "answer": w1["hanzi"], "explain": f"Đáp án chuẩn: {w1['hanzi']} ({w1.get('pinyin', '')})."},
-            {"id": "q4", "type": "mcq", "skillFocus": "vocab_context", "question": f"Nghĩa đúng của từ '{w0['hanzi']}' là gì?", "options": [w0["vi"], "Máy bay", "Bệnh viện", "Quả dưa hấu"], "answer": w0["vi"], "explain": f"{w0['hanzi']} ({w0.get('pinyin', '')}) có nghĩa là: {w0['vi']}."},
+            {
+                "id": "q1", "type": "mcq", "skillFocus": "main_idea",
+                "question_en": f"Which key term is most closely tied to the main topic of {title}?",
+                "options_en": [f"{w0['hanzi']} ({w0_en})", "Macroeconomics (宏观经济)", "Maritime Law (海商法)", "Astronomy (天文学)"],
+                "answer_en": f"{w0['hanzi']} ({w0_en})",
+                "explain_en": f"The key word '{w0['hanzi']}' appears directly in the extracted PDF text.",
+                "question": f"Chủ đề chính của {title} liên quan mật thiết nhất đến từ khóa nào?",
+                "options": [f"{w0['hanzi']} ({w0['vi']})", "Kinh tế vĩ mô", "Luật hàng hải", "Thiên văn học"],
+                "answer": f"{w0['hanzi']} ({w0['vi']})",
+                "explain": f"Từ trọng tâm '{w0['hanzi']}' xuất hiện trực tiếp trong nội dung PDF của bài học.",
+            },
+            {
+                "id": "q2", "type": "tf", "skillFocus": "detail",
+                "question_en": f"True or False: The term '{w0['hanzi']}' appears in the source passage.",
+                "options_en": ["True (正确)", "False (错误)"],
+                "answer_en": "True (正确)" if w0["hanzi"] in rd_zh else "False (错误)",
+                "explain_en": "Verified directly against the extracted PDF text.",
+                "question": f"Đúng hay Sai: Từ '{w0['hanzi']}' xuất hiện trong đoạn văn gốc.",
+                "options": ["Đúng (True)", "Sai (False)"],
+                "answer": "Đúng (True)" if w0["hanzi"] in rd_zh else "Sai (False)",
+                "explain": "Kiểm chứng trực tiếp đối chiếu với văn bản trích xuất từ PDF.",
+            },
+            {
+                "id": "q3", "type": "fill", "skillFocus": "vocab_context",
+                "question_en": f"Type the Simplified Chinese word meaning '{w1_en}':",
+                "answer_en": w1["hanzi"],
+                "explain_en": f"Answer: {w1['hanzi']} ({w1.get('pinyin', '')}).",
+                "question": f"Gõ chữ Hán Giản thể tương ứng với nghĩa '{w1['vi']}':",
+                "answer": w1["hanzi"],
+                "explain": f"Đáp án chuẩn: {w1['hanzi']} ({w1.get('pinyin', '')}).",
+            },
+            {
+                "id": "q4", "type": "mcq", "skillFocus": "vocab_context",
+                "question_en": f"What is the meaning of '{w0['hanzi']}'?",
+                "options_en": [w0_en, "Airplane (飞机)", "Hospital (医院)", "Watermelon (西瓜)"],
+                "answer_en": w0_en,
+                "explain_en": f"{w0['hanzi']} ({w0.get('pinyin', '')}) means: {w0_en}.",
+                "question": f"Nghĩa đúng của từ '{w0['hanzi']}' là gì?",
+                "options": [w0["vi"], "Máy bay", "Bệnh viện", "Quả dưa hấu"],
+                "answer": w0["vi"],
+                "explain": f"{w0['hanzi']} ({w0.get('pinyin', '')}) có nghĩa là: {w0['vi']}.",
+            },
         ]
     elif lesson_num in default_passages:
-        rd_zh, rd_py, rd_vi, rd_qs = default_passages[lesson_num]
+        rd_zh, rd_py, rd_en, rd_vi, rd_qs = default_passages[lesson_num]
         rd_src = "ai_generated"
     else:
         w_list_str = "、".join(w["hanzi"] for w in word_entries[:6])
+        w_py_str = ", ".join(w["pinyin"] for w in word_entries[:6] if w.get("pinyin"))
         w0 = word_entries[0]
         w1 = word_entries[1] if len(word_entries) > 1 else w0
         w2 = word_entries[2] if len(word_entries) > 2 else w0
         w3 = word_entries[3] if len(word_entries) > 3 else w0
-        rd_zh = f"今天我们学习第{lesson_num}课。这一课的重要词语有：{w_list_str}。我每天都认真学习汉语，先听录音，再读课文，然后用“{w0['hanzi']}”和“{w1['hanzi']}”造句。我的中国朋友说我的汉语进步很快！"
-        rd_py = f"Jīntiān wǒmen xuéxí dì {lesson_num} kè... (Bấm từng từ hoặc nút Loa để nghe chuẩn từng câu)."
-        rd_vi = f"Hôm nay chúng ta học Bài {lesson_num}. Các từ trọng tâm của bài gồm: {w_list_str}. Mỗi ngày tôi đều chăm chỉ học tiếng Hán, nghe audio trước, đọc bài khóa sau, rồi đặt câu với '{w0['hanzi']}' và '{w1['hanzi']}'."
+        w0_en = w0.get("en") or w0["vi"]
+        w1_en = w1.get("en") or w1["vi"]
+        w2_en = w2.get("en") or w2["vi"]
+        w3_en = w3.get("en") or w3["vi"]
+        rd_zh = (
+            f"今天我们学习第{lesson_num}课。\n"
+            f"这一课的重要词语有：{w_list_str}。\n"
+            f"我每天都认真学习汉语，先听录音，再读课文，然后用“{w0['hanzi']}”和“{w1['hanzi']}”造句。\n"
+            "我的中国朋友说我的汉语进步很快！"
+        )
+        rd_py = (
+            f"Jīntiān wǒmen xuéxí dì {lesson_num} kè.\n"
+            f"Zhè yī kè de zhòngyào cíyǔ yǒu: {w_py_str or w_list_str}.\n"
+            f"Wǒ měitiān dōu rènzhēn xuéxí Hànyǔ, xiān tīng lùyīn, zài dú kèwén, ránhòu yòng \"{w0.get('pinyin') or w0['hanzi']}\" hé \"{w1.get('pinyin') or w1['hanzi']}\" zàojù.\n"
+            "Wǒ de Zhōngguó péngyou shuō wǒ de Hànyǔ jìnbù hěn kuài!"
+        )
+        rd_en = (
+            f"Today we are studying Lesson {lesson_num}.\n"
+            f"The key words in this lesson include: {w_list_str}.\n"
+            f"Every day I study Chinese diligently: first I listen to the audio, then read the text, and make sentences with \"{w0['hanzi']}\" ({w0_en}) and \"{w1['hanzi']}\" ({w1_en}).\n"
+            "My Chinese friend says my Chinese is improving very fast!"
+        )
+        rd_vi = (
+            f"Hôm nay chúng ta học Bài {lesson_num}.\n"
+            f"Các từ trọng tâm của bài gồm: {w_list_str}.\n"
+            f"Mỗi ngày tôi đều chăm chỉ học tiếng Hán: nghe audio trước, đọc bài khóa sau, rồi đặt câu với \"{w0['hanzi']}\" và \"{w1['hanzi']}\".\n"
+            "Người bạn Trung Quốc của tôi nói tiếng Hán của tôi tiến bộ rất nhanh!"
+        )
         rd_src = "ai_generated"
         rd_qs = [
-            {"id": "q1", "type": "mcq", "skillFocus": "main_idea", "question": f"Bài đọc trên thuộc bài số mấy trong giáo trình HSK {hsk_level}?", "options": [f"Bài {lesson_num} (第{lesson_num}课)", "Bài 20", "Bài 30", "Không đề cập"], "answer": f"Bài {lesson_num} (第{lesson_num}课)", "explain": f"Câu đầu tiên ghi rõ: '今天我们学习第{lesson_num}课。'"},
-            {"id": "q2", "type": "mcq", "skillFocus": "vocab_context", "question": f"Trong bài học này, từ '{w0['hanzi']}' ({w0['pinyin']}) có nghĩa là gì?", "options": [w0["vi"], w2["vi"] if w2["vi"] != w0["vi"] else "Xe buýt", "Mùa đông", "Bệnh viện"], "answer": w0["vi"], "explain": f"Theo bảng từ vựng HSK 3.0 cấp {hsk_level}: {w0['hanzi']} ({w0['pinyin']}) = {w0['vi']}."},
-            {"id": "q3", "type": "tf", "skillFocus": "detail", "question": "Đúng hay Sai: Người học trong bài nghe băng ghi âm (听录音) trước rồi mới đọc bài khóa (读课文).", "options": ["Đúng (True)", "Sai (False)"], "answer": "Đúng (True)", "explain": "Trong bài có câu: '先听录音，再读课文' (nghe ghi âm trước, rồi mới đọc bài khóa)."},
-            {"id": "q4", "type": "fill", "skillFocus": "vocab_context", "question": f"Điền chữ Hán Giản thể có nghĩa '{w1['vi']}' ({w1['pinyin']}):", "answer": w1["hanzi"], "explain": f"Đáp án chuẩn là '{w1['hanzi']}' ({w1['pinyin']})."},
-            {"id": "q5", "type": "mcq", "skillFocus": "vocab_context", "question": f"Từ '{w3['hanzi']}' ({w3['pinyin']}) có nghĩa tiếng Việt là gì?", "options": [w3["vi"], "Sân bay", "Bóng rổ", "Cà phê"], "answer": w3["vi"], "explain": f"Từ vựng xác thực: {w3['hanzi']} ({w3['pinyin']}) = {w3['vi']}."},
+            {
+                "id": "q1", "type": "mcq", "skillFocus": "main_idea",
+                "question_en": f"Which lesson number in HSK {hsk_level} is this passage about? (这篇课文是第几课？)",
+                "options_en": [f"Lesson {lesson_num} (第{lesson_num}课)", "Lesson 20 (第20课)", "Lesson 30 (第30课)", "Not mentioned (未提及)"],
+                "answer_en": f"Lesson {lesson_num} (第{lesson_num}课)",
+                "explain_en": f"The first line states: '今天我们学习第{lesson_num}课。'",
+                "question": f"Bài đọc trên thuộc bài số mấy trong giáo trình HSK {hsk_level}?",
+                "options": [f"Bài {lesson_num} (第{lesson_num}课)", "Bài 20", "Bài 30", "Không đề cập"],
+                "answer": f"Bài {lesson_num} (第{lesson_num}课)",
+                "explain": f"Câu đầu tiên ghi rõ: '今天我们学习第{lesson_num}课。'",
+            },
+            {
+                "id": "q2", "type": "mcq", "skillFocus": "vocab_context",
+                "question_en": f"In this lesson, what does '{w0['hanzi']}' ({w0['pinyin']}) mean?",
+                "options_en": [w0_en, w2_en if w2_en != w0_en else "Bus (公共汽车)", "Winter (冬天)", "Hospital (医院)"],
+                "answer_en": w0_en,
+                "explain_en": f"HSK 3.0 Level {hsk_level} vocabulary: {w0['hanzi']} ({w0['pinyin']}) = {w0_en}.",
+                "question": f"Trong bài học này, từ '{w0['hanzi']}' ({w0['pinyin']}) có nghĩa là gì?",
+                "options": [w0["vi"], w2["vi"] if w2["vi"] != w0["vi"] else "Xe buýt", "Mùa đông", "Bệnh viện"],
+                "answer": w0["vi"],
+                "explain": f"Theo bảng từ vựng HSK 3.0 cấp {hsk_level}: {w0['hanzi']} ({w0['pinyin']}) = {w0['vi']}.",
+            },
+            {
+                "id": "q3", "type": "tf", "skillFocus": "detail",
+                "question_en": "True or False: The learner listens to the audio (听录音) first before reading the text (读课文).",
+                "options_en": ["True (正确)", "False (错误)"],
+                "answer_en": "True (正确)",
+                "explain_en": "The text says: '先听录音，再读课文' (listen to the recording first, then read the text).",
+                "question": "Đúng hay Sai: Người học trong bài nghe băng ghi âm (听录音) trước rồi mới đọc bài khóa (读课文).",
+                "options": ["Đúng (True)", "Sai (False)"],
+                "answer": "Đúng (True)",
+                "explain": "Trong bài có câu: '先听录音，再读课文' (nghe ghi âm trước, rồi mới đọc bài khóa).",
+            },
+            {
+                "id": "q4", "type": "fill", "skillFocus": "vocab_context",
+                "question_en": f"Fill in the Simplified Chinese word meaning '{w1_en}' ({w1['pinyin']}):",
+                "answer_en": w1["hanzi"],
+                "explain_en": f"Correct answer: '{w1['hanzi']}' ({w1['pinyin']}).",
+                "question": f"Điền chữ Hán Giản thể có nghĩa '{w1['vi']}' ({w1['pinyin']}):",
+                "answer": w1["hanzi"],
+                "explain": f"Đáp án chuẩn là '{w1['hanzi']}' ({w1['pinyin']}).",
+            },
+            {
+                "id": "q5", "type": "mcq", "skillFocus": "vocab_context",
+                "question_en": f"What does '{w3['hanzi']}' ({w3['pinyin']}) mean in English?",
+                "options_en": [w3_en, "Airport (机场)", "Basketball (篮球)", "Coffee (咖啡)"],
+                "answer_en": w3_en,
+                "explain_en": f"Verified vocabulary: {w3['hanzi']} ({w3['pinyin']}) = {w3_en}.",
+                "question": f"Từ '{w3['hanzi']}' ({w3['pinyin']}) có nghĩa tiếng Việt là gì?",
+                "options": [w3["vi"], "Sân bay", "Bóng rổ", "Cà phê"],
+                "answer": w3["vi"],
+                "explain": f"Từ vựng xác thực: {w3['hanzi']} ({w3['pinyin']}) = {w3['vi']}.",
+            },
         ]
 
     # Listening items linked directly to REAL MP3 tracks when present!
@@ -274,32 +491,39 @@ def _build_lesson_exercises_for_topic(
     if mp3_tracks:
         for idx, trk in enumerate(mp3_tracks[:6]):
             w_ref = word_entries[idx % len(word_entries)]
+            w_ref_en = w_ref.get("en") or w_ref["vi"]
             listening_items.append({
                 "id": f"L{lesson_num}_lis_{idx + 1}",
-                "title": f"Bài nghe {idx + 1} – Track giáo trình {trk}",
+                "title": f"Listening {idx + 1} – Track {trk}",
                 "audioUrl": f"api/pdf/audio?file={trk}",
                 "audioSource": "real_mp3",
                 "sourceTag": "extracted_from_pdf",
+                "targetHint_en": f"Listen to New HSK 1 (3.0) track {trk}, focusing on '{w_ref['hanzi']}' ({w_ref['pinyin']} – {w_ref_en}).",
                 "targetHint": f"Nghe track {trk} của giáo trình New HSK 1 (3.0), chú ý từ trọng tâm '{w_ref['hanzi']}' ({w_ref['pinyin']} – {w_ref['vi']}).",
                 "questions": [
                     {
                         "id": f"lq_{idx}_1",
                         "type": "mcq",
+                        "question_en": f"Listen to track {trk} and select the meaning of '{w_ref['hanzi']}' ({w_ref['pinyin']}):",
+                        "options_en": [w_ref_en, "Department store (百货商店)", "Subway (地铁)", "Hospital (医院)"],
+                        "answer_en": w_ref_en,
+                        "explain_en": f"Track {trk} belongs to Lesson {lesson_num} (New HSK 1 3.0); key word: {w_ref['hanzi']} ({w_ref['pinyin']}) = {w_ref_en}.",
                         "question": f"Nghe track {trk} và xác định nghĩa của từ trọng tâm '{w_ref['hanzi']}' ({w_ref['pinyin']}):",
                         "options": [w_ref["vi"], "Cửa hàng bách hóa", "Tàu điện ngầm", "Bệnh viện nhân dân"],
                         "answer": w_ref["vi"],
-                        "explain": f"Track {trk} thuộc Bài {lesson_num} giáo trình New HSK 1 (3.0); từ trọng tâm: {w_ref['hanzi']} ({w_ref['pinyin']}) = {w_ref['vi']}."
+                        "explain": f"Track {trk} thuộc Bài {lesson_num} giáo trình New HSK 1 (3.0); từ trọng tâm: {w_ref['hanzi']} ({w_ref['pinyin']}) = {w_ref['vi']}.",
                     }
-                ]
+                ],
             })
     else:
         listening_items.append({
             "id": f"L{lesson_num}_lis_1",
-            "title": f"Bài nghe 1 – Luyện nghe bài khóa Bài {lesson_num} (Putonghua TTS)",
+            "title": f"Listening 1 – Lesson {lesson_num} Passage (Putonghua TTS)",
             "audioUrl": "",
             "audioText": rd_zh,
             "audioSource": "tts",
             "sourceTag": "ai_generated",
+            "targetHint_en": "Listen to the Putonghua TTS audio for this lesson and answer the comprehension questions.",
             "targetHint": "Tài liệu PDF chưa kèm file MP3 riêng — sử dụng giọng đọc chuẩn Putonghua TTS (đánh dấu minh bạch).",
             "questions": rd_qs[:2],
         })
@@ -314,11 +538,12 @@ def _build_lesson_exercises_for_topic(
             "reading": [
                 {
                     "id": f"hsk3_L{hsk_level}_L{lesson_num}_rd_1",
-                    "title": f"Bài đọc 1 – {title}",
+                    "title": f"Reading 1 – {title}",
                     "sourceTag": rd_src,
                     "sourcePage": max(1, (lesson_num - 1) * 9 + 2),
                     "chinese": rd_zh,
                     "pinyin": rd_py,
+                    "english": rd_en,
                     "vietnamese": rd_vi,
                     "questions": rd_qs,
                 }
@@ -328,20 +553,25 @@ def _build_lesson_exercises_for_topic(
             "grammar": [
                 {
                     "id": f"hsk3_L{hsk_level}_L{lesson_num}_gr_1",
-                    "title": f"Điểm ngữ pháp trọng tâm Bài {lesson_num}",
+                    "title": f"Core Grammar Point – Lesson {lesson_num}",
                     "sourceTag": "ai_explained",
-                    "formula": f"Chủ ngữ + [Thời gian/Địa điểm] + Động từ ({word_entries[0]['hanzi']}...) + Tân ngữ",
+                    "formula": f"Subject + [Time / Place] + Verb ({word_entries[0]['hanzi']}...) + Object",
+                    "explanation_en": f"Apply Lesson {lesson_num} vocabulary ({', '.join(w['hanzi'] for w in word_entries[:4])}) with standard Mandarin word order.",
                     "explanation": f"Áp dụng từ vựng bài {lesson_num} ({', '.join(w['hanzi'] for w in word_entries[:4])}) đúng trật tự chuẩn tiếng Trung Giản thể.",
                     "questions": [
                         {
                             "id": f"gq_{lesson_num}_1",
                             "type": "mcq",
+                            "question_en": "Which sentence follows standard Chinese word order? (哪个句子的语序是正确的？)",
+                            "options_en": ["我今天在学校学习汉语。", "我学习汉语在学校今天。", "我是好学习汉语。", "我不有汉语书。"],
+                            "answer_en": "我今天在学校学习汉语。",
+                            "explain_en": "Time (今天) and Place (在学校) always come BEFORE the main verb (学习) in Mandarin.",
                             "question": "Câu nào sau đây có trật tự từ ĐÚNG chuẩn tiếng Trung?",
                             "options": ["我今天在学校学习汉语。", "我学习汉语在学校今天。", "我是好学习汉语。", "我不有汉语书。"],
                             "answer": "我今天在学校学习汉语。",
-                            "explain": "Thời gian (今天) và cụm địa điểm (在学校) luôn đứng TRƯỚC động từ chính (学习)."
+                            "explain": "Thời gian (今天) và cụm địa điểm (在学校) luôn đứng TRƯỚC động từ chính (学习).",
                         }
-                    ]
+                    ],
                 }
             ],
             "writing": [
@@ -374,8 +604,8 @@ def ensure_hsk3_level1_seeded(get_db_fn: Callable[[], sqlite3.Connection], db_lo
         conn = get_db_fn()
         try:
             init_pdf_tables(conn)
-            exists = conn.execute("SELECT id FROM pdf_courses WHERE hsk_level = 1 LIMIT 1").fetchone()
-            if exists:
+            exists = conn.execute("SELECT id, course_json FROM pdf_courses WHERE hsk_level = 1 LIMIT 1").fetchone()
+            if exists and '"schemaVersion": 2' in (exists["course_json"] or ""):
                 return
         finally:
             conn.close()
@@ -425,6 +655,7 @@ def ensure_hsk3_level1_seeded(get_db_fn: Callable[[], sqlite3.Connection], db_lo
         lessons.append(lesson_obj)
 
     course_payload = {
+        "schemaVersion": 2,
         "hskLevel": 1,
         "code": "HSK 1 (3.0)",
         "title": "Khóa học HSK 1 (Chuẩn HSK 3.0 – 15 Lessons + 93 MP3 gốc)",

@@ -36,6 +36,7 @@ window.QCore = (function () {
         lastActiveDate: today,
         totalStudyMinutes: 0,
         theme: "light",
+        uiLang: "en",
         showVietnameseHint: true,
         showPinyinDefault: true,
         enablePinyinIme: true,
@@ -1098,6 +1099,29 @@ window.QCore = (function () {
     return null;
   }
 
+  function getUiLang() {
+    const saved = localStorage.getItem("qchinese_ui_lang");
+    if (saved === "en" || saved === "vi") return saved;
+    if (appState && appState.profile && (appState.profile.uiLang === "en" || appState.profile.uiLang === "vi")) {
+      return appState.profile.uiLang;
+    }
+    return "en";
+  }
+
+  function setUiLang(lang) {
+    const clean = lang === "vi" ? "vi" : "en";
+    localStorage.setItem("qchinese_ui_lang", clean);
+    if (appState && appState.profile) {
+      appState.profile.uiLang = clean;
+      saveState(false);
+    }
+    return clean;
+  }
+
+  function toggleUiLang() {
+    return setUiLang(getUiLang() === "en" ? "vi" : "en");
+  }
+
   function applyTheme(theme) {
     const t = theme === "dark" ? "dark" : "light";
     document.documentElement.setAttribute("data-theme", t);
@@ -1177,6 +1201,9 @@ window.QCore = (function () {
     captureLearnerVoice,
     resolveHanziDetail,
     fetchStrokeData,
+    getUiLang,
+    setUiLang,
+    toggleUiLang,
     applyTheme,
     toggleTheme,
     showToast,

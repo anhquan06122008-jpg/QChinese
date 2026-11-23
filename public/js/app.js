@@ -7,34 +7,35 @@ window.QApp = (function () {
   let currentParams = {};
 
   const NAV_ITEMS = [
-    { id: "dashboard", label: "Dashboard", icon: "🏠" },
-    { id: "vocab", label: "Kho từ vựng HSK", icon: "📚" },
-    { id: "pinyin", label: "Phòng luyện Pinyin", icon: "🎵" },
-    { id: "ai-tutor", label: "QChinese AI Tutor", icon: "🤖" },
-    { id: "ai-tournament", label: "Đấu trường 100 AI", icon: "🏆" },
-    { id: "ai-pdf", label: "AI PDF · HSK 3.0", icon: "📄" },
-    { id: "lessons", label: "Khóa học & Lesson", icon: "🎓" },
-    { id: "materials", label: "Kho tài liệu cá nhân", icon: "📁" },
-    { id: "hanzi", label: "Học chữ Hán", icon: "✍️" },
-    { id: "assessment", label: "Đánh giá trình độ", icon: "🧭" },
-    { id: "grammar", label: "Ngữ pháp", icon: "🧩" },
-    { id: "listening", label: "Luyện nghe", icon: "🎧" },
-    { id: "speaking", label: "Luyện nói", icon: "🎙️" },
-    { id: "reading", label: "Luyện đọc", icon: "📰" },
-    { id: "writing", label: "Luyện viết", icon: "🖋️" },
-    { id: "notebook", label: "Sổ tay", icon: "📒" },
-    { id: "analytics", label: "Thống kê tiến độ", icon: "📊" },
-    { id: "settings", label: "Cài đặt", icon: "⚙️" }
+    { id: "dashboard", labelEn: "Dashboard", labelVi: "Dashboard", icon: "🏠" },
+    { id: "vocab", labelEn: "HSK Vocabulary", labelVi: "Kho từ vựng HSK", icon: "📚" },
+    { id: "pinyin", labelEn: "Pinyin Lab", labelVi: "Phòng luyện Pinyin", icon: "🎵" },
+    { id: "ai-tutor", labelEn: "QChinese AI Tutor", labelVi: "QChinese AI Tutor", icon: "🤖" },
+    { id: "ai-tournament", labelEn: "100-AI Arena", labelVi: "Đấu trường 100 AI", icon: "🏆" },
+    { id: "ai-pdf", labelEn: "AI PDF · HSK 3.0", labelVi: "AI PDF · HSK 3.0", icon: "📄" },
+    { id: "lessons", labelEn: "Courses & Lessons", labelVi: "Khóa học & Lesson", icon: "🎓" },
+    { id: "materials", labelEn: "My Materials", labelVi: "Kho tài liệu cá nhân", icon: "📁" },
+    { id: "hanzi", labelEn: "Hanzi Studio", labelVi: "Học chữ Hán", icon: "✍️" },
+    { id: "assessment", labelEn: "Placement Test", labelVi: "Đánh giá trình độ", icon: "🧭" },
+    { id: "grammar", labelEn: "Grammar", labelVi: "Ngữ pháp", icon: "🧩" },
+    { id: "listening", labelEn: "Listening", labelVi: "Luyện nghe", icon: "🎧" },
+    { id: "speaking", labelEn: "Speaking", labelVi: "Luyện nói", icon: "🎙️" },
+    { id: "reading", labelEn: "Reading", labelVi: "Luyện đọc", icon: "📰" },
+    { id: "writing", labelEn: "Writing", labelVi: "Luyện viết", icon: "🖋️" },
+    { id: "notebook", labelEn: "Notebook", labelVi: "Sổ tay", icon: "📒" },
+    { id: "analytics", labelEn: "Analytics", labelVi: "Thống kê tiến độ", icon: "📊" },
+    { id: "settings", labelEn: "Settings", labelVi: "Cài đặt", icon: "⚙️" }
   ];
 
   function renderSidebar() {
     const navEl = document.getElementById("sidebar-nav");
     if (!navEl) return;
+    const isVi = QCore.getUiLang() === "vi";
     navEl.innerHTML = NAV_ITEMS.map(
       (item) => `
       <button class="nav-btn ${currentRoute === item.id ? "active" : ""}" data-route="${item.id}">
         <span class="nav-icon">${item.icon}</span>
-        <span>${item.label}</span>
+        <span>${isVi ? item.labelVi : item.labelEn}</span>
       </button>
     `
     ).join("");
@@ -50,6 +51,18 @@ window.QApp = (function () {
   function refreshTopbar() {
     const st = QCore.getState();
     const user = QCore.getUser();
+    const isVi = QCore.getUiLang() === "vi";
+    const langBtn = document.getElementById("top-lang-btn");
+    const searchInp = document.getElementById("quick-search-input");
+    if (langBtn) {
+      langBtn.textContent = isVi ? "🇻🇳 VI" : "🌐 EN";
+      langBtn.title = isVi ? "Chuyển sang tiếng Anh (ZH–EN)" : "Switch to Vietnamese (ZH–VI)";
+    }
+    if (searchInp) {
+      searchInp.placeholder = isVi
+        ? "Tra nhanh Pinyin (vd: nihao, xihuan), chữ Hán hoặc tiếng Việt..."
+        : "Quick search Pinyin (e.g. nihao, xihuan), Hanzi or English...";
+    }
     if (!st) return;
 
     const p = st.profile;
@@ -63,12 +76,16 @@ window.QApp = (function () {
 
     const memHanzi = Object.values(st.hanziProgress).filter((x) => x.memorized).length;
 
-    if (streakEl) streakEl.textContent = `🔥 ${p.streakDays || 1} ngày`;
-    if (hanziEl) hanziEl.textContent = `✿ ${memHanzi} chữ`;
+    if (streakEl) streakEl.textContent = isVi ? `🔥 ${p.streakDays || 1} ngày` : `🔥 ${p.streakDays || 1}d`;
+    if (hanziEl) hanziEl.textContent = isVi ? `✿ ${memHanzi} chữ` : `✿ ${memHanzi} chars`;
     if (hskEl) hskEl.textContent = `✦ HSK ${p.hskLevel}`;
-    if (themeBtn) themeBtn.textContent = p.theme === "dark" ? "☀️ Sáng" : "🌙 Tối";
+    if (themeBtn) {
+      themeBtn.textContent = p.theme === "dark"
+        ? (isVi ? "☀️ Sáng" : "☀️ Light")
+        : (isVi ? "🌙 Tối" : "🌙 Dark");
+    }
 
-    if (sbName) sbName.textContent = p.name || (user && user.displayName) || "Học viên";
+    if (sbName) sbName.textContent = p.name || (user && user.displayName) || (isVi ? "Học viên" : "Learner");
     if (sbSub) sbSub.textContent = `@${(user && user.username) || "user"} · HSK ${p.hskLevel}`;
     if (sbAvatar) sbAvatar.textContent = (p.name || "H").trim().charAt(0).toUpperCase();
   }
@@ -263,8 +280,8 @@ window.QApp = (function () {
 
     function drawAuth() {
       gate.classList.add("open");
-      const idLabel = cloudMode ? "Email" : "Tên tài khoản (viết liền không dấu, vd: minh_an)";
-      const idPlaceholder = cloudMode ? "vd: anhquan06122008@gmail.com" : "Nhập tên tài khoản...";
+      const idLabel = cloudMode ? "Email" : "Tên tài khoản";
+      const idPlaceholder = cloudMode ? "Nhập địa chỉ email..." : "Nhập tên tài khoản...";
       const idType = cloudMode ? "email" : "text";
       gate.innerHTML = `
         <div class="modal-card" style="max-width:440px;">
@@ -272,11 +289,6 @@ window.QApp = (function () {
             <div class="brand-seal" style="margin:0 auto 8px;width:50px;height:50px;font-size:26px;">练</div>
             <h2 style="margin:0;font-size:21px;">CHINESE PERSONAL TUTOR</h2>
             <div style="color:var(--primary);font-weight:700;font-size:13.5px;margin-top:2px;">AI 汉语私人教师 · Tiếng Trung Giản Thể</div>
-            <p style="font-size:12.5px;color:var(--text-secondary);margin:6px 0 0;">
-              ${cloudMode
-                ? "Đăng nhập bằng tài khoản Cloud (dùng chung hệ sinh thái QEnglish · TKB) để tự động đồng bộ tiến độ 24/7."
-                : "Mỗi người học có một tài khoản & mật khẩu riêng — chia sẻ web cho bạn bè học cùng thoải mái mà không lo trùng tiến độ!"}
-            </p>
           </div>
 
           ${
@@ -320,8 +332,8 @@ window.QApp = (function () {
               ${
                 authTab === "register"
                   ? `
-                <label style="font-size:13px;font-weight:600;">Tên gọi hiển thị của bạn (vd: Anh Quân)
-                  <input class="input-field" id="auth-disp" placeholder="Giáo viên AI sẽ chào bạn bằng tên này...">
+                <label style="font-size:13px;font-weight:600;">Tên hiển thị của bạn
+                  <input class="input-field" id="auth-disp" placeholder="Nhập tên hiển thị...">
                 </label>
               `
                   : ""
@@ -380,12 +392,6 @@ window.QApp = (function () {
                 : ""
             }
           </div>
-
-          <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border-color);text-align:center;">
-            <button class="btn btn-soft btn-sm" id="auth-switch-quick">
-              ${authTab === "login" ? "Chưa có tài khoản? Đăng ký ngay →" : "Đã có tài khoản? Đăng nhập →"}
-            </button>
-          </div>
         </div>
       `;
 
@@ -397,10 +403,6 @@ window.QApp = (function () {
       if (tabRegBtn) tabRegBtn.onclick = () => { authTab = "register"; drawAuth(); };
       if (tabRecBtn) tabRecBtn.onclick = () => { authTab = "recover"; drawAuth(); };
       if (backLoginBtn) backLoginBtn.onclick = () => { authTab = "login"; drawAuth(); };
-      gate.querySelector("#auth-switch-quick").onclick = () => {
-        authTab = authTab === "login" ? "register" : "login";
-        drawAuth();
-      };
 
       const doSubmit = async () => {
         const uEl = gate.querySelector("#auth-user");
@@ -491,6 +493,17 @@ window.QApp = (function () {
       themeBtn.onclick = () => {
         QCore.toggleTheme();
         refreshTopbar();
+      };
+    }
+
+    const langBtn = document.getElementById("top-lang-btn");
+    if (langBtn) {
+      langBtn.onclick = () => {
+        const nextLang = QCore.toggleUiLang();
+        renderSidebar();
+        refreshTopbar();
+        refreshCurrentView();
+        QCore.showToast(nextLang === "en" ? "🌐 Switched to English (ZH–EN bilingual)" : "🇻🇳 Đã chuyển sang Tiếng Việt (ZH–VI)");
       };
     }
 

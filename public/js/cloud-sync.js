@@ -265,7 +265,7 @@ window.QCloud = (function () {
     const cleanEmail = String(email || "").trim().toLowerCase();
     const cleanName = String(displayName || "").trim() || cleanEmail.split("@")[0] || "Học viên";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
-      throw new Error("Vui lòng nhập địa chỉ Email hợp lệ (vd: anhquan06122008@gmail.com).");
+      throw new Error("Vui lòng nhập địa chỉ Email hợp lệ (vd: you@example.com).");
     }
     if (String(password || "").length < 6) {
       throw new Error("Mật khẩu cần tối thiểu 6 ký tự.");

@@ -12,9 +12,36 @@ window.QLessonStudio = (function () {
   let activeSkill = "reading"; // reading | listening | writing | speaking | vocabulary | grammar
   let activeExIdx = 0;
   let showPinyin = true;
+  let showEn = true;
   let showVi = false;
   let lastWrongFocuses = [];
   let lastGradeSummary = null;
+
+  function isViMode() {
+    return window.QCore && typeof QCore.getUiLang === "function" && QCore.getUiLang() === "vi";
+  }
+
+  function pickQuestionFields(q) {
+    const useEn = !isViMode();
+    return {
+      text: (useEn && q.question_en) ? q.question_en : (q.question || ""),
+      options: (useEn && Array.isArray(q.options_en) && q.options_en.length) ? q.options_en : (q.options || []),
+      answer: (useEn && q.answer_en) ? q.answer_en : (q.answer || ""),
+      explain: (useEn && q.explain_en) ? q.explain_en : (q.explain || "")
+    };
+  }
+
+  function formatAlignedLines(text, refChinese) {
+    const raw = String(text || "").trim();
+    if (!raw) return "";
+    if (raw.includes("\n")) return raw;
+    // If legacy data had no newlines but Chinese has multiple lines, split cleanly by sentence punctuation
+    const refLines = String(refChinese || "").split("\n").filter((x) => x.trim()).length;
+    if (refLines > 1) {
+      return raw.replace(/([.!?。！？])\s+(?=[A-ZĐÁÀẢÃẠĂÂÊÔƠƯNǐWǒShìMéiDuìXièBú])/g, "$1\n");
+    }
+    return raw;
+  }
 
   const SKILLS = [
     { id: "reading", label: "📰 Reading" },
@@ -226,13 +253,17 @@ window.QLessonStudio = (function () {
 
   /* ---------- SPLIT-SCREEN READING (LEFT: PASSAGE · RIGHT: 5 QUESTIONS + GRADING) ---------- */
   function renderReadingSplit(stage, lesson, ex, parentContainer) {
-    if (!ex) { stage.innerHTML = `<div class="card">Chưa có bài đọc. Bấm "✨ AI – TẠO BÀI TẬP MỚI" phía trên!</div>`; return; }
+    const vi = isViMode();
+    if (!ex) { stage.innerHTML = `<div class="card">${vi ? 'Chưa có bài đọc. Bấm "✨ AI – TẠO BÀI TẬP MỚI" phía trên!' : 'No reading exercise yet. Click "✨ AI – Generate New Exercise" above!'}</div>`; return; }
     const st = QCore.getState();
     const prog = st.lessonProgress && st.lessonProgress[ex.id];
+    const alignedPinyin = formatAlignedLines(ex.pinyin, ex.chinese);
+    const alignedEn = formatAlignedLines(ex.english, ex.chinese);
+    const alignedVi = formatAlignedLines(ex.vietnamese, ex.chinese);
 
     stage.innerHTML = `
       <div class="grid-2" style="align-items:start;gap:16px;">
-        <!-- LEFT PANE: Chinese Passage -->
+        <!-- LEFT PANE: Chinese Passage + Line-Aligned Pinyin, English & Vietnamese -->
         <div class="card">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
             <div>
@@ -241,34 +272,61 @@ window.QLessonStudio = (function () {
             </div>
             <div style="display:flex;gap:6px;flex-wrap:wrap;">
               <button class="btn ${showPinyin ? "btn-primary" : "btn-outline"} btn-sm" id="lrd-py">ā Pinyin</button>
-              <button class="btn ${showVi ? "btn-primary" : "btn-outline"} btn-sm" id="lrd-vi">👁️ Dịch Việt</button>
-              <button class="btn btn-soft btn-sm" id="lrd-speak">🔊 Nghe đọc</button>
+              <button class="btn ${showEn ? "btn-primary" : "btn-outline"} btn-sm" id="lrd-en">🇬🇧 English</button>
+              <button class="btn ${showVi ? "btn-primary" : "btn-outline"} btn-sm" id="lrd-vi">🇻🇳 Dịch Việt</button>
+              <button class="btn btn-soft btn-sm" id="lrd-speak">🔊 ${vi ? "Nghe đọc" : "Listen"}</button>
             </div>
           </div>
 
           ${ex.focusReason ? `<div class="vi-hint-banner" style="margin-bottom:10px;"><span>🎯</span><div>${QCore.escapeHtml(ex.focusReason)}</div></div>` : ""}
 
-          <div class="card-subtle hanzi-text" style="font-size:21px;line-height:2.0;white-space:pre-wrap;margin-bottom:12px;">${QCore.escapeHtml(ex.chinese)}</div>
-          ${showPinyin && ex.pinyin ? `<div class="pinyin-text" style="font-size:13.5px;color:var(--primary);margin-bottom:8px;">${QCore.escapeHtml(ex.pinyin)}</div>` : ""}
-          ${showVi && ex.vietnamese ? `<div class="card-subtle" style="font-size:13.5px;color:var(--text-secondary);">🇻🇳 <strong>Bản dịch tham khảo:</strong> ${QCore.escapeHtml(ex.vietnamese)}</div>` : ""}
+          <div class="card-subtle hanzi-text" style="font-size:21px;line-height:2.0;white-space:pre-line;margin-bottom:12px;">${QCore.escapeHtml(ex.chinese)}</div>
+
+          ${showPinyin && alignedPinyin ? `
+            <div class="card-subtle" style="margin-bottom:10px;border-left:3px solid var(--primary);">
+              <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.4px;">ā Pinyin</div>
+              <div class="pinyin-text" style="font-size:14.5px;color:var(--primary);line-height:1.9;white-space:pre-line;margin-top:6px;">${QCore.escapeHtml(alignedPinyin)}</div>
+            </div>
+          ` : ""}
+
+          ${showEn && alignedEn ? `
+            <div class="card-subtle" style="margin-bottom:10px;border-left:3px solid #3b82f6;">
+              <div style="font-size:12.5px;font-weight:700;color:var(--text-main);">🇬🇧 English Translation:</div>
+              <div style="font-size:13.5px;color:var(--text-secondary);line-height:1.85;white-space:pre-line;margin-top:6px;">${QCore.escapeHtml(alignedEn)}</div>
+            </div>
+          ` : ""}
+
+          ${showVi && alignedVi ? `
+            <div class="card-subtle" style="font-size:13.5px;color:var(--text-secondary);border-left:3px solid var(--accent-amber);">
+              <div style="font-size:12.5px;font-weight:700;color:var(--text-main);">🇻🇳 Bản dịch tham khảo:</div>
+              <div style="line-height:1.85;white-space:pre-line;margin-top:6px;">${QCore.escapeHtml(alignedVi)}</div>
+            </div>
+          ` : ""}
         </div>
 
-        <!-- RIGHT PANE: 5 Diverse Questions + Full Grading -->
+        <!-- RIGHT PANE: 5 Diverse Questions (Default ZH–EN, toggleable to ZH–VI) -->
         <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-            <h3 style="margin:0;font-size:16.5px;">📝 Câu hỏi Đọc hiểu (${(ex.questions || []).length} câu)</h3>
-            ${prog ? `<span class="badge badge-jade">Điểm cao nhất: ${prog.bestScore}/100 · ${prog.attempts} lần</span>` : ""}
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+            <h3 style="margin:0;font-size:16.5px;">📝 ${vi ? `Câu hỏi Đọc hiểu (${(ex.questions || []).length} câu)` : `Reading Questions (${(ex.questions || []).length})`}</h3>
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+              <button class="btn btn-outline btn-sm" id="lrd-q-lang" title="Switch question language (ZH-EN / ZH-VI)">
+                ${vi ? "🌐 Switch to ZH–EN" : "🇻🇳 Đổi sang Trung–Việt"}
+              </button>
+              ${prog ? `<span class="badge badge-jade">${vi ? `Điểm cao nhất: ${prog.bestScore}/100 · ${prog.attempts} lần` : `Best: ${prog.bestScore}/100 · ${prog.attempts}x`}</span>` : ""}
+            </div>
           </div>
 
           <div style="display:flex;flex-direction:column;gap:14px;" id="lrd-q-list">
-            ${(ex.questions || []).map((q, qi) => `
+            ${(ex.questions || []).map((q, qi) => {
+              const qf = pickQuestionFields(q);
+              return `
               <div class="card-subtle" style="padding:12px;" data-qidx="${qi}">
-                <div style="font-weight:700;font-size:14px;margin-bottom:8px;">Câu ${qi + 1}. ${QCore.escapeHtml(q.question)}</div>
+                <div style="font-weight:700;font-size:14px;margin-bottom:8px;">${vi ? `Câu ${qi + 1}.` : `Question ${qi + 1}.`} ${QCore.escapeHtml(qf.text)}</div>
                 ${q.type === "fill" ? `
-                  <input class="input-field hanzi-text" id="lrd-ans-${qi}" data-pinyin-ime="true" placeholder="Nhập đáp án chữ Hán Giản thể..." />
+                  <input class="input-field hanzi-text" id="lrd-ans-${qi}" data-pinyin-ime="true" placeholder="${vi ? "Nhập đáp án chữ Hán Giản thể..." : "Type Simplified Chinese answer..."}" />
                 ` : `
                   <div style="display:flex;flex-direction:column;gap:6px;">
-                    ${(q.options || []).map((opt, oi) => `
+                    ${qf.options.map((opt) => `
                       <label style="display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--border-color);border-radius:8px;cursor:pointer;background:var(--bg-surface);font-size:13.5px;">
                         <input type="radio" name="lrd_q_${qi}" value="${QCore.escapeHtml(opt)}" />
                         <span>${QCore.escapeHtml(opt)}</span>
@@ -278,12 +336,13 @@ window.QLessonStudio = (function () {
                 `}
                 <div id="lrd-qfb-${qi}" style="margin-top:8px;font-size:13px;"></div>
               </div>
-            `).join("")}
+            `;
+            }).join("")}
           </div>
 
           <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;">
-            <button class="btn btn-primary" id="lrd-submit">✅ Nộp bài và nhận kết quả</button>
-            <button class="btn btn-outline btn-sm" id="lrd-retry">🔄 Làm lại</button>
+            <button class="btn btn-primary" id="lrd-submit">✅ ${vi ? "Nộp bài và nhận kết quả" : "Submit & Grade"}</button>
+            <button class="btn btn-outline btn-sm" id="lrd-retry">🔄 ${vi ? "Làm lại" : "Retry"}</button>
           </div>
 
           <div id="lrd-summary" style="margin-top:14px;"></div>
@@ -292,15 +351,23 @@ window.QLessonStudio = (function () {
     `;
 
     stage.querySelector("#lrd-py").onclick = () => { showPinyin = !showPinyin; renderReadingSplit(stage, lesson, ex, parentContainer); };
+    stage.querySelector("#lrd-en").onclick = () => { showEn = !showEn; renderReadingSplit(stage, lesson, ex, parentContainer); };
     stage.querySelector("#lrd-vi").onclick = () => { showVi = !showVi; renderReadingSplit(stage, lesson, ex, parentContainer); };
     stage.querySelector("#lrd-speak").onclick = () => QCore.speakChinese(ex.chinese);
     stage.querySelector("#lrd-retry").onclick = () => renderReadingSplit(stage, lesson, ex, parentContainer);
+    stage.querySelector("#lrd-q-lang").onclick = () => {
+      QCore.toggleUiLang();
+      if (window.QApp && typeof QApp.refreshTopbar === "function") QApp.refreshTopbar();
+      if (window.QApp && typeof QApp.refreshCurrentView === "function") QApp.refreshCurrentView();
+      else renderReadingSplit(stage, lesson, ex, parentContainer);
+    };
 
     stage.querySelector("#lrd-submit").onclick = () => {
       const qs = ex.questions || [];
       let right = 0;
       const missed = [];
       qs.forEach((q, qi) => {
+        const qf = pickQuestionFields(q);
         let userAns = "";
         if (q.type === "fill") {
           userAns = (stage.querySelector(`#lrd-ans-${qi}`).value || "").trim();
@@ -308,13 +375,14 @@ window.QLessonStudio = (function () {
           const checked = stage.querySelector(`input[name="lrd_q_${qi}"]:checked`);
           userAns = checked ? checked.value : "";
         }
-        const ok = userAns.replace(/[。！？\s]/g, "") === String(q.answer || "").replace(/[。！？\s]/g, "");
+        const norm = (s) => String(s || "").replace(/[。！？\s]/g, "");
+        const ok = norm(userAns) === norm(qf.answer) || (q.answer && norm(userAns) === norm(q.answer));
         if (ok) right++;
         else missed.push(q.skillFocus || "detail");
         const fbEl = stage.querySelector(`#lrd-qfb-${qi}`);
         fbEl.innerHTML = ok
-          ? `<div style="color:var(--primary);font-weight:700;">✅ Chính xác! ${QCore.escapeHtml(q.explain || "")}</div>`
-          : `<div style="color:var(--accent-red);">❌ Chưa đúng (bạn chọn: "${QCore.escapeHtml(userAns || "Chưa trả lời")}"). <strong>Đáp án đúng: ${QCore.escapeHtml(q.answer)}</strong><br/><span style="color:var(--text-secondary);">💡 ${QCore.escapeHtml(q.explain || "")}</span></div>`;
+          ? `<div style="color:var(--primary);font-weight:700;">✅ ${vi ? "Chính xác!" : "Correct!"} ${QCore.escapeHtml(qf.explain)}</div>`
+          : `<div style="color:var(--accent-red);">❌ ${vi ? "Chưa đúng" : "Incorrect"} (${vi ? "bạn chọn" : "selected"}: "${QCore.escapeHtml(userAns || (vi ? "Chưa trả lời" : "No answer"))}"). <strong>${vi ? "Đáp án đúng" : "Correct answer"}: ${QCore.escapeHtml(qf.answer)}</strong><br/><span style="color:var(--text-secondary);">💡 ${QCore.escapeHtml(qf.explain)}</span></div>`;
       });
 
       const score = qs.length ? Math.round((right / qs.length) * 100) : 100;
@@ -329,12 +397,14 @@ window.QLessonStudio = (function () {
       const sumBox = stage.querySelector("#lrd-summary");
       sumBox.innerHTML = `
         <div class="card-subtle" style="border:2px solid ${score >= 70 ? "var(--primary)" : "var(--accent-amber)"};">
-          <strong style="font-size:16px;">🎯 Kết quả: ${score}/100 điểm (${right}/${qs.length} câu đúng · ${qs.length - right} câu sai)</strong>
+          <strong style="font-size:16px;">🎯 ${vi ? `Kết quả: ${score}/100 điểm (${right}/${qs.length} câu đúng · ${qs.length - right} câu sai)` : `Result: ${score}/100 (${right}/${qs.length} correct · ${qs.length - right} missed)`}</strong>
           <div style="font-size:13px;color:var(--text-secondary);margin-top:6px;">
-            ${missed.length ? `Điểm cần củng cố: <strong>${[...new Set(missed)].join(", ")}</strong>. Bấm nút bên dưới để AI tạo bài Reading mới nhắm đúng lỗ hổng này!` : "Xuất sắc! Bạn đã nắm chắc toàn bộ nội dung bài đọc. Hãy thử bài mới hoặc chuyển sang kỹ năng tiếp theo!"}
+            ${missed.length
+              ? (vi ? `Điểm cần củng cố: <strong>${[...new Set(missed)].join(", ")}</strong>. Bấm nút bên dưới để AI tạo bài Reading mới nhắm đúng lỗ hổng này!` : `Focus areas to review: <strong>${[...new Set(missed)].join(", ")}</strong>. Click below to let AI generate a targeted practice set!`)
+              : (vi ? "Xuất sắc! Bạn đã nắm chắc toàn bộ nội dung bài đọc." : "Excellent! You mastered this reading passage.")}
           </div>
           <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
-            <button class="btn btn-primary btn-sm" id="lrd-gen-more">✨ AI – TẠO BÀI TẬP MỚI (Nhắm lỗi vừa sai)</button>
+            <button class="btn btn-primary btn-sm" id="lrd-gen-more">✨ ${vi ? "AI – TẠO BÀI TẬP MỚI (Nhắm lỗi vừa sai)" : "AI – Generate Targeted Practice"}</button>
           </div>
         </div>
       `;
@@ -344,7 +414,9 @@ window.QLessonStudio = (function () {
 
   /* ---------- LISTENING WITH REAL NEW HSK 1 (3.0) MP3 TRACKS ---------- */
   function renderListeningEx(stage, lesson, ex, parentContainer) {
-    if (!ex) { stage.innerHTML = `<div class="card">Chưa có bài nghe.</div>`; return; }
+    const vi = isViMode();
+    if (!ex) { stage.innerHTML = `<div class="card">${vi ? "Chưa có bài nghe." : "No listening exercise yet."}</div>`; return; }
+    const hintText = (!vi && ex.targetHint_en) ? ex.targetHint_en : (ex.targetHint || "");
     stage.innerHTML = `
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
@@ -352,7 +424,8 @@ window.QLessonStudio = (function () {
             ${sourceTagBadge(ex.sourceTag)}
             <h3 style="margin:6px 0 0;">🎧 ${QCore.escapeHtml(ex.title)}</h3>
           </div>
-          <div style="display:flex;gap:6px;">
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            <button class="btn btn-outline btn-sm" id="llis-q-lang">${vi ? "🌐 ZH–EN" : "🇻🇳 Trung–Việt"}</button>
             ${[0.75, 1.0, 1.25].map((s) => `<button class="btn btn-outline btn-sm" data-lspd="${s}">x${s}</button>`).join("")}
           </div>
         </div>
@@ -361,18 +434,20 @@ window.QLessonStudio = (function () {
           <audio id="ls-mp3-player" controls src="${QCore.escapeHtml(QCore.resolveApiUrl(ex.audioUrl))}" style="width:100%;margin-bottom:12px;"></audio>
         ` : `
           <div style="margin-bottom:12px;">
-            <button class="btn btn-primary" id="ls-tts-play">🔊 Nghe bài đọc (Putonghua TTS)</button>
+            <button class="btn btn-primary" id="ls-tts-play">🔊 ${vi ? "Nghe bài đọc (Putonghua TTS)" : "Play Passage (Putonghua TTS)"}</button>
           </div>
         `}
 
-        <div class="card-subtle" style="margin-bottom:14px;font-size:13.5px;">💡 ${QCore.escapeHtml(ex.targetHint || "")}</div>
+        <div class="card-subtle" style="margin-bottom:14px;font-size:13.5px;">💡 ${QCore.escapeHtml(hintText)}</div>
 
         <div style="display:flex;flex-direction:column;gap:12px;">
-          ${(ex.questions || []).map((q, qi) => `
+          ${(ex.questions || []).map((q, qi) => {
+            const qf = pickQuestionFields(q);
+            return `
             <div class="card-subtle">
-              <div style="font-weight:700;margin-bottom:8px;">Câu ${qi + 1}. ${QCore.escapeHtml(q.question)}</div>
+              <div style="font-weight:700;margin-bottom:8px;">${vi ? `Câu ${qi + 1}.` : `Question ${qi + 1}.`} ${QCore.escapeHtml(qf.text)}</div>
               <div style="display:flex;flex-direction:column;gap:6px;">
-                ${(q.options || []).map((opt) => `
+                ${qf.options.map((opt) => `
                   <label style="display:flex;gap:8px;align-items:center;cursor:pointer;font-size:13.5px;">
                     <input type="radio" name="llis_q_${qi}" value="${QCore.escapeHtml(opt)}" />
                     <span>${QCore.escapeHtml(opt)}</span>
@@ -381,15 +456,22 @@ window.QLessonStudio = (function () {
               </div>
               <div id="llis-fb-${qi}" style="margin-top:6px;font-size:13px;"></div>
             </div>
-          `).join("")}
+          `;
+          }).join("")}
         </div>
 
         <div style="margin-top:14px;display:flex;gap:8px;">
-          <button class="btn btn-primary" id="llis-submit">✅ Nộp bài nghe</button>
+          <button class="btn btn-primary" id="llis-submit">✅ ${vi ? "Nộp bài nghe" : "Submit Listening"}</button>
         </div>
         <div id="llis-sum" style="margin-top:12px;"></div>
       </div>
     `;
+
+    stage.querySelector("#llis-q-lang").onclick = () => {
+      QCore.toggleUiLang();
+      if (window.QApp && typeof QApp.refreshTopbar === "function") QApp.refreshTopbar();
+      if (window.QApp && typeof QApp.refreshCurrentView === "function") QApp.refreshCurrentView();
+    };
 
     const player = stage.querySelector("#ls-mp3-player");
     stage.querySelectorAll("[data-lspd]").forEach((b) => {
@@ -406,25 +488,27 @@ window.QLessonStudio = (function () {
       const qs = ex.questions || [];
       let okCnt = 0;
       qs.forEach((q, qi) => {
+        const qf = pickQuestionFields(q);
         const sel = stage.querySelector(`input[name="llis_q_${qi}"]:checked`);
         const val = sel ? sel.value : "";
-        const ok = val === q.answer;
+        const ok = val === qf.answer || val === q.answer;
         if (ok) okCnt++;
         stage.querySelector(`#llis-fb-${qi}`).innerHTML = ok
-          ? `<span style="color:var(--primary);font-weight:700;">✅ Chính xác! ${QCore.escapeHtml(q.explain || "")}</span>`
-          : `<span style="color:var(--accent-red);">❌ Đáp án đúng: <strong>${QCore.escapeHtml(q.answer)}</strong> — ${QCore.escapeHtml(q.explain || "")}</span>`;
+          ? `<span style="color:var(--primary);font-weight:700;">✅ ${vi ? "Chính xác!" : "Correct!"} ${QCore.escapeHtml(qf.explain)}</span>`
+          : `<span style="color:var(--accent-red);">❌ ${vi ? "Đáp án đúng" : "Correct answer"}: <strong>${QCore.escapeHtml(qf.answer)}</strong> — ${QCore.escapeHtml(qf.explain)}</span>`;
       });
       const score = qs.length ? Math.round((okCnt / qs.length) * 100) : 100;
       QCore.recordLessonExercise(ex.id, score);
       QCore.updateSkillScore("listening", score);
       QCore.logDailyActivity("listeningCount", 1);
-      stage.querySelector("#llis-sum").innerHTML = `<div class="card-subtle" style="border-color:var(--primary);"><strong>🎯 Điểm bài nghe: ${score}/100 (${okCnt}/${qs.length} đúng)</strong></div>`;
+      stage.querySelector("#llis-sum").innerHTML = `<div class="card-subtle" style="border-color:var(--primary);"><strong>🎯 ${vi ? `Điểm bài nghe: ${score}/100 (${okCnt}/${qs.length} đúng)` : `Listening Score: ${score}/100 (${okCnt}/${qs.length} correct)`}</strong></div>`;
     };
   }
 
   /* ---------- VOCABULARY / GRAMMAR / WRITING / SPEAKING INSIDE LESSON ---------- */
   function renderVocabEx(stage, lesson) {
     const words = lesson.skills.vocabulary || [];
+    const vi = isViMode();
     stage.innerHTML = `
       <div class="grid-2" style="gap:12px;">
         ${words.map((w) => `
@@ -432,7 +516,8 @@ window.QLessonStudio = (function () {
             <div>
               <span class="hanzi-text" style="font-size:28px;font-weight:700;">${QCore.escapeHtml(w.hanzi)}</span>
               <span class="pinyin-text" style="font-size:16px;color:var(--primary);font-weight:700;margin-left:8px;">${QCore.escapeHtml(w.pinyin)}</span>
-              <div style="font-size:13.5px;color:var(--text-secondary);margin-top:4px;">🇻🇳 ${QCore.escapeHtml(w.vi)}</div>
+              ${w.en ? `<div style="font-size:13.5px;color:var(--text-main);margin-top:4px;">🇬🇧 ${QCore.escapeHtml(w.en)}</div>` : ""}
+              ${vi || !w.en ? `<div style="font-size:13px;color:var(--text-secondary);margin-top:2px;">🇻🇳 ${QCore.escapeHtml(w.vi)}</div>` : ""}
             </div>
             <div style="display:flex;gap:6px;">
               <button class="icon-btn" data-lv-sp="${QCore.escapeHtml(w.hanzi)}">🔊</button>
@@ -452,33 +537,47 @@ window.QLessonStudio = (function () {
   }
 
   function renderGrammarEx(stage, lesson, ex) {
-    if (!ex) { stage.innerHTML = `<div class="card">Chưa có bài ngữ pháp.</div>`; return; }
+    const vi = isViMode();
+    if (!ex) { stage.innerHTML = `<div class="card">${vi ? "Chưa có bài ngữ pháp." : "No grammar exercise yet."}</div>`; return; }
+    const expText = (!vi && ex.explanation_en) ? ex.explanation_en : (ex.explanation || ex.focusReason || "");
     stage.innerHTML = `
       <div class="card">
-        ${sourceTagBadge(ex.sourceTag)}
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+          <div>${sourceTagBadge(ex.sourceTag)}</div>
+          <button class="btn btn-outline btn-sm" id="lgr-q-lang">${vi ? "🌐 ZH–EN" : "🇻🇳 Trung–Việt"}</button>
+        </div>
         <h3 style="margin:6px 0;">🧩 ${QCore.escapeHtml(ex.title)}</h3>
         ${ex.formula ? `<div class="badge badge-amber" style="margin-bottom:8px;white-space:normal;">📐 ${QCore.escapeHtml(ex.formula)}</div>` : ""}
-        <p style="font-size:14px;color:var(--text-secondary);">${QCore.escapeHtml(ex.explanation || ex.focusReason || "")}</p>
-        ${(ex.questions || []).map((q, qi) => `
+        <p style="font-size:14px;color:var(--text-secondary);">${QCore.escapeHtml(expText)}</p>
+        ${(ex.questions || []).map((q, qi) => {
+          const qf = pickQuestionFields(q);
+          return `
           <div class="card-subtle" style="margin-bottom:10px;">
-            <div style="font-weight:700;margin-bottom:6px;">Câu ${qi + 1}. ${QCore.escapeHtml(q.question)}</div>
-            ${q.type === "fill" ? `<input class="input-field hanzi-text" id="lgr-a-${qi}" />` : (q.options || []).map((o) => `<label style="display:block;margin:4px 0;cursor:pointer;"><input type="radio" name="lgr_${qi}" value="${QCore.escapeHtml(o)}"/> ${QCore.escapeHtml(o)}</label>`).join("")}
+            <div style="font-weight:700;margin-bottom:6px;">${vi ? `Câu ${qi + 1}.` : `Question ${qi + 1}.`} ${QCore.escapeHtml(qf.text)}</div>
+            ${q.type === "fill" ? `<input class="input-field hanzi-text" id="lgr-a-${qi}" />` : qf.options.map((o) => `<label style="display:block;margin:4px 0;cursor:pointer;"><input type="radio" name="lgr_${qi}" value="${QCore.escapeHtml(o)}"/> ${QCore.escapeHtml(o)}</label>`).join("")}
             <div id="lgr-fb-${qi}" style="margin-top:6px;font-size:13px;"></div>
           </div>
-        `).join("")}
-        <button class="btn btn-primary" id="lgr-sub">✅ Kiểm tra ngữ pháp</button>
+        `;
+        }).join("")}
+        <button class="btn btn-primary" id="lgr-sub">✅ ${vi ? "Kiểm tra ngữ pháp" : "Check Grammar"}</button>
       </div>
     `;
+    stage.querySelector("#lgr-q-lang").onclick = () => {
+      QCore.toggleUiLang();
+      if (window.QApp && typeof QApp.refreshTopbar === "function") QApp.refreshTopbar();
+      if (window.QApp && typeof QApp.refreshCurrentView === "function") QApp.refreshCurrentView();
+    };
     stage.querySelector("#lgr-sub").onclick = () => {
       const qs = ex.questions || [];
       let right = 0;
       qs.forEach((q, qi) => {
+        const qf = pickQuestionFields(q);
         const val = q.type === "fill" ? (stage.querySelector(`#lgr-a-${qi}`).value || "").trim() : ((stage.querySelector(`input[name="lgr_${qi}"]:checked`) || {}).value || "");
-        const ok = val === q.answer;
+        const ok = val === qf.answer || val === q.answer;
         if (ok) right++;
         stage.querySelector(`#lgr-fb-${qi}`).innerHTML = ok
-          ? `<span style="color:var(--primary);font-weight:700;">✅ Đúng! ${QCore.escapeHtml(q.explain || "")}</span>`
-          : `<span style="color:var(--accent-red);">❌ Đáp án đúng: ${QCore.escapeHtml(q.answer)} — ${QCore.escapeHtml(q.explain || "")}</span>`;
+          ? `<span style="color:var(--primary);font-weight:700;">✅ ${vi ? "Đúng!" : "Correct!"} ${QCore.escapeHtml(qf.explain)}</span>`
+          : `<span style="color:var(--accent-red);">❌ ${vi ? "Đáp án đúng" : "Correct answer"}: ${QCore.escapeHtml(qf.answer)} — ${QCore.escapeHtml(qf.explain)}</span>`;
       });
       const score = qs.length ? Math.round((right / qs.length) * 100) : 100;
       QCore.recordLessonExercise(ex.id, score);

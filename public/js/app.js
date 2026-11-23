@@ -263,21 +263,31 @@ window.QApp = (function () {
     function drawAuth() {
       gate.classList.add("open");
       gate.innerHTML = `
-        <div class="modal-card" style="max-width:460px;">
-          <div style="text-align:center;margin-bottom:18px;">
-            <div class="brand-seal" style="margin:0 auto 10px;width:54px;height:54px;font-size:28px;">练</div>
-            <h2 style="margin:0;font-size:22px;">CHINESE PERSONAL TUTOR</h2>
-            <div style="color:var(--primary);font-weight:700;font-size:14px;">AI 汉语私人教师 · Tiếng Trung Giản Thể</div>
-            <p style="font-size:13px;color:var(--text-secondary);margin:6px 0 0;">
+        <div class="modal-card" style="max-width:440px;">
+          <div style="text-align:center;margin-bottom:16px;">
+            <div class="brand-seal" style="margin:0 auto 8px;width:50px;height:50px;font-size:26px;">练</div>
+            <h2 style="margin:0;font-size:21px;">CHINESE PERSONAL TUTOR</h2>
+            <div style="color:var(--primary);font-weight:700;font-size:13.5px;margin-top:2px;">AI 汉语私人教师 · Tiếng Trung Giản Thể</div>
+            <p style="font-size:12.5px;color:var(--text-secondary);margin:6px 0 0;">
               Mỗi người học có một tài khoản & mật khẩu riêng — chia sẻ web cho bạn bè học cùng thoải mái mà không lo trùng tiến độ!
             </p>
           </div>
 
-          <div class="tabs-bar" style="width:100%;margin-bottom:16px;">
-            <button class="tab-pill ${authTab === "login" ? "active" : ""}" style="flex:1;" id="auth-tab-login">Đăng nhập</button>
-            <button class="tab-pill ${authTab === "register" ? "active" : ""}" style="flex:1;" id="auth-tab-reg">Tạo tài khoản</button>
-            <button class="tab-pill ${authTab === "recover" ? "active" : ""}" style="flex:1;" id="auth-tab-rec">Khôi phục MK</button>
-          </div>
+          ${
+            authTab === "recover"
+              ? `
+            <div style="text-align:center;margin-bottom:14px;">
+              <div style="font-size:15px;font-weight:700;color:var(--text-primary);">🔑 Khôi phục mật khẩu</div>
+              <div style="font-size:12.5px;color:var(--text-muted);margin-top:2px;">Nhập tên tài khoản và mã khôi phục đã lưu để đặt mật khẩu mới</div>
+            </div>
+          `
+              : `
+            <div class="tabs-bar" style="width:100%;margin-bottom:16px;">
+              <button class="tab-pill ${authTab === "login" ? "active" : ""}" style="flex:1;" id="auth-tab-login">Đăng nhập</button>
+              <button class="tab-pill ${authTab === "register" ? "active" : ""}" style="flex:1;" id="auth-tab-reg">Tạo tài khoản</button>
+            </div>
+          `
+          }
 
           <div id="auth-err" style="color:var(--accent-red);font-size:13px;margin-bottom:10px;display:none;"></div>
           <div id="auth-ok" style="color:var(--primary);font-size:13px;margin-bottom:10px;display:none;"></div>
@@ -314,13 +324,32 @@ window.QApp = (function () {
             `
             }
 
-            <button class="btn btn-primary" style="margin-top:6px;width:100%;padding:12px;" id="auth-submit">
-              ${authTab === "login" ? "🚀 Đăng nhập (hỗ trợ đa thiết bị)" : authTab === "register" ? "✨ Tạo tài khoản & Bắt đầu từ con số 0" : "🔑 Đặt lại mật khẩu ngay"}
+            <button class="btn btn-primary" style="margin-top:6px;width:100%;padding:12px;font-weight:700;" id="auth-submit">
+              ${authTab === "login" ? "Đăng nhập" : authTab === "register" ? "Tạo tài khoản" : "Đặt lại mật khẩu"}
             </button>
+
+            ${
+              authTab === "login"
+                ? `
+              <div style="text-align:center;margin-top:2px;">
+                <button type="button" id="auth-tab-rec" style="background:none;border:none;color:var(--primary);font-size:13px;font-weight:600;cursor:pointer;padding:4px 8px;text-decoration:underline;text-underline-offset:3px;">
+                  Khôi phục mật khẩu
+                </button>
+              </div>
+            `
+                : authTab === "recover"
+                ? `
+              <div style="text-align:center;margin-top:2px;">
+                <button type="button" id="auth-back-login" style="background:none;border:none;color:var(--primary);font-size:13px;font-weight:600;cursor:pointer;padding:4px 8px;">
+                  ← Quay lại đăng nhập
+                </button>
+              </div>
+            `
+                : ""
+            }
           </div>
 
-          <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border-color);text-align:center;">
-            <small style="color:var(--text-muted);display:block;margin-bottom:6px;">Lần đầu ghé thăm? Bấm nút dưới để chuyển sang tạo tài khoản riêng trong 5 giây:</small>
+          <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border-color);text-align:center;">
             <button class="btn btn-soft btn-sm" id="auth-switch-quick">
               ${authTab === "login" ? "Chưa có tài khoản? Đăng ký ngay →" : "Đã có tài khoản? Đăng nhập →"}
             </button>
@@ -328,9 +357,14 @@ window.QApp = (function () {
         </div>
       `;
 
-      gate.querySelector("#auth-tab-login").onclick = () => { authTab = "login"; drawAuth(); };
-      gate.querySelector("#auth-tab-reg").onclick = () => { authTab = "register"; drawAuth(); };
-      gate.querySelector("#auth-tab-rec").onclick = () => { authTab = "recover"; drawAuth(); };
+      const tabLoginBtn = gate.querySelector("#auth-tab-login");
+      const tabRegBtn = gate.querySelector("#auth-tab-reg");
+      const tabRecBtn = gate.querySelector("#auth-tab-rec");
+      const backLoginBtn = gate.querySelector("#auth-back-login");
+      if (tabLoginBtn) tabLoginBtn.onclick = () => { authTab = "login"; drawAuth(); };
+      if (tabRegBtn) tabRegBtn.onclick = () => { authTab = "register"; drawAuth(); };
+      if (tabRecBtn) tabRecBtn.onclick = () => { authTab = "recover"; drawAuth(); };
+      if (backLoginBtn) backLoginBtn.onclick = () => { authTab = "login"; drawAuth(); };
       gate.querySelector("#auth-switch-quick").onclick = () => {
         authTab = authTab === "login" ? "register" : "login";
         drawAuth();

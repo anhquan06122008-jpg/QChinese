@@ -163,8 +163,16 @@ window.QCore = (function () {
     else localStorage.removeItem("qchinese_auth_token");
   }
 
+  const DEFAULT_CLOUD_API_BASE = "https://q-chinese.vercel.app";
+  let autoCloudBase = "";
+
   function getApiBase() {
-    return (localStorage.getItem("qchinese_api_base") || "").trim().replace(/\/+$/, "");
+    const custom = (localStorage.getItem("qchinese_api_base") || "").trim().replace(/\/+$/, "");
+    if (custom) return custom;
+    if (autoCloudBase) return autoCloudBase;
+    const host = (typeof window !== "undefined" && window.location && window.location.hostname) || "";
+    const isStatic = typeof window !== "undefined" && (window.location.protocol === "file:" || /github\.io$/i.test(host));
+    return isStatic ? DEFAULT_CLOUD_API_BASE : "";
   }
 
   function setApiBase(url) {
@@ -176,7 +184,7 @@ window.QCore = (function () {
   function resolveApiUrl(url) {
     const base = getApiBase();
     const rel = String(url).replace(/^\//, "");
-    return base ? `${base}/${rel}` : rel;
+    return base ? `${base}/${rel}` : `/${rel}`;
   }
 
   async function apiFetch(url, options = {}) {
@@ -390,7 +398,20 @@ window.QCore = (function () {
     try {
       serverHealth = await apiFetch("/api/health");
     } catch (_) {
-      serverHealth = { ok: false, aiConfigured: false, aiProvider: "local-offline" };
+      // Auto-fallback to 24/7 Vercel Cloud Backend if opened on a static host/dev server without Python backend
+      if (getApiBase() !== DEFAULT_CLOUD_API_BASE) {
+        autoCloudBase = DEFAULT_CLOUD_API_BASE;
+        if (window.QCloud && !QCloud.isCloudMode()) {
+          await QCloud.initConfig(DEFAULT_CLOUD_API_BASE);
+        }
+        try {
+          serverHealth = await apiFetch("/api/health");
+        } catch (__) {
+          serverHealth = { ok: false, aiConfigured: false, aiProvider: "local-offline" };
+        }
+      } else {
+        serverHealth = { ok: false, aiConfigured: false, aiProvider: "local-offline" };
+      }
     }
 
     if (isCloudAuthMode()) {

@@ -139,16 +139,30 @@ window.QVocabStore = (function () {
     });
   }
 
+  function vocabUrl(relPath) {
+    const isFile = typeof window !== "undefined" && window.location && window.location.protocol === "file:";
+    return isFile ? `https://q-chinese.vercel.app/${relPath}` : relPath;
+  }
+
   async function init() {
     seedLegacyIndex();
     if (initialized && manifest) return manifest;
     try {
-      const res = await fetch("data/vocab/manifest.json");
+      let res = await fetch(vocabUrl("data/vocab/manifest.json"));
+      if (!res.ok) res = await fetch("https://q-chinese.vercel.app/data/vocab/manifest.json");
       if (res.ok) {
         manifest = await res.json();
         initialized = true;
       }
-    } catch (_) {}
+    } catch (_) {
+      try {
+        const res2 = await fetch("https://q-chinese.vercel.app/data/vocab/manifest.json");
+        if (res2.ok) {
+          manifest = await res2.json();
+          initialized = true;
+        }
+      } catch (__) {}
+    }
     // Preload HSK 2.0 L1 & L2 in background for instant search & reading lookup
     loadLevel("hsk2", 1).catch(() => {});
     loadLevel("hsk2", 2).catch(() => {});
@@ -158,15 +172,26 @@ window.QVocabStore = (function () {
   async function loadLevel(version, level) {
     const key = `${version}:${level}`;
     if (shardCache[key]) return shardCache[key];
+    const rel = `data/vocab/${version}/L${level}.json`;
     try {
-      const res = await fetch(`data/vocab/${version}/L${level}.json`);
+      let res = await fetch(vocabUrl(rel));
+      if (!res.ok) res = await fetch(`https://q-chinese.vercel.app/${rel}`);
       if (!res.ok) return [];
       const rows = await res.json();
       const list = rows.map((r) => normalizeRow(r, version, level));
       shardCache[key] = list;
       return list;
     } catch (_) {
-      return [];
+      try {
+        const res2 = await fetch(`https://q-chinese.vercel.app/${rel}`);
+        if (!res2.ok) return [];
+        const rows = await res2.json();
+        const list = rows.map((r) => normalizeRow(r, version, level));
+        shardCache[key] = list;
+        return list;
+      } catch (__) {
+        return [];
+      }
     }
   }
 

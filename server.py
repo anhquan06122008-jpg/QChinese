@@ -536,8 +536,12 @@ class QChineseRequestHandler(BaseHTTPRequestHandler):
     def _cors_headers(self) -> Dict[str, str]:
         origin = (self.headers.get("Origin") or "").strip()
         allowed_env = os.environ.get("CORS_ORIGINS", "*").strip()
-        if not origin:
-            return {}
+        if not origin or origin == "null":
+            return {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Device-Name",
+                "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+            }
         if allowed_env == "*" or origin in [o.strip() for o in allowed_env.split(",")]:
             return {
                 "Access-Control-Allow-Origin": origin,
@@ -969,6 +973,8 @@ class QChineseRequestHandler(BaseHTTPRequestHandler):
             self.send_header("Content-Length", str(len(audio_bytes)))
             self.send_header("Accept-Ranges", "bytes")
             self.send_header("Cache-Control", "public, max-age=604800")
+            for k, v in self._cors_headers().items():
+                self.send_header(k, v)
             self.end_headers()
             self.wfile.write(audio_bytes)
             return
@@ -986,6 +992,8 @@ class QChineseRequestHandler(BaseHTTPRequestHandler):
                 self.send_header("Content-Type", "application/json; charset=utf-8")
                 self.send_header("Content-Length", str(len(raw)))
                 self.send_header("Cache-Control", "public, max-age=2592000")
+                for k, v in self._cors_headers().items():
+                    self.send_header(k, v)
                 self.end_headers()
                 self.wfile.write(raw)
                 return
@@ -1002,6 +1010,8 @@ class QChineseRequestHandler(BaseHTTPRequestHandler):
                         self.send_header("Content-Type", "application/json; charset=utf-8")
                         self.send_header("Content-Length", str(len(raw)))
                         self.send_header("Cache-Control", "public, max-age=2592000")
+                        for k, v in self._cors_headers().items():
+                            self.send_header(k, v)
                         self.end_headers()
                         self.wfile.write(raw)
                         return

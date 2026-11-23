@@ -7,6 +7,7 @@
 window.QCloud = (function () {
   const CLOUD_SESSION_KEY = "qchinese_cloud_session_v1";
   const DEVICE_ID_KEY = "qchinese_device_id_v1";
+  const DEFAULT_CLOUD_ORIGIN = "https://q-chinese.vercel.app";
 
   let config = {
     loaded: false,
@@ -104,20 +105,31 @@ window.QCloud = (function () {
 
   async function initConfig(apiBase = "") {
     const base = String(apiBase || "").trim().replace(/\/+$/, "");
-    const url = base ? `${base}/api/config` : "/api/config";
-    try {
-      const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), 7000);
-      const res = await fetch(url, { method: "GET", cache: "no-store", signal: ctrl.signal });
-      clearTimeout(t);
-      if (res.ok) {
-        const d = await res.json().catch(() => ({}));
-        if (d && d.ok) {
-          config = Object.assign({}, config, d, { loaded: true });
-          return config;
+    const host = (typeof window !== "undefined" && window.location && window.location.hostname) || "";
+    const isStaticHost = typeof window !== "undefined" && (window.location.protocol === "file:" || /github\.io$/i.test(host));
+    const candidates = [];
+    if (base) candidates.push(`${base}/api/config`);
+    else if (isStaticHost) candidates.push(`${DEFAULT_CLOUD_ORIGIN}/api/config`);
+    else {
+      candidates.push("/api/config");
+      candidates.push(`${DEFAULT_CLOUD_ORIGIN}/api/config`);
+    }
+
+    for (const url of candidates) {
+      try {
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), 7000);
+        const res = await fetch(url, { method: "GET", cache: "no-store", signal: ctrl.signal });
+        clearTimeout(t);
+        if (res.ok) {
+          const d = await res.json().catch(() => ({}));
+          if (d && d.ok) {
+            config = Object.assign({}, config, d, { loaded: true });
+            return config;
+          }
         }
-      }
-    } catch (_) {}
+      } catch (_) {}
+    }
     config.loaded = true;
     return config;
   }

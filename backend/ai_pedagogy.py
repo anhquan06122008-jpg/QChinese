@@ -1409,14 +1409,32 @@ def handle_generate_lesson_exercise(payload: Dict[str, Any]) -> Dict[str, Any]:
                             ]
                     return llm_res
 
-    # Normalize lesson vocabulary words with guaranteed hanzi, pinyin, en, vi
+    # Normalize lesson vocabulary words with guaranteed hanzi, pinyin, en, vi (never mix fallback pinyin with a different hanzi!)
+    common_dict = {
+        "你好": ("nǐ hǎo", "hello", "xin chào"),
+        "你们": ("nǐmen", "you (plural)", "các bạn"),
+        "对不起": ("duìbuqǐ", "sorry", "xin lỗi"),
+        "没关系": ("méi guānxi", "it doesn't matter", "không sao đâu"),
+        "不客气": ("bú kèqi", "you're welcome", "đừng khách sáo"),
+        "再见": ("zàijiàn", "goodbye", "tạm biệt"),
+        "谢谢": ("xièxie", "thank you", "cảm ơn"),
+        "多少钱": ("duōshao qián", "how much money", "bao nhiêu tiền"),
+        "打电话": ("dǎ diànhuà", "make a phone call", "gọi điện thoại"),
+        "出租车": ("chūzūchē", "taxi", "xe taxi"),
+    }
+
     def _norm_word(idx: int, fallback: Dict[str, str]) -> Dict[str, str]:
         if idx < len(vocab_words) and isinstance(vocab_words[idx], dict) and vocab_words[idx].get("hanzi"):
             raw = vocab_words[idx]
             hz = str(raw.get("hanzi") or fallback["hanzi"]).strip()
-            py = str(raw.get("pinyin") or fallback["pinyin"]).strip() or hz
-            vi_v = str(raw.get("vi") or raw.get("en") or fallback["vi"]).strip()
-            en_v = str(raw.get("en") or raw.get("vi") or fallback["en"]).strip()
+            cd = common_dict.get(hz)
+            py = str(raw.get("pinyin") or (cd[0] if cd else "")).strip() or hz
+            vi_raw = str(raw.get("vi") or "").strip()
+            if not vi_raw or vi_raw == "Từ trọng tâm bài học":
+                vi_v = (cd[2] if cd else "") or str(raw.get("en") or hz).strip()
+            else:
+                vi_v = vi_raw
+            en_v = str(raw.get("en") or (cd[1] if cd else "") or vi_v).strip()
             return {"hanzi": hz, "pinyin": py, "en": en_v, "vi": vi_v}
         return dict(fallback)
 

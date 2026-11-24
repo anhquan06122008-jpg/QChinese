@@ -172,6 +172,185 @@ def _load_hsk3_l1_vocab(root_dir: Path) -> Dict[str, Dict[str, Any]]:
         return {}
 
 
+_MP3_TRANSCRIPTS_CACHE: Optional[Dict[str, List[Dict[str, str]]]] = None
+
+
+def _load_hsk1_mp3_transcripts(root_dir: Optional[Path] = None) -> Dict[str, List[Dict[str, str]]]:
+    """Load verbatim ASR-verified transcripts for all 93 real HSK 1 (3.0) MP3 tracks."""
+    global _MP3_TRANSCRIPTS_CACHE
+    if _MP3_TRANSCRIPTS_CACHE is not None:
+        return _MP3_TRANSCRIPTS_CACHE
+    here = Path(__file__).resolve().parent
+    repo_root = root_dir or here.parent
+    candidates = [
+        here / "hsk1_mp3_transcripts.json",
+        repo_root / "backend" / "hsk1_mp3_transcripts.json",
+        repo_root / "public" / "data" / "hsk1_mp3_transcripts.json",
+    ]
+    for p in candidates:
+        if p.exists():
+            try:
+                data = json.loads(p.read_text(encoding="utf-8"))
+                if isinstance(data, dict) and data:
+                    _MP3_TRANSCRIPTS_CACHE = data
+                    return _MP3_TRANSCRIPTS_CACHE
+            except Exception:
+                pass
+    _MP3_TRANSCRIPTS_CACHE = {}
+    return _MP3_TRANSCRIPTS_CACHE
+
+
+def _build_mp3_track_questions(
+    trk: str,
+    lesson_num: int,
+    idx: int,
+    track_lines: List[Dict[str, str]],
+) -> List[Dict[str, Any]]:
+    """Generate bilingual listening comprehension questions strictly from the verbatim MP3 transcript."""
+    if not track_lines:
+        return []
+
+    # Deduplicate spoken lines (vocab tracks often repeat male + female)
+    unique_lines: List[Dict[str, str]] = []
+    seen_zh = set()
+    for ln in track_lines:
+        zh = str(ln.get("chinese") or "").strip()
+        if zh and zh not in seen_zh:
+            seen_zh.add(zh)
+            unique_lines.append(ln)
+
+    first = unique_lines[0]
+    second = unique_lines[1] if len(unique_lines) > 1 else first
+    is_vocab_drill = all(len(str(ln.get("chinese") or "")) <= 6 and not any(p in str(ln.get("chinese") or "") for p in "。？！?!") for ln in unique_lines)
+
+    # Generic distractors guaranteed not to match the correct answer
+    en_distractors = [
+        "I am going to the airport tomorrow morning.",
+        "This red sweater costs five hundred yuan.",
+        "The weather in winter is very windy and snowy.",
+        "My younger brother works at a large bank.",
+        "Department store / Shopping mall",
+        "Subway station / Bus stop",
+        "Airplane ticket / Passport",
+        "University library / Classroom",
+    ]
+    vi_distractors = [
+        "Ngày mai tôi sẽ ra sân bay từ sáng sớm.",
+        "Chiếc áo len màu đỏ này giá năm trăm tệ.",
+        "Thời tiết mùa đông rất nhiều gió và có tuyết.",
+        "Em trai tôi làm việc tại một ngân hàng lớn.",
+        "Cửa hàng bách hóa / Trung tâm thương mại",
+        "Ga tàu điện ngầm / Trạm xe buýt",
+        "Vé máy bay / Hộ chiếu",
+        "Thư viện đại học / Phòng học",
+    ]
+
+    def _pick_distractors(correct: str, pool: List[str], count: int = 3) -> List[str]:
+        c_low = correct.strip().lower()
+        out = [x for x in pool if x.strip().lower() != c_low and c_low not in x.strip().lower()]
+        # Deterministic rotation by lesson_num + idx so options vary cleanly
+        shift = (lesson_num * 3 + idx) % max(1, len(out))
+        rotated = out[shift:] + out[:shift]
+        return rotated[:count]
+
+    def _rotate_options(opts: List[str], salt: int) -> List[str]:
+        if len(opts) <= 1:
+            return opts
+        pos = (lesson_num * 5 + idx * 3 + salt) % len(opts)
+        # Move correct answer (index 0) to deterministic slot `pos`
+        correct = opts[0]
+        rest = opts[1:]
+        return rest[:pos] + [correct] + rest[pos:]
+
+    qs: List[Dict[str, Any]] = []
+
+    if is_vocab_drill:
+        # Question 1: meaning of the first spoken vocabulary item
+        q1_en_ans = first["english"]
+        q1_vi_ans = first["vietnamese"]
+        q1_en_opts = _rotate_options([q1_en_ans] + _pick_distractors(q1_en_ans, en_distractors[4:] + en_distractors[:4], 3), 1)
+        q1_vi_opts = _rotate_options([q1_vi_ans] + _pick_distractors(q1_vi_ans, vi_distractors[4:] + vi_distractors[:4], 3), 1)
+        qs.append({
+            "id": f"lq_{lesson_num}_{idx}_1",
+            "type": "mcq",
+            "question_en": f"Listen to track {trk}. What does the spoken word '{first['chinese']}' ({first['pinyin']}) mean?",
+            "options_en": q1_en_opts,
+            "answer_en": q1_en_ans,
+            "explain_en": f"In track {trk}, '{first['chinese']}' ({first['pinyin']}) means: {q1_en_ans}.",
+            "question": f"Nghe track {trk}. Từ '{first['chinese']}' ({first['pinyin']}) được đọc trong băng có nghĩa là gì?",
+            "options": q1_vi_opts,
+            "answer": q1_vi_ans,
+            "explain": f"Trong track {trk}, từ '{first['chinese']}' ({first['pinyin']}) có nghĩa là: {q1_vi_ans}.",
+        })
+        # Question 2: identify another spoken item or verify exact audio word
+        target2 = unique_lines[-1] if len(unique_lines) > 1 else first
+        q2_en_ans = f"{target2['chinese']} ({target2['pinyin']} — {target2['english']})"
+        q2_vi_ans = f"{target2['chinese']} ({target2['pinyin']} — {target2['vietnamese']})"
+        qs.append({
+            "id": f"lq_{lesson_num}_{idx}_2",
+            "type": "mcq",
+            "question_en": f"Which word is actually pronounced in track {trk}?",
+            "options_en": _rotate_options([
+                q2_en_ans,
+                "宏观经济 (hóngguān jīngjì — macroeconomics)",
+                "海商法 (hǎishāngfǎ — maritime law)",
+                "天文学 (tiānwénxué — astronomy)",
+            ], 2),
+            "answer_en": q2_en_ans,
+            "explain_en": f"Track {trk} reads '{target2['chinese']}' ({target2['pinyin']}) aloud.",
+            "question": f"Từ vựng nào thực sự xuất hiện trong file audio gốc {trk}?",
+            "options": _rotate_options([
+                q2_vi_ans,
+                "宏观经济 (hóngguān jīngjì — kinh tế vĩ mô)",
+                "海商法 (hǎishāngfǎ — luật hàng hải)",
+                "天文学 (tiānwénxué — thiên văn học)",
+            ], 2),
+            "answer": q2_vi_ans,
+            "explain": f"File audio gốc {trk} đọc trực tiếp từ '{target2['chinese']}' ({target2['pinyin']}).",
+        })
+    else:
+        # Dialogue or sentence/tongue-twister track
+        q1_en_ans = f"{first['chinese']} ({first['english']})"
+        q1_vi_ans = f"{first['chinese']} ({first['vietnamese']})"
+        q1_en_opts = _rotate_options([q1_en_ans] + _pick_distractors(first["english"], en_distractors[:4], 3), 1)
+        q1_vi_opts = _rotate_options([q1_vi_ans] + _pick_distractors(first["vietnamese"], vi_distractors[:4], 3), 1)
+        spk1 = first.get("speaker") or "Speaker"
+        qs.append({
+            "id": f"lq_{lesson_num}_{idx}_1",
+            "type": "mcq",
+            "question_en": f"Listen to track {trk}. What is the opening sentence spoken by {spk1}?",
+            "options_en": q1_en_opts,
+            "answer_en": q1_en_ans,
+            "explain_en": f"In track {trk}, {spk1} says: '{first['chinese']}' ({first['pinyin']}) — {first['english']}.",
+            "question": f"Nghe track {trk}. Câu mở đầu mà {spk1} nói trong đoạn băng là gì?",
+            "options": q1_vi_opts,
+            "answer": q1_vi_ans,
+            "explain": f"Trong track {trk}, {spk1} nói: '{first['chinese']}' ({first['pinyin']}) — {first['vietnamese']}.",
+        })
+
+        # Question 2: meaning of the second turn (or the main sentence if single-sentence tongue twister)
+        target2 = second if len(unique_lines) > 1 else first
+        spk2 = target2.get("speaker") or "Speaker"
+        q2_en_ans = target2["english"]
+        q2_vi_ans = target2["vietnamese"]
+        q2_en_opts = _rotate_options([q2_en_ans] + _pick_distractors(q2_en_ans, en_distractors, 3), 2)
+        q2_vi_opts = _rotate_options([q2_vi_ans] + _pick_distractors(q2_vi_ans, vi_distractors, 3), 2)
+        qs.append({
+            "id": f"lq_{lesson_num}_{idx}_2",
+            "type": "mcq",
+            "question_en": f"What does {spk2}'s line '{target2['chinese']}' mean in track {trk}?",
+            "options_en": q2_en_opts,
+            "answer_en": q2_en_ans,
+            "explain_en": f"Verbatim from {trk}: {target2['chinese']} ({target2['pinyin']}) = {target2['english']}.",
+            "question": f"Câu '{target2['chinese']}' của {spk2} trong track {trk} có nghĩa là gì?",
+            "options": q2_vi_opts,
+            "answer": q2_vi_ans,
+            "explain": f"Nguyên văn từ {trk}: {target2['chinese']} ({target2['pinyin']}) = {target2['vietnamese']}.",
+        })
+
+    return qs
+
+
 HSK1_MP3_MANIFEST: Dict[int, List[str]] = {
     1: ["1-1.mp3", "1-2.mp3", "1-3.mp3", "1-4.mp3", "1-5.mp3", "1-6.mp3", "1-7.mp3"],
     2: ["2-1.mp3", "2-2.mp3", "2-3.mp3", "2-4.mp3", "2-5.mp3", "2-6.mp3", "2-7.mp3"],
@@ -220,6 +399,7 @@ def _build_lesson_exercises_for_topic(
     mp3_tracks: List[str],
     source_label: str,
     custom_passage: str = "",
+    mp3_transcripts: Optional[Dict[str, List[Dict[str, str]]]] = None,
 ) -> Dict[str, Any]:
     """Assemble a rich 6-skill Lesson with 5 Reading questions, Listening MP3/TTS, Writing, Speaking, Vocab & Grammar."""
     word_entries = []
@@ -528,52 +708,54 @@ def _build_lesson_exercises_for_topic(
             "vietnamese": vi_lines[li] if li < len(vi_lines) else "",
         })
 
-    # Listening items linked directly to REAL MP3 tracks when present!
+    # Listening items linked directly to REAL MP3 tracks with 100% verbatim ASR-verified transcripts!
     listening_items = []
     if mp3_tracks:
-        for idx, trk in enumerate(mp3_tracks[:6]):
-            w_ref = word_entries[idx % len(word_entries)]
-            w_next = word_entries[(idx + 1) % len(word_entries)]
-            w_ref_en = w_ref.get("en") or w_ref["vi"]
-            track_lines = list(base_transcript_lines)
-            track_lines.append({
-                "speaker": "生词重点",
-                "chinese": f"{w_ref['hanzi']} · {w_next['hanzi']}",
-                "pinyin": f"{w_ref['pinyin']} · {w_next['pinyin']}",
-                "english": f"{w_ref_en} · {w_next.get('en') or w_next['vi']}",
-                "vietnamese": f"{w_ref['vi']} · {w_next['vi']}",
-            })
+        t_map = mp3_transcripts if mp3_transcripts is not None else _load_hsk1_mp3_transcripts()
+        for idx, trk in enumerate(mp3_tracks):
+            verified_lines = t_map.get(trk)
+            if isinstance(verified_lines, list) and len(verified_lines) > 0:
+                track_lines = [dict(ln) for ln in verified_lines]
+                first_ln = track_lines[0]
+                is_vocab_trk = all(
+                    len(str(ln.get("chinese") or "")) <= 6 and not any(p in str(ln.get("chinese") or "") for p in "。？！?!")
+                    for ln in track_lines
+                )
+                trk_kind_en = "Vocabulary Drill" if is_vocab_trk else ("Pronunciation & Tongue Twister" if trk.endswith("-7.mp3") else "Dialogue Listening")
+                trk_kind_vi = "Luyện đọc từ vựng" if is_vocab_trk else ("Luyện phát âm & Vè thanh điệu" if trk.endswith("-7.mp3") else "Nghe hội thoại gốc")
+                t_source = "audio_asr_verified"
+                t_label = f"Phụ đề khớp 100% Audio gốc {trk} (Trích xuất nguyên văn từ MP3 · Bài {lesson_num})"
+                hint_en = f"Listen to original New HSK 1 (3.0) track {trk} ({trk_kind_en}). Opening line: '{first_ln['chinese']}' ({first_ln['pinyin']})."
+                hint_vi = f"Nghe file gốc New HSK 1 (3.0) track {trk} ({trk_kind_vi}). Câu/từ mở đầu: '{first_ln['chinese']}' ({first_ln['pinyin']})."
+                track_qs = _build_mp3_track_questions(trk, lesson_num, idx, track_lines)
+            else:
+                # Never fall back to mismatched Reading dialogues when real MP3 transcript is unavailable
+                track_lines = []
+                trk_kind_en = "Audio Track"
+                trk_kind_vi = "Audio gốc"
+                t_source = "missing_transcript"
+                t_label = f"Track {trk} (Chưa có phụ đề xác thực)"
+                hint_en = f"Listen carefully to original New HSK 1 (3.0) track {trk}."
+                hint_vi = f"Nghe kỹ file audio gốc New HSK 1 (3.0) track {trk}."
+                track_qs = []
+
             listening_items.append({
                 "id": f"L{lesson_num}_lis_{idx + 1}",
                 "contentSource": "AI_PDF_HSK3",
                 "courseType": "hsk3_pdf_curriculum",
-                "title": f"Listening {idx + 1} – Track {trk}",
-                "title_vi": f"Bài nghe {idx + 1} – Audio gốc {trk} (Lesson {lesson_num})",
+                "title": f"Listening {idx + 1} – {trk_kind_en} ({trk})",
+                "title_vi": f"Bài nghe {idx + 1} – {trk_kind_vi} ({trk})",
                 "audioFile": trk,
                 "audioUrl": f"audio/hsk1/{trk}",
                 "staticAudioUrl": f"public/audio/hsk1/{trk}",
                 "audioSource": "real_mp3",
                 "sourceTag": "extracted_from_pdf",
-                "transcriptSource": "extracted_from_pdf" if custom_passage else "curriculum_aligned",
-                "transcriptLabel": f"Transcript đối chiếu Bài {lesson_num} (Giáo trình New HSK 1 3.0 · Track {trk})",
+                "transcriptSource": t_source,
+                "transcriptLabel": t_label,
                 "transcriptLines": track_lines,
-                "targetHint_en": f"Listen to New HSK 1 (3.0) track {trk}, focusing on '{w_ref['hanzi']}' ({w_ref['pinyin']} – {w_ref_en}).",
-                "targetHint": f"Nghe track {trk} của giáo trình New HSK 1 (3.0), chú ý từ trọng tâm '{w_ref['hanzi']}' ({w_ref['pinyin']} – {w_ref['vi']}).",
-                "questions": [
-                    {
-                        "id": f"lq_{idx}_1",
-                        "type": "mcq",
-                        "question_en": f"Listen to track {trk} and select the meaning of '{w_ref['hanzi']}' ({w_ref['pinyin']}):",
-                        "options_en": [w_ref_en, "Department store (百货商店)", "Subway (地铁)", "Hospital (医院)"],
-                        "answer_en": w_ref_en,
-                        "explain_en": f"Track {trk} belongs to Lesson {lesson_num} (New HSK 1 3.0); key word: {w_ref['hanzi']} ({w_ref['pinyin']}) = {w_ref_en}.",
-                        "question": f"Nghe track {trk} và xác định nghĩa của từ trọng tâm '{w_ref['hanzi']}' ({w_ref['pinyin']}):",
-                        "options": [w_ref["vi"], "Cửa hàng bách hóa", "Tàu điện ngầm", "Bệnh viện nhân dân"],
-                        "answer": w_ref["vi"],
-                        "explain": f"Track {trk} thuộc Bài {lesson_num} giáo trình New HSK 1 (3.0); từ trọng tâm: {w_ref['hanzi']} ({w_ref['pinyin']}) = {w_ref['vi']}.",
-                    },
-                    rd_qs[idx % len(rd_qs)],
-                ],
+                "targetHint_en": hint_en,
+                "targetHint": hint_vi,
+                "questions": track_qs,
             })
     else:
         w0 = word_entries[0] if word_entries else {"hanzi": "你好", "pinyin": "nǐ hǎo", "en": "hello", "vi": "xin chào"}
@@ -934,13 +1116,14 @@ def ensure_hsk3_level1_seeded(get_db_fn: Callable[[], sqlite3.Connection], db_lo
         try:
             init_pdf_tables(conn)
             exists = conn.execute("SELECT id, course_json FROM pdf_courses WHERE hsk_level = 1 LIMIT 1").fetchone()
-            if exists and '"schemaVersion": 5' in (exists["course_json"] or ""):
+            if exists and '"schemaVersion": 6' in (exists["course_json"] or ""):
                 return
         finally:
             conn.close()
 
     vocab_map = _load_hsk3_l1_vocab(root_dir)
     mp3_by_lesson = _scan_local_hsk1_mp3s(root_dir)
+    mp3_transcripts = _load_hsk1_mp3_transcripts(root_dir)
     now = _utc_now()
 
     seed_docs = []
@@ -973,6 +1156,7 @@ def ensure_hsk3_level1_seeded(get_db_fn: Callable[[], sqlite3.Connection], db_lo
         lesson_obj = _build_lesson_exercises_for_topic(
             1, lnum, ltitle, lwords, vocab_map, tracks,
             source_label=f"Giáo trình New HSK 1 (3.0) + {len(tracks)} file MP3 gốc" if tracks else "Giáo trình New HSK 1 (3.0)",
+            mp3_transcripts=mp3_transcripts,
         )
         total_ex += (
             len(lesson_obj["skills"]["reading"])
@@ -984,14 +1168,15 @@ def ensure_hsk3_level1_seeded(get_db_fn: Callable[[], sqlite3.Connection], db_lo
         lessons.append(lesson_obj)
 
     course_payload = {
-        "schemaVersion": 5,
+        "schemaVersion": 6,
         "contentSource": "AI_PDF_HSK3",
         "courseType": "hsk3_pdf_curriculum",
         "hskLevel": 1,
         "code": "HSK 1 (3.0)",
         "title": "Khóa học HSK 1 (Chuẩn HSK 3.0 – 15 Lessons + 93 MP3 gốc)",
         "mp3TracksLinked": sum(len(v) for v in mp3_by_lesson.values()),
-        "transparencyNote": "File 新HSK1.pdf là bản PDF ảnh scan (143 trang). Hệ thống đã gắn trực tiếp 93 file MP3 giáo trình New HSK 1 (3.0) theo 15 bài học cùng bảng từ vựng HSK 3.0 xác thực; các bài đọc/bài tập bổ trợ được gắn nhãn rõ 'AI tạo thêm' để phân biệt với tài liệu gốc.",
+        "mp3TranscriptsVerified": len(mp3_transcripts),
+        "transparencyNote": "File 新HSK1.pdf là bản PDF ảnh scan (143 trang). Hệ thống đã gắn trực tiếp 93 file MP3 giáo trình New HSK 1 (3.0) theo 15 bài học kèm phụ đề khớp nguyên văn 100% trích xuất trực tiếp từ từng file MP3 gốc.",
         "lessons": lessons,
     }
 

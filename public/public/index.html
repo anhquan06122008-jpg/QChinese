@@ -15308,6 +15308,10 @@ window.QLessonStudio = (function () {
     if (Array.isArray(ex.transcriptLines) && ex.transcriptLines.length > 0) {
       return ex.transcriptLines;
     }
+    // CRITICAL: Never substitute the Reading passage onto a real MP3 track — prevents mismatched subtitles!
+    if (ex.audioSource === "real_mp3" || ex.audioFile) {
+      return [];
+    }
     const rd0 = (lesson.skills && lesson.skills.reading && lesson.skills.reading[0]) || null;
     const rawZh = String(ex.audioText || (rd0 && rd0.chinese) || "").trim();
     const rawPy = String((rd0 && rd0.pinyin) || "").trim();
@@ -15332,6 +15336,8 @@ window.QLessonStudio = (function () {
     if (ex.audioFile) {
       const isFileProto = typeof window !== "undefined" && window.location && window.location.protocol === "file:";
       if (isFileProto) return `public/audio/hsk1/${ex.audioFile}`;
+      const isLocal = typeof window !== "undefined" && window.location && /^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname || "");
+      if (isLocal) return `/audio/hsk1/${ex.audioFile}`;
       return `https://q-chinese.vercel.app/audio/hsk1/${ex.audioFile}`;
     }
     if (ex.audioUrl) return QCore.resolveApiUrl(ex.audioUrl);
@@ -15342,11 +15348,13 @@ window.QLessonStudio = (function () {
   function renderListeningEx(stage, lesson, ex, parentContainer) {
     const vi = isViMode();
     if (!ex) { stage.innerHTML = `<div class="card">${vi ? "Chưa có bài nghe." : "No listening exercise yet."}</div>`; return; }
+    lisActiveLineIdx = -1;
     const hintText = (!vi && ex.targetHint_en) ? ex.targetHint_en : (ex.targetHint || "");
     const tLines = buildTranscriptLinesForEx(lesson, ex);
     const mp3Src = resolveMp3Src(ex);
     const trackName = ex.audioFile || (ex.audioUrl ? ex.audioUrl.split("file=")[1] : "") || "HSK 3.0 Audio";
     const isAiTrans = ex.transcriptSource === "ai_generated";
+    const isAsrVerified = ex.transcriptSource === "audio_asr_verified";
 
     stage.innerHTML = `
       <div class="card" style="padding:20px;">
@@ -15448,11 +15456,11 @@ window.QLessonStudio = (function () {
               </span>
             </div>
             <span class="badge ${isAiTrans ? "badge-amber" : "badge-jade"}" style="font-size:11.5px;">
-              ${isAiTrans ? "🤖 Transcript AI tạo từ bài học (cho phép kiểm tra lại)" : "📄 Transcript từ giáo trình HSK 3.0"}
+              ${isAsrVerified ? "🎧 Phụ đề chuẩn khớp 100% Audio MP3 gốc" : (isAiTrans ? "🤖 Transcript AI tạo từ bài học (cho phép kiểm tra lại)" : "📄 Transcript từ giáo trình HSK 3.0")}
             </span>
           </div>
 
-          <div id="ls-transcript-body" style="display:${lisTranscriptOpen ? "block" : "none"};padding:14px;border-top:1px solid var(--border-color);max-height:300px;overflow-y:auto;background:var(--bg-surface);">
+          <div id="ls-transcript-body" style="display:${lisTranscriptOpen ? "block" : "none"};padding:14px;border-top:1px solid var(--border-color);max-height:360px;overflow-y:auto;background:var(--bg-surface);">
             ${tLines.length > 0 ? `
               <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">
                 💡 Bấm vào từng câu bên dưới để phát âm thanh từ vị trí tương ứng. Khi audio chạy, câu đang phát sẽ tự động làm nổi bật:

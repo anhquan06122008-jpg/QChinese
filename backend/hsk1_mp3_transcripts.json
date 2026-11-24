@@ -1,0 +1,5445 @@
+{
+  "1-1.mp3": [
+    {
+      "speaker": "王老师",
+      "chinese": "AI小雨，你好。",
+      "pinyin": "AI Xiǎoyǔ, nǐ hǎo.",
+      "english": "Hello, AI Xiaoyu.",
+      "vietnamese": "Xin chào AI Tiểu Vũ."
+    },
+    {
+      "speaker": "AI小雨",
+      "chinese": "王老师，你好。",
+      "pinyin": "Wáng lǎoshī, nǐ hǎo.",
+      "english": "Hello, Teacher Wang.",
+      "vietnamese": "Em chào cô Vương ạ."
+    }
+  ],
+  "1-2.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "你好",
+      "pinyin": "nǐ hǎo",
+      "english": "hello",
+      "vietnamese": "xin chào"
+    },
+    {
+      "speaker": "女",
+      "chinese": "你好",
+      "pinyin": "nǐ hǎo",
+      "english": "hello",
+      "vietnamese": "xin chào"
+    },
+    {
+      "speaker": "男",
+      "chinese": "王老师",
+      "pinyin": "Wáng lǎoshī",
+      "english": "Teacher Wang",
+      "vietnamese": "cô Vương"
+    },
+    {
+      "speaker": "女",
+      "chinese": "王老师",
+      "pinyin": "Wáng lǎoshī",
+      "english": "Teacher Wang",
+      "vietnamese": "cô Vương"
+    }
+  ],
+  "1-3.mp3": [
+    {
+      "speaker": "AI小雨",
+      "chinese": "大家好。",
+      "pinyin": "Dàjiā hǎo.",
+      "english": "Hello, everyone.",
+      "vietnamese": "Xin chào mọi người."
+    },
+    {
+      "speaker": "同学们",
+      "chinese": "老师，你好！",
+      "pinyin": "Lǎoshī, nǐ hǎo!",
+      "english": "Hello, teacher!",
+      "vietnamese": "Chúng em chào cô ạ!"
+    },
+    {
+      "speaker": "AI小雨",
+      "chinese": "你们好。",
+      "pinyin": "Nǐmen hǎo.",
+      "english": "Hello, everyone.",
+      "vietnamese": "Chào các em."
+    },
+    {
+      "speaker": "男",
+      "chinese": "你好，小雨。",
+      "pinyin": "Nǐ hǎo, Xiǎoyǔ.",
+      "english": "Hello, Xiaoyu.",
+      "vietnamese": "Chào Tiểu Vũ."
+    }
+  ],
+  "1-4.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "大家",
+      "pinyin": "dàjiā",
+      "english": "everyone",
+      "vietnamese": "mọi người"
+    },
+    {
+      "speaker": "女",
+      "chinese": "大家",
+      "pinyin": "dàjiā",
+      "english": "everyone",
+      "vietnamese": "mọi người"
+    },
+    {
+      "speaker": "男",
+      "chinese": "好",
+      "pinyin": "hǎo",
+      "english": "good; fine",
+      "vietnamese": "tốt; khỏe"
+    },
+    {
+      "speaker": "女",
+      "chinese": "好",
+      "pinyin": "hǎo",
+      "english": "good; fine",
+      "vietnamese": "tốt; khỏe"
+    },
+    {
+      "speaker": "男",
+      "chinese": "学生",
+      "pinyin": "xuésheng",
+      "english": "student",
+      "vietnamese": "học sinh, sinh viên"
+    },
+    {
+      "speaker": "女",
+      "chinese": "学生",
+      "pinyin": "xuésheng",
+      "english": "student",
+      "vietnamese": "học sinh, sinh viên"
+    },
+    {
+      "speaker": "男",
+      "chinese": "们",
+      "pinyin": "men",
+      "english": "(plural marker for pronouns and some nouns)",
+      "vietnamese": "(hậu tố chỉ số nhiều)"
+    },
+    {
+      "speaker": "女",
+      "chinese": "们",
+      "pinyin": "men",
+      "english": "(plural marker for pronouns and some nouns)",
+      "vietnamese": "(hậu tố chỉ số nhiều)"
+    },
+    {
+      "speaker": "男",
+      "chinese": "老师",
+      "pinyin": "lǎoshī",
+      "english": "teacher",
+      "vietnamese": "giáo viên, thầy/cô giáo"
+    },
+    {
+      "speaker": "女",
+      "chinese": "老师",
+      "pinyin": "lǎoshī",
+      "english": "teacher",
+      "vietnamese": "giáo viên, thầy/cô giáo"
+    },
+    {
+      "speaker": "男",
+      "chinese": "您",
+      "pinyin": "nín",
+      "english": "you (polite)",
+      "vietnamese": "ngài, ông/bà, thầy/cô (lịch sự)"
+    },
+    {
+      "speaker": "女",
+      "chinese": "您",
+      "pinyin": "nín",
+      "english": "you (polite)",
+      "vietnamese": "ngài, ông/bà, thầy/cô (lịch sự)"
+    },
+    {
+      "speaker": "男",
+      "chinese": "你们",
+      "pinyin": "nǐmen",
+      "english": "you (plural)",
+      "vietnamese": "các bạn, các em"
+    },
+    {
+      "speaker": "女",
+      "chinese": "你们",
+      "pinyin": "nǐmen",
+      "english": "you (plural)",
+      "vietnamese": "các bạn, các em"
+    }
+  ],
+  "1-5.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "谢谢。",
+      "pinyin": "Xièxie.",
+      "english": "Thank you.",
+      "vietnamese": "Cảm ơn."
+    },
+    {
+      "speaker": "女",
+      "chinese": "不客气。",
+      "pinyin": "Bú kèqi.",
+      "english": "You're welcome.",
+      "vietnamese": "Không có gì."
+    },
+    {
+      "speaker": "女",
+      "chinese": "同学们，再见。",
+      "pinyin": "Tóngxuémen, zàijiàn.",
+      "english": "Goodbye, class.",
+      "vietnamese": "Tạm biệt các em."
+    },
+    {
+      "speaker": "同学们",
+      "chinese": "老师，再见。",
+      "pinyin": "Lǎoshī, zàijiàn.",
+      "english": "Goodbye, teacher.",
+      "vietnamese": "Chúng em chào cô ạ."
+    }
+  ],
+  "1-6.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "谢谢",
+      "pinyin": "xièxie",
+      "english": "thank you",
+      "vietnamese": "cảm ơn"
+    },
+    {
+      "speaker": "女",
+      "chinese": "谢谢",
+      "pinyin": "xièxie",
+      "english": "thank you",
+      "vietnamese": "cảm ơn"
+    },
+    {
+      "speaker": "男",
+      "chinese": "不客气",
+      "pinyin": "bú kèqi",
+      "english": "you're welcome",
+      "vietnamese": "không có gì, đừng khách sáo"
+    },
+    {
+      "speaker": "女",
+      "chinese": "不客气",
+      "pinyin": "bú kèqi",
+      "english": "you're welcome",
+      "vietnamese": "không có gì, đừng khách sáo"
+    },
+    {
+      "speaker": "男",
+      "chinese": "同学",
+      "pinyin": "tóngxué",
+      "english": "classmate; student",
+      "vietnamese": "bạn học; học sinh"
+    },
+    {
+      "speaker": "女",
+      "chinese": "同学",
+      "pinyin": "tóngxué",
+      "english": "classmate; student",
+      "vietnamese": "bạn học; học sinh"
+    },
+    {
+      "speaker": "男",
+      "chinese": "再见",
+      "pinyin": "zàijiàn",
+      "english": "goodbye",
+      "vietnamese": "tạm biệt"
+    },
+    {
+      "speaker": "女",
+      "chinese": "再见",
+      "pinyin": "zàijiàn",
+      "english": "goodbye",
+      "vietnamese": "tạm biệt"
+    }
+  ],
+  "1-7.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "妈种麻，我放马，马吃麻，妈骂马。",
+      "pinyin": "Mā zhòng má, wǒ fàng mǎ, mǎ chī má, mā mà mǎ.",
+      "english": "Mom plants hemp, I graze the horse, the horse eats the hemp, Mom scolds the horse.",
+      "vietnamese": "Mẹ trồng gai, tôi chăn ngựa, ngựa ăn gai, mẹ mắng ngựa."
+    },
+    {
+      "speaker": "女",
+      "chinese": "妈种麻，我放马，马吃麻，妈骂马。",
+      "pinyin": "Mā zhòng má, wǒ fàng mǎ, mǎ chī má, mā mà mǎ.",
+      "english": "Mom plants hemp, I graze the horse, the horse eats the hemp, Mom scolds the horse.",
+      "vietnamese": "Mẹ trồng gai, tôi chăn ngựa, ngựa ăn gai, mẹ mắng ngựa."
+    }
+  ],
+  "2-1.mp3": [
+    {
+      "speaker": "女",
+      "chinese": "请问，你叫什么名字？",
+      "pinyin": "Qǐngwèn, nǐ jiào shénme míngzi?",
+      "english": "Excuse me, what is your name?",
+      "vietnamese": "Xin hỏi, bạn tên là gì?"
+    },
+    {
+      "speaker": "男",
+      "chinese": "我叫陈天中。",
+      "pinyin": "Wǒ jiào Chén Tiānzhōng.",
+      "english": "My name is Chen Tianzhong.",
+      "vietnamese": "Tôi tên là Trần Thiên Trung."
+    }
+  ],
+  "2-2.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "请问",
+      "pinyin": "qǐngwèn",
+      "english": "excuse me; may I ask",
+      "vietnamese": "xin hỏi"
+    },
+    {
+      "speaker": "女",
+      "chinese": "请问",
+      "pinyin": "qǐngwèn",
+      "english": "excuse me; may I ask",
+      "vietnamese": "xin hỏi"
+    },
+    {
+      "speaker": "男",
+      "chinese": "你",
+      "pinyin": "nǐ",
+      "english": "you",
+      "vietnamese": "bạn"
+    },
+    {
+      "speaker": "女",
+      "chinese": "你",
+      "pinyin": "nǐ",
+      "english": "you",
+      "vietnamese": "bạn"
+    },
+    {
+      "speaker": "男",
+      "chinese": "叫",
+      "pinyin": "jiào",
+      "english": "to be called",
+      "vietnamese": "tên là, gọi là"
+    },
+    {
+      "speaker": "女",
+      "chinese": "叫",
+      "pinyin": "jiào",
+      "english": "to be called",
+      "vietnamese": "tên là, gọi là"
+    },
+    {
+      "speaker": "男",
+      "chinese": "什么",
+      "pinyin": "shénme",
+      "english": "what",
+      "vietnamese": "cái gì, gì"
+    },
+    {
+      "speaker": "女",
+      "chinese": "什么",
+      "pinyin": "shénme",
+      "english": "what",
+      "vietnamese": "cái gì, gì"
+    },
+    {
+      "speaker": "男",
+      "chinese": "名字",
+      "pinyin": "míngzi",
+      "english": "name",
+      "vietnamese": "tên"
+    },
+    {
+      "speaker": "女",
+      "chinese": "名字",
+      "pinyin": "míngzi",
+      "english": "name",
+      "vietnamese": "tên"
+    },
+    {
+      "speaker": "男",
+      "chinese": "我",
+      "pinyin": "wǒ",
+      "english": "I; me",
+      "vietnamese": "tôi"
+    },
+    {
+      "speaker": "女",
+      "chinese": "我",
+      "pinyin": "wǒ",
+      "english": "I; me",
+      "vietnamese": "tôi"
+    }
+  ],
+  "2-3.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "你好，安妮。",
+      "pinyin": "Nǐ hǎo, Ānnī.",
+      "english": "Hello, Annie.",
+      "vietnamese": "Chào An Ni."
+    },
+    {
+      "speaker": "女",
+      "chinese": "你好，陈天中，我不是安妮，我是白佳月。",
+      "pinyin": "Nǐ hǎo, Chén Tiānzhōng, wǒ bú shì Ānnī, wǒ shì Bái Jiāyuè.",
+      "english": "Hello, Chen Tianzhong. I'm not Annie, I'm Bai Jiayue.",
+      "vietnamese": "Chào Trần Thiên Trung, tôi không phải là An Ni, tôi là Bạch Giai Nguyệt."
+    },
+    {
+      "speaker": "男",
+      "chinese": "对不起。",
+      "pinyin": "Duìbuqǐ.",
+      "english": "I'm sorry.",
+      "vietnamese": "Xin lỗi."
+    },
+    {
+      "speaker": "女",
+      "chinese": "没关系。",
+      "pinyin": "Méi guānxi.",
+      "english": "That's all right.",
+      "vietnamese": "Không sao đâu."
+    }
+  ],
+  "2-4.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "不",
+      "pinyin": "bù",
+      "english": "no; not",
+      "vietnamese": "không"
+    },
+    {
+      "speaker": "女",
+      "chinese": "不",
+      "pinyin": "bù",
+      "english": "no; not",
+      "vietnamese": "không"
+    },
+    {
+      "speaker": "男",
+      "chinese": "是",
+      "pinyin": "shì",
+      "english": "to be",
+      "vietnamese": "là"
+    },
+    {
+      "speaker": "女",
+      "chinese": "是",
+      "pinyin": "shì",
+      "english": "to be",
+      "vietnamese": "là"
+    },
+    {
+      "speaker": "男",
+      "chinese": "对不起",
+      "pinyin": "duìbuqǐ",
+      "english": "sorry",
+      "vietnamese": "xin lỗi"
+    },
+    {
+      "speaker": "女",
+      "chinese": "对不起",
+      "pinyin": "duìbuqǐ",
+      "english": "sorry",
+      "vietnamese": "xin lỗi"
+    },
+    {
+      "speaker": "男",
+      "chinese": "没关系",
+      "pinyin": "méi guānxi",
+      "english": "it doesn't matter; that's okay",
+      "vietnamese": "không sao đâu"
+    },
+    {
+      "speaker": "女",
+      "chinese": "没关系",
+      "pinyin": "méi guānxi",
+      "english": "it doesn't matter; that's okay",
+      "vietnamese": "không sao đâu"
+    },
+    {
+      "speaker": "男",
+      "chinese": "没事",
+      "pinyin": "méi shì",
+      "english": "it's nothing; no problem",
+      "vietnamese": "không có gì, không sao đâu"
+    },
+    {
+      "speaker": "女",
+      "chinese": "没事",
+      "pinyin": "méi shì",
+      "english": "it's nothing; no problem",
+      "vietnamese": "không có gì, không sao đâu"
+    }
+  ],
+  "2-5.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "你好，我叫李文。",
+      "pinyin": "Nǐ hǎo, wǒ jiào Lǐ Wén.",
+      "english": "Hello, my name is Li Wen.",
+      "vietnamese": "Chào bạn, tôi tên là Lý Văn."
+    },
+    {
+      "speaker": "女",
+      "chinese": "你好，我叫白佳月。",
+      "pinyin": "Nǐ hǎo, wǒ jiào Bái Jiāyuè.",
+      "english": "Hello, my name is Bai Jiayue.",
+      "vietnamese": "Chào bạn, tôi tên là Bạch Giai Nguyệt."
+    },
+    {
+      "speaker": "男",
+      "chinese": "很高兴认识你。",
+      "pinyin": "Hěn gāoxìng rènshi nǐ.",
+      "english": "Nice to meet you.",
+      "vietnamese": "Rất vui được làm quen với bạn."
+    },
+    {
+      "speaker": "女",
+      "chinese": "认识你我也很高兴。",
+      "pinyin": "Rènshi nǐ wǒ yě hěn gāoxìng.",
+      "english": "Nice to meet you too.",
+      "vietnamese": "Làm quen với bạn tôi cũng rất vui."
+    }
+  ],
+  "2-6.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "很",
+      "pinyin": "hěn",
+      "english": "very",
+      "vietnamese": "rất"
+    },
+    {
+      "speaker": "女",
+      "chinese": "很",
+      "pinyin": "hěn",
+      "english": "very",
+      "vietnamese": "rất"
+    },
+    {
+      "speaker": "男",
+      "chinese": "高兴",
+      "pinyin": "gāoxìng",
+      "english": "happy; glad",
+      "vietnamese": "vui vẻ, vui mừng"
+    },
+    {
+      "speaker": "女",
+      "chinese": "高兴",
+      "pinyin": "gāoxìng",
+      "english": "happy; glad",
+      "vietnamese": "vui vẻ, vui mừng"
+    },
+    {
+      "speaker": "男",
+      "chinese": "认识",
+      "pinyin": "rènshi",
+      "english": "to know; to meet",
+      "vietnamese": "quen biết, làm quen"
+    },
+    {
+      "speaker": "女",
+      "chinese": "认识",
+      "pinyin": "rènshi",
+      "english": "to know; to meet",
+      "vietnamese": "quen biết, làm quen"
+    },
+    {
+      "speaker": "男",
+      "chinese": "也",
+      "pinyin": "yě",
+      "english": "also; too",
+      "vietnamese": "cũng"
+    },
+    {
+      "speaker": "女",
+      "chinese": "也",
+      "pinyin": "yě",
+      "english": "also; too",
+      "vietnamese": "cũng"
+    }
+  ],
+  "2-7.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "七加一，再减一，加完减完等于几？加完减完还是七。",
+      "pinyin": "Qī jiā yī, zài jiǎn yī, jiāwán jiǎnwán děngyú jǐ? Jiāwán jiǎnwán háishi qī.",
+      "english": "Seven plus one, then minus one, after adding and subtracting what does it equal? After adding and subtracting it is still seven.",
+      "vietnamese": "Bảy cộng một, rồi trừ một, cộng xong trừ xong bằng mấy? Cộng xong trừ xong vẫn là bảy."
+    },
+    {
+      "speaker": "女",
+      "chinese": "七加一，再减一，加完减完等于几？加完减完还是七。",
+      "pinyin": "Qī jiā yī, zài jiǎn yī, jiāwán jiǎnwán děngyú jǐ? Jiāwán jiǎnwán háishi qī.",
+      "english": "Seven plus one, then minus one, after adding and subtracting what does it equal? After adding and subtracting it is still seven.",
+      "vietnamese": "Bảy cộng một, rồi trừ một, cộng xong trừ xong bằng mấy? Cộng xong trừ xong vẫn là bảy."
+    }
+  ],
+  "3-1.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "我是中国人。",
+      "pinyin": "Wǒ shì Zhōngguó rén.",
+      "english": "I am Chinese.",
+      "vietnamese": "Tôi là người Trung Quốc."
+    },
+    {
+      "speaker": "女",
+      "chinese": "我是法国人。我的中文老师也是中国人。",
+      "pinyin": "Wǒ shì Fǎguó rén. Wǒ de Zhōngwén lǎoshī yě shì Zhōngguó rén.",
+      "english": "I am French. My Chinese teacher is also Chinese.",
+      "vietnamese": "Tôi là người Pháp. Giáo viên tiếng Trung của tôi cũng là người Trung Quốc."
+    }
+  ],
+  "3-2.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "人",
+      "pinyin": "rén",
+      "english": "person; people",
+      "vietnamese": "người"
+    },
+    {
+      "speaker": "女",
+      "chinese": "人",
+      "pinyin": "rén",
+      "english": "person; people",
+      "vietnamese": "người"
+    },
+    {
+      "speaker": "男",
+      "chinese": "的",
+      "pinyin": "de",
+      "english": "of; 's (possessive particle)",
+      "vietnamese": "của (trợ từ sở hữu)"
+    },
+    {
+      "speaker": "女",
+      "chinese": "的",
+      "pinyin": "de",
+      "english": "of; 's (possessive particle)",
+      "vietnamese": "của (trợ từ sở hữu)"
+    },
+    {
+      "speaker": "男",
+      "chinese": "中国",
+      "pinyin": "Zhōngguó",
+      "english": "China",
+      "vietnamese": "Trung Quốc"
+    },
+    {
+      "speaker": "女",
+      "chinese": "中国",
+      "pinyin": "Zhōngguó",
+      "english": "China",
+      "vietnamese": "Trung Quốc"
+    },
+    {
+      "speaker": "男",
+      "chinese": "法国",
+      "pinyin": "Fǎguó",
+      "english": "France",
+      "vietnamese": "Pháp"
+    },
+    {
+      "speaker": "女",
+      "chinese": "法国",
+      "pinyin": "Fǎguó",
+      "english": "France",
+      "vietnamese": "Pháp"
+    },
+    {
+      "speaker": "男",
+      "chinese": "中文",
+      "pinyin": "Zhōngwén",
+      "english": "Chinese (language)",
+      "vietnamese": "tiếng Trung"
+    },
+    {
+      "speaker": "女",
+      "chinese": "中文",
+      "pinyin": "Zhōngwén",
+      "english": "Chinese (language)",
+      "vietnamese": "tiếng Trung"
+    }
+  ],
+  "3-3.mp3": [
+    {
+      "speaker": "女",
+      "chinese": "这是谁？",
+      "pinyin": "Zhè shì shéi?",
+      "english": "Who is this?",
+      "vietnamese": "Đây là ai?"
+    },
+    {
+      "speaker": "男",
+      "chinese": "这是我女朋友。",
+      "pinyin": "Zhè shì wǒ nǚpéngyou.",
+      "english": "This is my girlfriend.",
+      "vietnamese": "Đây là bạn gái của tôi."
+    },
+    {
+      "speaker": "女",
+      "chinese": "你女朋友是哪国人？",
+      "pinyin": "Nǐ nǚpéngyou shì nǎ guó rén?",
+      "english": "What nationality is your girlfriend?",
+      "vietnamese": "Bạn gái của bạn là người nước nào?"
+    },
+    {
+      "speaker": "男",
+      "chinese": "她也是泰国人。",
+      "pinyin": "Tā yě shì Tàiguó rén.",
+      "english": "She is also Thai.",
+      "vietnamese": "Cô ấy cũng là người Thái Lan."
+    }
+  ],
+  "3-4.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "这",
+      "pinyin": "zhè",
+      "english": "this",
+      "vietnamese": "đây, này"
+    },
+    {
+      "speaker": "女",
+      "chinese": "这",
+      "pinyin": "zhè",
+      "english": "this",
+      "vietnamese": "đây, này"
+    },
+    {
+      "speaker": "男",
+      "chinese": "谁 / 谁",
+      "pinyin": "shéi / shuí",
+      "english": "who",
+      "vietnamese": "ai"
+    },
+    {
+      "speaker": "女",
+      "chinese": "谁 / 谁",
+      "pinyin": "shéi / shuí",
+      "english": "who",
+      "vietnamese": "ai"
+    },
+    {
+      "speaker": "男",
+      "chinese": "女朋友",
+      "pinyin": "nǚpéngyou",
+      "english": "girlfriend",
+      "vietnamese": "bạn gái"
+    },
+    {
+      "speaker": "女",
+      "chinese": "女朋友",
+      "pinyin": "nǚpéngyou",
+      "english": "girlfriend",
+      "vietnamese": "bạn gái"
+    },
+    {
+      "speaker": "男",
+      "chinese": "哪",
+      "pinyin": "nǎ",
+      "english": "which",
+      "vietnamese": "nào"
+    },
+    {
+      "speaker": "女",
+      "chinese": "哪",
+      "pinyin": "nǎ",
+      "english": "which",
+      "vietnamese": "nào"
+    },
+    {
+      "speaker": "男",
+      "chinese": "国",
+      "pinyin": "guó",
+      "english": "country; nation",
+      "vietnamese": "nước, quốc gia"
+    },
+    {
+      "speaker": "女",
+      "chinese": "国",
+      "pinyin": "guó",
+      "english": "country; nation",
+      "vietnamese": "nước, quốc gia"
+    },
+    {
+      "speaker": "男",
+      "chinese": "她",
+      "pinyin": "tā",
+      "english": "she; her",
+      "vietnamese": "cô ấy, chị ấy, bà ấy"
+    },
+    {
+      "speaker": "女",
+      "chinese": "她",
+      "pinyin": "tā",
+      "english": "she; her",
+      "vietnamese": "cô ấy, chị ấy, bà ấy"
+    },
+    {
+      "speaker": "男",
+      "chinese": "泰国",
+      "pinyin": "Tàiguó",
+      "english": "Thailand",
+      "vietnamese": "Thái Lan"
+    },
+    {
+      "speaker": "女",
+      "chinese": "泰国",
+      "pinyin": "Tàiguó",
+      "english": "Thailand",
+      "vietnamese": "Thái Lan"
+    }
+  ],
+  "3-5.mp3": [
+    {
+      "speaker": "姐姐",
+      "chinese": "喂，一飞？",
+      "pinyin": "Wèi, Yīfēi?",
+      "english": "Hello, Yifei?",
+      "vietnamese": "A lô, Nhất Phi à?"
+    },
+    {
+      "speaker": "一飞",
+      "chinese": "姐姐。",
+      "pinyin": "Jiějie.",
+      "english": "Sister.",
+      "vietnamese": "Chị ạ."
+    },
+    {
+      "speaker": "姐姐",
+      "chinese": "你工作还忙吗？",
+      "pinyin": "Nǐ gōngzuò hái máng ma?",
+      "english": "Are you still busy with work?",
+      "vietnamese": "Công việc của em vẫn bận chứ?"
+    },
+    {
+      "speaker": "一飞",
+      "chinese": "对，还很忙。你也很忙吗？",
+      "pinyin": "Duì, hái hěn máng. Nǐ yě hěn máng ma?",
+      "english": "Yes, still very busy. Are you also very busy?",
+      "vietnamese": "Vâng, vẫn rất bận. Chị cũng rất bận ạ?"
+    },
+    {
+      "speaker": "姐姐",
+      "chinese": "我不太忙，我们很想你。",
+      "pinyin": "Wǒ bú tài máng, wǒmen hěn xiǎng nǐ.",
+      "english": "I'm not too busy, we miss you very much.",
+      "vietnamese": "Chị không bận lắm, mọi người rất nhớ em."
+    },
+    {
+      "speaker": "一飞",
+      "chinese": "我也想你们。",
+      "pinyin": "Wǒ yě xiǎng nǐmen.",
+      "english": "I miss you all too.",
+      "vietnamese": "Em cũng nhớ mọi người."
+    }
+  ],
+  "3-6.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "喂",
+      "pinyin": "wèi",
+      "english": "hello (on the phone)",
+      "vietnamese": "a lô"
+    },
+    {
+      "speaker": "女",
+      "chinese": "喂",
+      "pinyin": "wèi",
+      "english": "hello (on the phone)",
+      "vietnamese": "a lô"
+    },
+    {
+      "speaker": "男",
+      "chinese": "姐姐",
+      "pinyin": "jiějie",
+      "english": "older sister",
+      "vietnamese": "chị gái"
+    },
+    {
+      "speaker": "女",
+      "chinese": "姐姐",
+      "pinyin": "jiějie",
+      "english": "older sister",
+      "vietnamese": "chị gái"
+    },
+    {
+      "speaker": "男",
+      "chinese": "工作",
+      "pinyin": "gōngzuò",
+      "english": "work; job",
+      "vietnamese": "công việc; làm việc"
+    },
+    {
+      "speaker": "女",
+      "chinese": "工作",
+      "pinyin": "gōngzuò",
+      "english": "work; job",
+      "vietnamese": "công việc; làm việc"
+    },
+    {
+      "speaker": "男",
+      "chinese": "还",
+      "pinyin": "hái",
+      "english": "still; also",
+      "vietnamese": "vẫn; còn"
+    },
+    {
+      "speaker": "女",
+      "chinese": "还",
+      "pinyin": "hái",
+      "english": "still; also",
+      "vietnamese": "vẫn; còn"
+    },
+    {
+      "speaker": "男",
+      "chinese": "忙",
+      "pinyin": "máng",
+      "english": "busy",
+      "vietnamese": "bận"
+    },
+    {
+      "speaker": "女",
+      "chinese": "忙",
+      "pinyin": "máng",
+      "english": "busy",
+      "vietnamese": "bận"
+    },
+    {
+      "speaker": "男",
+      "chinese": "吗",
+      "pinyin": "ma",
+      "english": "(question particle)",
+      "vietnamese": "không (trợ từ nghi vấn)"
+    },
+    {
+      "speaker": "女",
+      "chinese": "吗",
+      "pinyin": "ma",
+      "english": "(question particle)",
+      "vietnamese": "không (trợ từ nghi vấn)"
+    },
+    {
+      "speaker": "男",
+      "chinese": "对",
+      "pinyin": "duì",
+      "english": "correct; right; yes",
+      "vietnamese": "đúng"
+    },
+    {
+      "speaker": "女",
+      "chinese": "对",
+      "pinyin": "duì",
+      "english": "correct; right; yes",
+      "vietnamese": "đúng"
+    },
+    {
+      "speaker": "男",
+      "chinese": "太",
+      "pinyin": "tài",
+      "english": "too; excessively",
+      "vietnamese": "quá, lắm"
+    },
+    {
+      "speaker": "女",
+      "chinese": "太",
+      "pinyin": "tài",
+      "english": "too; excessively",
+      "vietnamese": "quá, lắm"
+    },
+    {
+      "speaker": "男",
+      "chinese": "我们",
+      "pinyin": "wǒmen",
+      "english": "we; us",
+      "vietnamese": "chúng tôi, chúng ta"
+    },
+    {
+      "speaker": "女",
+      "chinese": "我们",
+      "pinyin": "wǒmen",
+      "english": "we; us",
+      "vietnamese": "chúng tôi, chúng ta"
+    },
+    {
+      "speaker": "男",
+      "chinese": "想",
+      "pinyin": "xiǎng",
+      "english": "to miss; to think; to want",
+      "vietnamese": "nhớ; nghĩ; muốn"
+    },
+    {
+      "speaker": "女",
+      "chinese": "想",
+      "pinyin": "xiǎng",
+      "english": "to miss; to think; to want",
+      "vietnamese": "nhớ; nghĩ; muốn"
+    }
+  ],
+  "3-7.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "四是四，十是十，十四是十四，四十是四十。",
+      "pinyin": "Sì shì sì, shí shì shí, shísì shì shísì, sìshí shì sìshí.",
+      "english": "Four is four, ten is ten, fourteen is fourteen, forty is forty.",
+      "vietnamese": "Bốn là bốn, mười là mười, mười bốn là mười bốn, bốn mươi là bốn mươi."
+    },
+    {
+      "speaker": "女",
+      "chinese": "四是四，十是十，十四是十四，四十是四十。",
+      "pinyin": "Sì shì sì, shí shì shí, shísì shì shísì, sìshí shì sìshí.",
+      "english": "Four is four, ten is ten, fourteen is fourteen, forty is forty.",
+      "vietnamese": "Bốn là bốn, mười là mười, mười bốn là mười bốn, bốn mươi là bốn mươi."
+    }
+  ],
+  "4-1.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "一飞忙吗？",
+      "pinyin": "Yīfēi máng ma?",
+      "english": "Is Yifei busy?",
+      "vietnamese": "Nhất Phi có bận không?"
+    },
+    {
+      "speaker": "女",
+      "chinese": "她很忙。",
+      "pinyin": "Tā hěn máng.",
+      "english": "She is very busy.",
+      "vietnamese": "Cô ấy rất bận."
+    },
+    {
+      "speaker": "男",
+      "chinese": "她有多少个学生？",
+      "pinyin": "Tā yǒu duōshao gè xuésheng?",
+      "english": "How many students does she have?",
+      "vietnamese": "Cô ấy có bao nhiêu học sinh?"
+    },
+    {
+      "speaker": "女",
+      "chinese": "她有二十个学生。",
+      "pinyin": "Tā yǒu èrshí gè xuésheng.",
+      "english": "She has twenty students.",
+      "vietnamese": "Cô ấy có hai mươi học sinh."
+    }
+  ],
+  "4-2.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "有",
+      "pinyin": "yǒu",
+      "english": "to have; there is/are",
+      "vietnamese": "có"
+    },
+    {
+      "speaker": "女",
+      "chinese": "有",
+      "pinyin": "yǒu",
+      "english": "to have; there is/are",
+      "vietnamese": "có"
+    },
+    {
+      "speaker": "男",
+      "chinese": "多少",
+      "pinyin": "duōshao",
+      "english": "how many; how much",
+      "vietnamese": "bao nhiêu"
+    },
+    {
+      "speaker": "女",
+      "chinese": "多少",
+      "pinyin": "duōshao",
+      "english": "how many; how much",
+      "vietnamese": "bao nhiêu"
+    },
+    {
+      "speaker": "男",
+      "chinese": "个",
+      "pinyin": "gè",
+      "english": "(general measure word)",
+      "vietnamese": "cái, người (lượng từ chung)"
+    },
+    {
+      "speaker": "女",
+      "chinese": "个",
+      "pinyin": "gè",
+      "english": "(general measure word)",
+      "vietnamese": "cái, người (lượng từ chung)"
+    }
+  ],
+  "4-3.mp3": [
+    {
+      "speaker": "女",
+      "chinese": "我有两个哥哥，你呢？",
+      "pinyin": "Wǒ yǒu liǎng gè gēge, nǐ ne?",
+      "english": "I have two older brothers, what about you?",
+      "vietnamese": "Tôi có hai anh trai, còn bạn thì sao?"
+    },
+    {
+      "speaker": "男",
+      "chinese": "我没有哥哥。",
+      "pinyin": "Wǒ méiyǒu gēge.",
+      "english": "I don't have any older brothers.",
+      "vietnamese": "Tôi không có anh trai."
+    },
+    {
+      "speaker": "女",
+      "chinese": "你家有几口人？",
+      "pinyin": "Nǐ jiā yǒu jǐ kǒu rén?",
+      "english": "How many people are in your family?",
+      "vietnamese": "Nhà bạn có mấy người?"
+    },
+    {
+      "speaker": "男",
+      "chinese": "我家有四口人：爸爸、妈妈、妹妹和我。",
+      "pinyin": "Wǒ jiā yǒu sì kǒu rén: bàba, māma, mèimei hé wǒ.",
+      "english": "There are four people in my family: dad, mom, younger sister, and me.",
+      "vietnamese": "Nhà tôi có bốn người: bố, mẹ, em gái và tôi."
+    }
+  ],
+  "4-4.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "哥哥",
+      "pinyin": "gēge",
+      "english": "older brother",
+      "vietnamese": "anh trai"
+    },
+    {
+      "speaker": "女",
+      "chinese": "哥哥",
+      "pinyin": "gēge",
+      "english": "older brother",
+      "vietnamese": "anh trai"
+    },
+    {
+      "speaker": "男",
+      "chinese": "呢",
+      "pinyin": "ne",
+      "english": "(question particle for follow-up)",
+      "vietnamese": "thế, còn... thì sao (trợ từ)"
+    },
+    {
+      "speaker": "女",
+      "chinese": "呢",
+      "pinyin": "ne",
+      "english": "(question particle for follow-up)",
+      "vietnamese": "thế, còn... thì sao (trợ từ)"
+    },
+    {
+      "speaker": "男",
+      "chinese": "没有",
+      "pinyin": "méiyǒu",
+      "english": "not have; there is/are not",
+      "vietnamese": "không có"
+    },
+    {
+      "speaker": "女",
+      "chinese": "没有",
+      "pinyin": "méiyǒu",
+      "english": "not have; there is/are not",
+      "vietnamese": "không có"
+    },
+    {
+      "speaker": "男",
+      "chinese": "家",
+      "pinyin": "jiā",
+      "english": "home; family",
+      "vietnamese": "nhà, gia đình"
+    },
+    {
+      "speaker": "女",
+      "chinese": "家",
+      "pinyin": "jiā",
+      "english": "home; family",
+      "vietnamese": "nhà, gia đình"
+    },
+    {
+      "speaker": "男",
+      "chinese": "几",
+      "pinyin": "jǐ",
+      "english": "how many; several",
+      "vietnamese": "mấy"
+    },
+    {
+      "speaker": "女",
+      "chinese": "几",
+      "pinyin": "jǐ",
+      "english": "how many; several",
+      "vietnamese": "mấy"
+    },
+    {
+      "speaker": "男",
+      "chinese": "口",
+      "pinyin": "kǒu",
+      "english": "mouth; (measure word for family members)",
+      "vietnamese": "miệng; nhân khẩu (lượng từ cho người trong nhà)"
+    },
+    {
+      "speaker": "女",
+      "chinese": "口",
+      "pinyin": "kǒu",
+      "english": "mouth; (measure word for family members)",
+      "vietnamese": "miệng; nhân khẩu (lượng từ cho người trong nhà)"
+    },
+    {
+      "speaker": "男",
+      "chinese": "爸爸",
+      "pinyin": "bàba",
+      "english": "dad; father",
+      "vietnamese": "bố, ba"
+    },
+    {
+      "speaker": "女",
+      "chinese": "爸爸",
+      "pinyin": "bàba",
+      "english": "dad; father",
+      "vietnamese": "bố, ba"
+    },
+    {
+      "speaker": "男",
+      "chinese": "妈妈",
+      "pinyin": "māma",
+      "english": "mom; mother",
+      "vietnamese": "mẹ, má"
+    },
+    {
+      "speaker": "女",
+      "chinese": "妈妈",
+      "pinyin": "māma",
+      "english": "mom; mother",
+      "vietnamese": "mẹ, má"
+    },
+    {
+      "speaker": "男",
+      "chinese": "妹妹",
+      "pinyin": "mèimei",
+      "english": "younger sister",
+      "vietnamese": "em gái"
+    },
+    {
+      "speaker": "女",
+      "chinese": "妹妹",
+      "pinyin": "mèimei",
+      "english": "younger sister",
+      "vietnamese": "em gái"
+    },
+    {
+      "speaker": "男",
+      "chinese": "和",
+      "pinyin": "hé",
+      "english": "and",
+      "vietnamese": "và"
+    },
+    {
+      "speaker": "女",
+      "chinese": "和",
+      "pinyin": "hé",
+      "english": "and",
+      "vietnamese": "và"
+    }
+  ],
+  "4-5.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "这是您儿子吗？",
+      "pinyin": "Zhè shì nín érzi ma?",
+      "english": "Is this your son?",
+      "vietnamese": "Đây là con trai của chị phải không?"
+    },
+    {
+      "speaker": "女",
+      "chinese": "是的。我有两个孩子，一个儿子，一个女儿。",
+      "pinyin": "Shì de. Wǒ yǒu liǎng gè háizi, yí gè érzi, yí gè nǚ'ér.",
+      "english": "Yes. I have two children, a son and a daughter.",
+      "vietnamese": "Đúng vậy. Tôi có hai người con, một con trai, một con gái."
+    },
+    {
+      "speaker": "男",
+      "chinese": "您儿子几岁？",
+      "pinyin": "Nín érzi jǐ suì?",
+      "english": "How old is your son?",
+      "vietnamese": "Con trai chị mấy tuổi rồi?"
+    },
+    {
+      "speaker": "女",
+      "chinese": "他今年五岁。",
+      "pinyin": "Tā jīnnián wǔ suì.",
+      "english": "He is five years old this year.",
+      "vietnamese": "Năm nay cháu năm tuổi."
+    },
+    {
+      "speaker": "男",
+      "chinese": "您女儿多大？",
+      "pinyin": "Nín nǚ'ér duō dà?",
+      "english": "How old is your daughter?",
+      "vietnamese": "Con gái chị bao nhiêu tuổi rồi?"
+    },
+    {
+      "speaker": "女",
+      "chinese": "她今年十二。",
+      "pinyin": "Tā jīnnián shí'èr.",
+      "english": "She is twelve this year.",
+      "vietnamese": "Năm nay cháu mười hai tuổi."
+    }
+  ],
+  "4-6.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "儿子",
+      "pinyin": "érzi",
+      "english": "son",
+      "vietnamese": "con trai"
+    },
+    {
+      "speaker": "女",
+      "chinese": "儿子",
+      "pinyin": "érzi",
+      "english": "son",
+      "vietnamese": "con trai"
+    },
+    {
+      "speaker": "男",
+      "chinese": "孩子",
+      "pinyin": "háizi",
+      "english": "child; children",
+      "vietnamese": "con cái, đứa trẻ"
+    },
+    {
+      "speaker": "女",
+      "chinese": "孩子",
+      "pinyin": "háizi",
+      "english": "child; children",
+      "vietnamese": "con cái, đứa trẻ"
+    },
+    {
+      "speaker": "男",
+      "chinese": "女儿",
+      "pinyin": "nǚ'ér",
+      "english": "daughter",
+      "vietnamese": "con gái"
+    },
+    {
+      "speaker": "女",
+      "chinese": "女儿",
+      "pinyin": "nǚ'ér",
+      "english": "daughter",
+      "vietnamese": "con gái"
+    },
+    {
+      "speaker": "男",
+      "chinese": "岁",
+      "pinyin": "suì",
+      "english": "year(s) of age",
+      "vietnamese": "tuổi"
+    },
+    {
+      "speaker": "女",
+      "chinese": "岁",
+      "pinyin": "suì",
+      "english": "year(s) of age",
+      "vietnamese": "tuổi"
+    },
+    {
+      "speaker": "男",
+      "chinese": "他",
+      "pinyin": "tā",
+      "english": "he; him",
+      "vietnamese": "anh ấy, ông ấy, cậu ấy"
+    },
+    {
+      "speaker": "女",
+      "chinese": "他",
+      "pinyin": "tā",
+      "english": "he; him",
+      "vietnamese": "anh ấy, ông ấy, cậu ấy"
+    },
+    {
+      "speaker": "男",
+      "chinese": "今年",
+      "pinyin": "jīnnián",
+      "english": "this year",
+      "vietnamese": "năm nay"
+    },
+    {
+      "speaker": "女",
+      "chinese": "今年",
+      "pinyin": "jīnnián",
+      "english": "this year",
+      "vietnamese": "năm nay"
+    },
+    {
+      "speaker": "男",
+      "chinese": "多",
+      "pinyin": "duō",
+      "english": "how (in questions about age/degree); many",
+      "vietnamese": "bao nhiêu (hỏi mức độ/tuổi); nhiều"
+    },
+    {
+      "speaker": "女",
+      "chinese": "多",
+      "pinyin": "duō",
+      "english": "how (in questions about age/degree); many",
+      "vietnamese": "bao nhiêu (hỏi mức độ/tuổi); nhiều"
+    },
+    {
+      "speaker": "男",
+      "chinese": "大",
+      "pinyin": "dà",
+      "english": "big; old (in age)",
+      "vietnamese": "to, lớn (tuổi)"
+    },
+    {
+      "speaker": "女",
+      "chinese": "大",
+      "pinyin": "dà",
+      "english": "big; old (in age)",
+      "vietnamese": "to, lớn (tuổi)"
+    }
+  ],
+  "5-1.mp3": [
+    {
+      "speaker": "女",
+      "chinese": "今天几号？",
+      "pinyin": "Jīntiān jǐ hào?",
+      "english": "What is the date today?",
+      "vietnamese": "Hôm nay là ngày mấy?"
+    },
+    {
+      "speaker": "男",
+      "chinese": "今天九月八号。",
+      "pinyin": "Jīntiān jiǔ yuè bā hào.",
+      "english": "Today is September 8th.",
+      "vietnamese": "Hôm nay là ngày 8 tháng 9."
+    },
+    {
+      "speaker": "女",
+      "chinese": "星期几？",
+      "pinyin": "Xīngqī jǐ?",
+      "english": "What day of the week is it?",
+      "vietnamese": "Hôm nay là thứ mấy?"
+    },
+    {
+      "speaker": "男",
+      "chinese": "星期日。今天我休息。",
+      "pinyin": "Xīngqīrì. Jīntiān wǒ xiūxi.",
+      "english": "Sunday. I am off today.",
+      "vietnamese": "Chủ nhật. Hôm nay tôi được nghỉ."
+    }
+  ],
+  "5-2.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "今天",
+      "pinyin": "jīntiān",
+      "english": "today",
+      "vietnamese": "hôm nay"
+    },
+    {
+      "speaker": "女",
+      "chinese": "今天",
+      "pinyin": "jīntiān",
+      "english": "today",
+      "vietnamese": "hôm nay"
+    },
+    {
+      "speaker": "男",
+      "chinese": "号",
+      "pinyin": "hào",
+      "english": "day (of a month); number",
+      "vietnamese": "ngày; số"
+    },
+    {
+      "speaker": "女",
+      "chinese": "号",
+      "pinyin": "hào",
+      "english": "day (of a month); number",
+      "vietnamese": "ngày; số"
+    },
+    {
+      "speaker": "男",
+      "chinese": "月",
+      "pinyin": "yuè",
+      "english": "month",
+      "vietnamese": "tháng"
+    },
+    {
+      "speaker": "女",
+      "chinese": "月",
+      "pinyin": "yuè",
+      "english": "month",
+      "vietnamese": "tháng"
+    },
+    {
+      "speaker": "男",
+      "chinese": "日",
+      "pinyin": "rì",
+      "english": "day; sun",
+      "vietnamese": "ngày; mặt trời"
+    },
+    {
+      "speaker": "女",
+      "chinese": "日",
+      "pinyin": "rì",
+      "english": "day; sun",
+      "vietnamese": "ngày; mặt trời"
+    },
+    {
+      "speaker": "男",
+      "chinese": "星期",
+      "pinyin": "xīngqī",
+      "english": "week",
+      "vietnamese": "tuần; thứ"
+    },
+    {
+      "speaker": "女",
+      "chinese": "星期",
+      "pinyin": "xīngqī",
+      "english": "week",
+      "vietnamese": "tuần; thứ"
+    },
+    {
+      "speaker": "男",
+      "chinese": "星期日",
+      "pinyin": "xīngqīrì",
+      "english": "Sunday",
+      "vietnamese": "Chủ nhật"
+    },
+    {
+      "speaker": "女",
+      "chinese": "星期日",
+      "pinyin": "xīngqīrì",
+      "english": "Sunday",
+      "vietnamese": "Chủ nhật"
+    },
+    {
+      "speaker": "男",
+      "chinese": "星期天",
+      "pinyin": "xīngqītiān",
+      "english": "Sunday",
+      "vietnamese": "Chủ nhật"
+    },
+    {
+      "speaker": "女",
+      "chinese": "星期天",
+      "pinyin": "xīngqītiān",
+      "english": "Sunday",
+      "vietnamese": "Chủ nhật"
+    },
+    {
+      "speaker": "男",
+      "chinese": "休息",
+      "pinyin": "xiūxi",
+      "english": "to rest",
+      "vietnamese": "nghỉ ngơi"
+    },
+    {
+      "speaker": "女",
+      "chinese": "休息",
+      "pinyin": "xiūxi",
+      "english": "to rest",
+      "vietnamese": "nghỉ ngơi"
+    }
+  ],
+  "5-3.mp3": [
+    {
+      "speaker": "女",
+      "chinese": "你会做饭吗？",
+      "pinyin": "Nǐ huì zuòfàn ma?",
+      "english": "Can you cook?",
+      "vietnamese": "Bạn biết nấu ăn không?"
+    },
+    {
+      "speaker": "男",
+      "chinese": "我会做。",
+      "pinyin": "Wǒ huì zuò.",
+      "english": "Yes, I can.",
+      "vietnamese": "Tôi biết nấu."
+    },
+    {
+      "speaker": "女",
+      "chinese": "你会做什么？",
+      "pinyin": "Nǐ huì zuò shénme?",
+      "english": "What can you cook?",
+      "vietnamese": "Bạn biết nấu món gì?"
+    },
+    {
+      "speaker": "男",
+      "chinese": "我会做面条、饺子，也会做一些菜。星期天我也做饭。",
+      "pinyin": "Wǒ huì zuò miàntiáo, jiǎozi, yě huì zuò yìxiē cài. Xīngqītiān wǒ yě zuòfàn.",
+      "english": "I can make noodles and dumplings, and I can also cook some dishes. I also cook on Sundays.",
+      "vietnamese": "Tôi biết làm mì, sủi cảo, cũng biết nấu một vài món ăn. Chủ nhật tôi cũng nấu cơm."
+    }
+  ],
+  "5-4.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "会",
+      "pinyin": "huì",
+      "english": "can; to be able to",
+      "vietnamese": "biết (làm gì)"
+    },
+    {
+      "speaker": "女",
+      "chinese": "会",
+      "pinyin": "huì",
+      "english": "can; to be able to",
+      "vietnamese": "biết (làm gì)"
+    },
+    {
+      "speaker": "男",
+      "chinese": "做饭",
+      "pinyin": "zuòfàn",
+      "english": "to cook",
+      "vietnamese": "nấu ăn; nấu cơm"
+    },
+    {
+      "speaker": "女",
+      "chinese": "做饭",
+      "pinyin": "zuòfàn",
+      "english": "to cook",
+      "vietnamese": "nấu ăn; nấu cơm"
+    },
+    {
+      "speaker": "男",
+      "chinese": "做",
+      "pinyin": "zuò",
+      "english": "to do; to make; to cook",
+      "vietnamese": "làm; nấu"
+    },
+    {
+      "speaker": "女",
+      "chinese": "做",
+      "pinyin": "zuò",
+      "english": "to do; to make; to cook",
+      "vietnamese": "làm; nấu"
+    },
+    {
+      "speaker": "男",
+      "chinese": "面条",
+      "pinyin": "miàntiáo",
+      "english": "noodles",
+      "vietnamese": "mì"
+    },
+    {
+      "speaker": "女",
+      "chinese": "面条",
+      "pinyin": "miàntiáo",
+      "english": "noodles",
+      "vietnamese": "mì"
+    },
+    {
+      "speaker": "男",
+      "chinese": "饺子",
+      "pinyin": "jiǎozi",
+      "english": "dumplings",
+      "vietnamese": "sủi cảo"
+    },
+    {
+      "speaker": "女",
+      "chinese": "饺子",
+      "pinyin": "jiǎozi",
+      "english": "dumplings",
+      "vietnamese": "sủi cảo"
+    },
+    {
+      "speaker": "男",
+      "chinese": "一些",
+      "pinyin": "yīxiē",
+      "english": "some; a few",
+      "vietnamese": "một ít; một vài"
+    },
+    {
+      "speaker": "女",
+      "chinese": "一些",
+      "pinyin": "yīxiē",
+      "english": "some; a few",
+      "vietnamese": "một ít; một vài"
+    },
+    {
+      "speaker": "男",
+      "chinese": "菜",
+      "pinyin": "cài",
+      "english": "dish; vegetable",
+      "vietnamese": "món ăn; rau"
+    },
+    {
+      "speaker": "女",
+      "chinese": "菜",
+      "pinyin": "cài",
+      "english": "dish; vegetable",
+      "vietnamese": "món ăn; rau"
+    }
+  ],
+  "5-5.mp3": [
+    {
+      "speaker": "女",
+      "chinese": "同乐，下班吗？",
+      "pinyin": "Tónglè, xiàbān ma?",
+      "english": "Tongle, are you getting off work?",
+      "vietnamese": "Đồng Lạc, bạn tan làm chưa?"
+    },
+    {
+      "speaker": "男",
+      "chinese": "下班。",
+      "pinyin": "Xiàbān.",
+      "english": "Yes, I am.",
+      "vietnamese": "Tan làm rồi."
+    },
+    {
+      "speaker": "女",
+      "chinese": "这是你的新电脑吗？",
+      "pinyin": "Zhè shì nǐ de xīn diànnǎo ma?",
+      "english": "Is this your new computer?",
+      "vietnamese": "Đây là máy tính mới của bạn à?"
+    },
+    {
+      "speaker": "男",
+      "chinese": "是的，是我的新电脑。",
+      "pinyin": "Shì de, shì wǒ de xīn diànnǎo.",
+      "english": "Yes, it is my new computer.",
+      "vietnamese": "Đúng vậy, là máy tính mới của tôi."
+    },
+    {
+      "speaker": "女",
+      "chinese": "真好看。",
+      "pinyin": "Zhēn hǎokàn.",
+      "english": "It looks really nice.",
+      "vietnamese": "Đẹp thật đấy."
+    },
+    {
+      "speaker": "男",
+      "chinese": "我也很喜欢它。",
+      "pinyin": "Wǒ yě hěn xǐhuan tā.",
+      "english": "I really like it too.",
+      "vietnamese": "Tôi cũng rất thích nó."
+    }
+  ],
+  "5-6.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "下班",
+      "pinyin": "xiàbān",
+      "english": "to get off work",
+      "vietnamese": "tan làm"
+    },
+    {
+      "speaker": "女",
+      "chinese": "下班",
+      "pinyin": "xiàbān",
+      "english": "to get off work",
+      "vietnamese": "tan làm"
+    },
+    {
+      "speaker": "男",
+      "chinese": "新",
+      "pinyin": "xīn",
+      "english": "new",
+      "vietnamese": "mới"
+    },
+    {
+      "speaker": "女",
+      "chinese": "新",
+      "pinyin": "xīn",
+      "english": "new",
+      "vietnamese": "mới"
+    },
+    {
+      "speaker": "男",
+      "chinese": "电脑",
+      "pinyin": "diànnǎo",
+      "english": "computer",
+      "vietnamese": "máy tính"
+    },
+    {
+      "speaker": "女",
+      "chinese": "电脑",
+      "pinyin": "diànnǎo",
+      "english": "computer",
+      "vietnamese": "máy tính"
+    },
+    {
+      "speaker": "男",
+      "chinese": "真",
+      "pinyin": "zhēn",
+      "english": "really; truly",
+      "vietnamese": "thật; thật sự"
+    },
+    {
+      "speaker": "女",
+      "chinese": "真",
+      "pinyin": "zhēn",
+      "english": "really; truly",
+      "vietnamese": "thật; thật sự"
+    },
+    {
+      "speaker": "男",
+      "chinese": "好看",
+      "pinyin": "hǎokàn",
+      "english": "good-looking; nice",
+      "vietnamese": "đẹp; ưa nhìn"
+    },
+    {
+      "speaker": "女",
+      "chinese": "好看",
+      "pinyin": "hǎokàn",
+      "english": "good-looking; nice",
+      "vietnamese": "đẹp; ưa nhìn"
+    },
+    {
+      "speaker": "男",
+      "chinese": "喜欢",
+      "pinyin": "xǐhuan",
+      "english": "to like",
+      "vietnamese": "thích"
+    },
+    {
+      "speaker": "女",
+      "chinese": "喜欢",
+      "pinyin": "xǐhuan",
+      "english": "to like",
+      "vietnamese": "thích"
+    },
+    {
+      "speaker": "男",
+      "chinese": "它",
+      "pinyin": "tā",
+      "english": "it",
+      "vietnamese": "nó"
+    },
+    {
+      "speaker": "女",
+      "chinese": "它",
+      "pinyin": "tā",
+      "english": "it",
+      "vietnamese": "nó"
+    }
+  ],
+  "6-1.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "家悦，你的手机号是多少？",
+      "pinyin": "Jiāyuè, nǐ de shǒujī hào shì duōshao?",
+      "english": "Jiayue, what is your mobile phone number?",
+      "vietnamese": "Gia Duyệt, số điện thoại di động của bạn là bao nhiêu?"
+    },
+    {
+      "speaker": "女",
+      "chinese": "我的手机号是33601493190。",
+      "pinyin": "Wǒ de shǒujī hào shì sān sān liù líng yāo sì jiǔ sān yāo jiǔ líng.",
+      "english": "My mobile phone number is 33601493190.",
+      "vietnamese": "Số điện thoại di động của tôi là 33601493190."
+    },
+    {
+      "speaker": "男",
+      "chinese": "我的手机号是8613552721160。",
+      "pinyin": "Wǒ de shǒujī hào shì bā liù yāo sān wǔ wǔ èr qī èr yāo yāo liù líng.",
+      "english": "My mobile phone number is 8613552721160.",
+      "vietnamese": "Số điện thoại di động của tôi là 8613552721160."
+    },
+    {
+      "speaker": "女",
+      "chinese": "好的。",
+      "pinyin": "Hǎo de.",
+      "english": "Okay.",
+      "vietnamese": "Được rồi."
+    }
+  ],
+  "6-2.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "手机",
+      "pinyin": "shǒujī",
+      "english": "mobile phone",
+      "vietnamese": "điện thoại di động"
+    },
+    {
+      "speaker": "女",
+      "chinese": "手机",
+      "pinyin": "shǒujī",
+      "english": "mobile phone",
+      "vietnamese": "điện thoại di động"
+    },
+    {
+      "speaker": "男",
+      "chinese": "电话",
+      "pinyin": "diànhuà",
+      "english": "telephone",
+      "vietnamese": "điện thoại"
+    },
+    {
+      "speaker": "女",
+      "chinese": "电话",
+      "pinyin": "diànhuà",
+      "english": "telephone",
+      "vietnamese": "điện thoại"
+    },
+    {
+      "speaker": "男",
+      "chinese": "号",
+      "pinyin": "hào",
+      "english": "number",
+      "vietnamese": "số"
+    },
+    {
+      "speaker": "女",
+      "chinese": "号",
+      "pinyin": "hào",
+      "english": "number",
+      "vietnamese": "số"
+    }
+  ],
+  "6-3.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "家悦，明天你去哪儿？",
+      "pinyin": "Jiāyuè, míngtiān nǐ qù nǎr?",
+      "english": "Jiayue, where are you going tomorrow?",
+      "vietnamese": "Gia Duyệt, ngày mai bạn đi đâu?"
+    },
+    {
+      "speaker": "女",
+      "chinese": "我想去超市买东西。",
+      "pinyin": "Wǒ xiǎng qù chāoshì mǎi dōngxi.",
+      "english": "I want to go to the supermarket to buy some things.",
+      "vietnamese": "Tôi muốn đi siêu thị mua đồ."
+    },
+    {
+      "speaker": "男",
+      "chinese": "你去超市买什么？",
+      "pinyin": "Nǐ qù chāoshì mǎi shénme?",
+      "english": "What are you going to buy at the supermarket?",
+      "vietnamese": "Bạn đi siêu thị mua gì thế?"
+    },
+    {
+      "speaker": "女",
+      "chinese": "我想买些牛奶。",
+      "pinyin": "Wǒ xiǎng mǎi xiē niúnǎi.",
+      "english": "I want to buy some milk.",
+      "vietnamese": "Tôi muốn mua một ít sữa bò."
+    }
+  ],
+  "6-4.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "明天",
+      "pinyin": "míngtiān",
+      "english": "tomorrow",
+      "vietnamese": "ngày mai"
+    },
+    {
+      "speaker": "女",
+      "chinese": "明天",
+      "pinyin": "míngtiān",
+      "english": "tomorrow",
+      "vietnamese": "ngày mai"
+    },
+    {
+      "speaker": "男",
+      "chinese": "去",
+      "pinyin": "qù",
+      "english": "to go",
+      "vietnamese": "đi"
+    },
+    {
+      "speaker": "女",
+      "chinese": "去",
+      "pinyin": "qù",
+      "english": "to go",
+      "vietnamese": "đi"
+    },
+    {
+      "speaker": "男",
+      "chinese": "哪儿",
+      "pinyin": "nǎr",
+      "english": "where",
+      "vietnamese": "đâu; ở đâu"
+    },
+    {
+      "speaker": "女",
+      "chinese": "哪儿",
+      "pinyin": "nǎr",
+      "english": "where",
+      "vietnamese": "đâu; ở đâu"
+    },
+    {
+      "speaker": "男",
+      "chinese": "想",
+      "pinyin": "xiǎng",
+      "english": "to want to; to think",
+      "vietnamese": "muốn; nghĩ"
+    },
+    {
+      "speaker": "女",
+      "chinese": "想",
+      "pinyin": "xiǎng",
+      "english": "to want to; to think",
+      "vietnamese": "muốn; nghĩ"
+    },
+    {
+      "speaker": "男",
+      "chinese": "超市",
+      "pinyin": "chāoshì",
+      "english": "supermarket",
+      "vietnamese": "siêu thị"
+    },
+    {
+      "speaker": "女",
+      "chinese": "超市",
+      "pinyin": "chāoshì",
+      "english": "supermarket",
+      "vietnamese": "siêu thị"
+    },
+    {
+      "speaker": "男",
+      "chinese": "买",
+      "pinyin": "mǎi",
+      "english": "to buy",
+      "vietnamese": "mua"
+    },
+    {
+      "speaker": "女",
+      "chinese": "买",
+      "pinyin": "mǎi",
+      "english": "to buy",
+      "vietnamese": "mua"
+    },
+    {
+      "speaker": "男",
+      "chinese": "东西",
+      "pinyin": "dōngxi",
+      "english": "thing; stuff",
+      "vietnamese": "đồ vật; đồ đạc"
+    },
+    {
+      "speaker": "女",
+      "chinese": "东西",
+      "pinyin": "dōngxi",
+      "english": "thing; stuff",
+      "vietnamese": "đồ vật; đồ đạc"
+    },
+    {
+      "speaker": "男",
+      "chinese": "些",
+      "pinyin": "xiē",
+      "english": "some; a few",
+      "vietnamese": "một ít; một vài"
+    },
+    {
+      "speaker": "女",
+      "chinese": "些",
+      "pinyin": "xiē",
+      "english": "some; a few",
+      "vietnamese": "một ít; một vài"
+    },
+    {
+      "speaker": "男",
+      "chinese": "牛奶",
+      "pinyin": "niúnǎi",
+      "english": "milk",
+      "vietnamese": "sữa bò"
+    },
+    {
+      "speaker": "女",
+      "chinese": "牛奶",
+      "pinyin": "niúnǎi",
+      "english": "milk",
+      "vietnamese": "sữa bò"
+    }
+  ],
+  "6-5.mp3": [
+    {
+      "speaker": "女",
+      "chinese": "星期天我们去哪儿吃晚饭？",
+      "pinyin": "Xīngqītiān wǒmen qù nǎr chī wǎnfàn?",
+      "english": "Where are we going for dinner on Sunday?",
+      "vietnamese": "Chủ nhật chúng ta đi đâu ăn tối?"
+    },
+    {
+      "speaker": "男",
+      "chinese": "我还想去西安饭店。",
+      "pinyin": "Wǒ hái xiǎng qù Xī'ān Fàndiàn.",
+      "english": "I still want to go to Xi'an Restaurant.",
+      "vietnamese": "Tôi vẫn muốn đến nhà hàng Tây An."
+    },
+    {
+      "speaker": "女",
+      "chinese": "那边的包子非常好吃，我想吃包子。",
+      "pinyin": "Nàbiān de bāozi fēicháng hǎochī, wǒ xiǎng chī bāozi.",
+      "english": "The steamed buns there are delicious; I want to eat steamed buns.",
+      "vietnamese": "Bánh bao ở bên đó rất ngon, tôi muốn ăn bánh bao."
+    },
+    {
+      "speaker": "孩子",
+      "chinese": "妈妈，我想吃米饭，不想吃包子。",
+      "pinyin": "Māma, wǒ xiǎng chī mǐfàn, bù xiǎng chī bāozi.",
+      "english": "Mom, I want to eat rice; I don't want to eat steamed buns.",
+      "vietnamese": "Mẹ ơi, con muốn ăn cơm, không muốn ăn bánh bao."
+    },
+    {
+      "speaker": "女",
+      "chinese": "好的，我们怎么去？",
+      "pinyin": "Hǎo de, wǒmen zěnme qù?",
+      "english": "Okay, how are we going there?",
+      "vietnamese": "Được thôi, chúng ta đi bằng gì?"
+    },
+    {
+      "speaker": "男",
+      "chinese": "坐出租车去。",
+      "pinyin": "Zuò chūzūchē qù.",
+      "english": "Let's take a taxi.",
+      "vietnamese": "Đi bằng taxi."
+    }
+  ],
+  "6-6.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "吃",
+      "pinyin": "chī",
+      "english": "to eat",
+      "vietnamese": "ăn"
+    },
+    {
+      "speaker": "女",
+      "chinese": "吃",
+      "pinyin": "chī",
+      "english": "to eat",
+      "vietnamese": "ăn"
+    },
+    {
+      "speaker": "男",
+      "chinese": "晚饭",
+      "pinyin": "wǎnfàn",
+      "english": "dinner",
+      "vietnamese": "bữa tối; cơm tối"
+    },
+    {
+      "speaker": "女",
+      "chinese": "晚饭",
+      "pinyin": "wǎnfàn",
+      "english": "dinner",
+      "vietnamese": "bữa tối; cơm tối"
+    },
+    {
+      "speaker": "男",
+      "chinese": "那边",
+      "pinyin": "nàbiān",
+      "english": "there; over there",
+      "vietnamese": "bên đó; đằng kia"
+    },
+    {
+      "speaker": "女",
+      "chinese": "那边",
+      "pinyin": "nàbiān",
+      "english": "there; over there",
+      "vietnamese": "bên đó; đằng kia"
+    },
+    {
+      "speaker": "男",
+      "chinese": "包子",
+      "pinyin": "bāozi",
+      "english": "steamed stuffed bun",
+      "vietnamese": "bánh bao"
+    },
+    {
+      "speaker": "女",
+      "chinese": "包子",
+      "pinyin": "bāozi",
+      "english": "steamed stuffed bun",
+      "vietnamese": "bánh bao"
+    },
+    {
+      "speaker": "男",
+      "chinese": "非常",
+      "pinyin": "fēicháng",
+      "english": "very; extremely",
+      "vietnamese": "vô cùng; rất"
+    },
+    {
+      "speaker": "女",
+      "chinese": "非常",
+      "pinyin": "fēicháng",
+      "english": "very; extremely",
+      "vietnamese": "vô cùng; rất"
+    },
+    {
+      "speaker": "男",
+      "chinese": "好吃",
+      "pinyin": "hǎochī",
+      "english": "delicious",
+      "vietnamese": "ngon"
+    },
+    {
+      "speaker": "女",
+      "chinese": "好吃",
+      "pinyin": "hǎochī",
+      "english": "delicious",
+      "vietnamese": "ngon"
+    },
+    {
+      "speaker": "男",
+      "chinese": "米饭",
+      "pinyin": "mǐfàn",
+      "english": "cooked rice",
+      "vietnamese": "cơm"
+    },
+    {
+      "speaker": "女",
+      "chinese": "米饭",
+      "pinyin": "mǐfàn",
+      "english": "cooked rice",
+      "vietnamese": "cơm"
+    },
+    {
+      "speaker": "男",
+      "chinese": "怎么",
+      "pinyin": "zěnme",
+      "english": "how",
+      "vietnamese": "thế nào; bằng cách nào"
+    },
+    {
+      "speaker": "女",
+      "chinese": "怎么",
+      "pinyin": "zěnme",
+      "english": "how",
+      "vietnamese": "thế nào; bằng cách nào"
+    },
+    {
+      "speaker": "男",
+      "chinese": "坐",
+      "pinyin": "zuò",
+      "english": "to sit; to travel by",
+      "vietnamese": "ngồi; đi (bằng phương tiện)"
+    },
+    {
+      "speaker": "女",
+      "chinese": "坐",
+      "pinyin": "zuò",
+      "english": "to sit; to travel by",
+      "vietnamese": "ngồi; đi (bằng phương tiện)"
+    },
+    {
+      "speaker": "男",
+      "chinese": "出租车",
+      "pinyin": "chūzūchē",
+      "english": "taxi",
+      "vietnamese": "xe taxi"
+    },
+    {
+      "speaker": "女",
+      "chinese": "出租车",
+      "pinyin": "chūzūchē",
+      "english": "taxi",
+      "vietnamese": "xe taxi"
+    },
+    {
+      "speaker": "男",
+      "chinese": "西安饭店",
+      "pinyin": "Xī'ān Fàndiàn",
+      "english": "Xi'an Restaurant",
+      "vietnamese": "Nhà hàng Tây An"
+    },
+    {
+      "speaker": "女",
+      "chinese": "西安饭店",
+      "pinyin": "Xī'ān Fàndiàn",
+      "english": "Xi'an Restaurant",
+      "vietnamese": "Nhà hàng Tây An"
+    }
+  ],
+  "7-1.mp3": [
+    {
+      "speaker": "女1",
+      "chinese": "现在几点？",
+      "pinyin": "Xiànzài jǐ diǎn?",
+      "english": "What time is it now?",
+      "vietnamese": "Bây giờ là mấy giờ?"
+    },
+    {
+      "speaker": "男",
+      "chinese": "早上八点四十。",
+      "pinyin": "Zǎoshang bā diǎn sìshí.",
+      "english": "8:40 in the morning.",
+      "vietnamese": "8 giờ 40 phút sáng."
+    },
+    {
+      "speaker": "女1",
+      "chinese": "我上午十点十分有课。",
+      "pinyin": "Wǒ shàngwǔ shí diǎn shí fēn yǒu kè.",
+      "english": "I have a class at 10:10 in the morning.",
+      "vietnamese": "Tôi có tiết học lúc 10 giờ 10 phút sáng."
+    },
+    {
+      "speaker": "女2",
+      "chinese": "好的，我们下午两点见吧。",
+      "pinyin": "Hǎo de, wǒmen xiàwǔ liǎng diǎn jiàn ba.",
+      "english": "Okay, let's meet at 2:00 in the afternoon.",
+      "vietnamese": "Được rồi, chúng ta gặp nhau lúc 2 giờ chiều nhé."
+    }
+  ],
+  "7-2.mp3": [
+    {
+      "speaker": "朗读",
+      "chinese": "现在",
+      "pinyin": "xiànzài",
+      "english": "now",
+      "vietnamese": "bây giờ"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "点",
+      "pinyin": "diǎn",
+      "english": "o'clock",
+      "vietnamese": "giờ"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "早上",
+      "pinyin": "zǎoshang",
+      "english": "morning",
+      "vietnamese": "buổi sáng"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "上午",
+      "pinyin": "shàngwǔ",
+      "english": "morning (before noon)",
+      "vietnamese": "buổi sáng (trước trưa)"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "分",
+      "pinyin": "fēn",
+      "english": "minute",
+      "vietnamese": "phút"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "课",
+      "pinyin": "kè",
+      "english": "class, lesson",
+      "vietnamese": "tiết học, bài học"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "下午",
+      "pinyin": "xiàwǔ",
+      "english": "afternoon",
+      "vietnamese": "buổi chiều"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "见",
+      "pinyin": "jiàn",
+      "english": "to see, to meet",
+      "vietnamese": "gặp"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "吧",
+      "pinyin": "ba",
+      "english": "(modal particle indicating suggestion)",
+      "vietnamese": "nhé, đi (trợ từ ngữ khí)"
+    }
+  ],
+  "7-3.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "下午我想去电影院看电影，你去吗？",
+      "pinyin": "Xiàwǔ wǒ xiǎng qù diànyǐngyuàn kàn diànyǐng, nǐ qù ma?",
+      "english": "I want to go to the cinema to watch a movie this afternoon, are you going?",
+      "vietnamese": "Chiều nay tôi muốn đi rạp chiếu phim xem phim, bạn có đi không?"
+    },
+    {
+      "speaker": "女",
+      "chinese": "我不想去，下午还有事。",
+      "pinyin": "Wǒ bù xiǎng qù, xiàwǔ hái yǒu shì.",
+      "english": "I don't want to go, I still have things to do this afternoon.",
+      "vietnamese": "Tôi không muốn đi, chiều nay vẫn còn có việc."
+    },
+    {
+      "speaker": "男",
+      "chinese": "好的，明天呢？",
+      "pinyin": "Hǎo de, míngtiān ne?",
+      "english": "Okay, how about tomorrow?",
+      "vietnamese": "Được rồi, thế ngày mai thì sao?"
+    },
+    {
+      "speaker": "女",
+      "chinese": "我明天下午两点还上课呢，四点半下课。",
+      "pinyin": "Wǒ míngtiān xiàwǔ liǎng diǎn hái shàngkè ne, sì diǎn bàn xiàkè.",
+      "english": "I still have class at 2:00 tomorrow afternoon; class finishes at 4:30.",
+      "vietnamese": "2 giờ chiều mai tôi vẫn đang học trên lớp, 4 giờ rưỡi mới tan học."
+    }
+  ],
+  "7-4.mp3": [
+    {
+      "speaker": "朗读",
+      "chinese": "电影院",
+      "pinyin": "diànyǐngyuàn",
+      "english": "cinema, movie theater",
+      "vietnamese": "rạp chiếu phim"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "看",
+      "pinyin": "kàn",
+      "english": "to watch, to look",
+      "vietnamese": "xem, nhìn"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "电影",
+      "pinyin": "diànyǐng",
+      "english": "movie, film",
+      "vietnamese": "phim, điện ảnh"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "事",
+      "pinyin": "shì",
+      "english": "matter, business, thing",
+      "vietnamese": "việc, sự việc"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "上课",
+      "pinyin": "shàngkè",
+      "english": "to attend class, to have class",
+      "vietnamese": "vào lớp, đi học"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "呢",
+      "pinyin": "ne",
+      "english": "(modal particle)",
+      "vietnamese": "thế, nhé, nhỉ (trợ từ ngữ khí)"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "半",
+      "pinyin": "bàn",
+      "english": "half",
+      "vietnamese": "một nửa, rưỡi"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "下课",
+      "pinyin": "xiàkè",
+      "english": "to finish class",
+      "vietnamese": "tan học, tan lớp"
+    }
+  ],
+  "7-5.mp3": [
+    {
+      "speaker": "女",
+      "chinese": "喂，你在哪儿呢？",
+      "pinyin": "Wèi, nǐ zài nǎr ne?",
+      "english": "Hello, where are you?",
+      "vietnamese": "A lô, anh đang ở đâu thế?"
+    },
+    {
+      "speaker": "男",
+      "chinese": "我在家里呢。",
+      "pinyin": "Wǒ zài jiālǐ ne.",
+      "english": "I'm at home.",
+      "vietnamese": "Anh đang ở nhà."
+    },
+    {
+      "speaker": "女",
+      "chinese": "我晚上六点半下班。",
+      "pinyin": "Wǒ wǎnshang liù diǎn bàn xiàbān.",
+      "english": "I get off work at 6:30 in the evening.",
+      "vietnamese": "6 giờ rưỡi tối em tan làm."
+    },
+    {
+      "speaker": "男",
+      "chinese": "我八点去医院上班。",
+      "pinyin": "Wǒ bā diǎn qù yīyuàn shàngbān.",
+      "english": "I go to work at the hospital at 8:00.",
+      "vietnamese": "8 giờ anh đến bệnh viện làm việc."
+    },
+    {
+      "speaker": "女",
+      "chinese": "好的，你去店里买些菜吧。",
+      "pinyin": "Hǎo de, nǐ qù diàn lǐ mǎi xiē cài ba.",
+      "english": "Okay, go to the store and buy some vegetables.",
+      "vietnamese": "Được rồi, anh ra cửa hàng mua ít rau nhé."
+    },
+    {
+      "speaker": "男",
+      "chinese": "好，我十分钟后去。",
+      "pinyin": "Hǎo, wǒ shí fēnzhōng hòu qù.",
+      "english": "Okay, I'll go in ten minutes.",
+      "vietnamese": "Ừ, mười phút nữa anh đi."
+    }
+  ],
+  "7-6.mp3": [
+    {
+      "speaker": "朗读",
+      "chinese": "在",
+      "pinyin": "zài",
+      "english": "to be at, in",
+      "vietnamese": "ở, tại"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "家",
+      "pinyin": "jiā",
+      "english": "home, family",
+      "vietnamese": "nhà, gia đình"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "里",
+      "pinyin": "li / lǐ",
+      "english": "inside, in",
+      "vietnamese": "bên trong, trong"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "晚上",
+      "pinyin": "wǎnshang",
+      "english": "evening, night",
+      "vietnamese": "buổi tối"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "医院",
+      "pinyin": "yīyuàn",
+      "english": "hospital",
+      "vietnamese": "bệnh viện"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "上班",
+      "pinyin": "shàngbān",
+      "english": "to go to work",
+      "vietnamese": "đi làm"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "店",
+      "pinyin": "diàn",
+      "english": "shop, store",
+      "vietnamese": "cửa hàng, tiệm"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "菜",
+      "pinyin": "cài",
+      "english": "vegetable, dish",
+      "vietnamese": "rau, món ăn"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "分钟",
+      "pinyin": "fēnzhōng",
+      "english": "minute",
+      "vietnamese": "phút"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "后",
+      "pinyin": "hòu",
+      "english": "after, later",
+      "vietnamese": "sau"
+    }
+  ],
+  "8-1.mp3": [
+    {
+      "speaker": "女",
+      "chinese": "房间外有一只小猫。",
+      "pinyin": "Fángjiān wài yǒu yì zhī xiǎo māo.",
+      "english": "There is a little cat outside the room.",
+      "vietnamese": "Ngoài phòng có một con mèo nhỏ."
+    },
+    {
+      "speaker": "男",
+      "chinese": "我没看见，它在哪儿呢？",
+      "pinyin": "Wǒ méi kànjiàn, tā zài nǎr ne?",
+      "english": "I didn't see it, where is it?",
+      "vietnamese": "Tôi không nhìn thấy, nó ở đâu thế?"
+    },
+    {
+      "speaker": "女",
+      "chinese": "它在桌子下呢。",
+      "pinyin": "Tā zài zhuōzi xià ne.",
+      "english": "It's under the table.",
+      "vietnamese": "Nó ở dưới bàn đấy."
+    },
+    {
+      "speaker": "男",
+      "chinese": "这只小猫真漂亮。",
+      "pinyin": "Zhè zhī xiǎo māo zhēn piàoliang.",
+      "english": "This little cat is really pretty.",
+      "vietnamese": "Con mèo nhỏ này thật xinh đẹp."
+    }
+  ],
+  "8-2.mp3": [
+    {
+      "speaker": "朗读",
+      "chinese": "房间",
+      "pinyin": "fángjiān",
+      "english": "room",
+      "vietnamese": "phòng"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "外",
+      "pinyin": "wài",
+      "english": "outside",
+      "vietnamese": "bên ngoài, ngoài"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "只",
+      "pinyin": "zhī",
+      "english": "(measure word for animals)",
+      "vietnamese": "con (lượng từ cho động vật)"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "小",
+      "pinyin": "xiǎo",
+      "english": "small, little",
+      "vietnamese": "nhỏ, bé"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "猫",
+      "pinyin": "māo",
+      "english": "cat",
+      "vietnamese": "con mèo"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "没",
+      "pinyin": "méi",
+      "english": "not, did not",
+      "vietnamese": "không, chưa"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "看见",
+      "pinyin": "kànjiàn",
+      "english": "to see",
+      "vietnamese": "nhìn thấy"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "桌子",
+      "pinyin": "zhuōzi",
+      "english": "table, desk",
+      "vietnamese": "cái bàn"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "下",
+      "pinyin": "xià",
+      "english": "under, below",
+      "vietnamese": "bên dưới, dưới"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "漂亮",
+      "pinyin": "piàoliang",
+      "english": "pretty, beautiful",
+      "vietnamese": "xinh đẹp"
+    }
+  ],
+  "8-3.mp3": [
+    {
+      "speaker": "女",
+      "chinese": "我们在哪儿见呢？",
+      "pinyin": "Wǒmen zài nǎr jiàn ne?",
+      "english": "Where shall we meet?",
+      "vietnamese": "Chúng ta gặp nhau ở đâu nhé?"
+    },
+    {
+      "speaker": "男",
+      "chinese": "在学校书店前见吧。",
+      "pinyin": "Zài xuéxiào shūdiàn qián jiàn ba.",
+      "english": "Let's meet in front of the school bookstore.",
+      "vietnamese": "Gặp nhau ở trước hiệu sách trường học đi."
+    },
+    {
+      "speaker": "女",
+      "chinese": "好的，下午两点你能到吗？",
+      "pinyin": "Hǎo de, xiàwǔ liǎng diǎn nǐ néng dào ma?",
+      "english": "Okay, can you arrive at 2:00 in the afternoon?",
+      "vietnamese": "Được rồi, 2 giờ chiều bạn có đến được không?"
+    },
+    {
+      "speaker": "男",
+      "chinese": "我能到，我在学校吃午饭。",
+      "pinyin": "Wǒ néng dào, wǒ zài xuéxiào chī wǔfàn.",
+      "english": "I can make it, I'm having lunch at school.",
+      "vietnamese": "Tôi đến được, tôi ăn trưa ở trường."
+    }
+  ],
+  "8-4.mp3": [
+    {
+      "speaker": "朗读",
+      "chinese": "在",
+      "pinyin": "zài",
+      "english": "at, in",
+      "vietnamese": "ở, tại"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "学校",
+      "pinyin": "xuéxiào",
+      "english": "school",
+      "vietnamese": "trường học"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "书店",
+      "pinyin": "shūdiàn",
+      "english": "bookstore",
+      "vietnamese": "hiệu sách, nhà sách"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "前",
+      "pinyin": "qián",
+      "english": "front, in front of",
+      "vietnamese": "phía trước, trước"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "能",
+      "pinyin": "néng",
+      "english": "can, to be able to",
+      "vietnamese": "có thể"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "到",
+      "pinyin": "dào",
+      "english": "to arrive",
+      "vietnamese": "đến"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "午饭",
+      "pinyin": "wǔfàn",
+      "english": "lunch",
+      "vietnamese": "bữa trưa, cơm trưa"
+    }
+  ],
+  "8-5.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "小胡，还没吃饭呢？",
+      "pinyin": "Xiǎo Hú, hái méi chīfàn ne?",
+      "english": "Xiao Hu, haven't you eaten yet?",
+      "vietnamese": "Tiểu Hồ, vẫn chưa ăn cơm à?"
+    },
+    {
+      "speaker": "小胡",
+      "chinese": "没吃呢。",
+      "pinyin": "Méi chī ne.",
+      "english": "Not yet.",
+      "vietnamese": "Chưa ăn ạ."
+    },
+    {
+      "speaker": "男",
+      "chinese": "大医院病人多，医生非常忙。",
+      "pinyin": "Dà yīyuàn bìngrén duō, yīshēng fēicháng máng.",
+      "english": "Big hospitals have many patients, and doctors are very busy.",
+      "vietnamese": "Bệnh viện lớn đông bệnh nhân, bác sĩ rất bận."
+    },
+    {
+      "speaker": "小胡",
+      "chinese": "是的，我爸爸也在医院工作，他也非常忙。",
+      "pinyin": "Shì de, wǒ bàba yě zài yīyuàn gōngzuò, tā yě fēicháng máng.",
+      "english": "Yes, my dad also works at the hospital, and he is also very busy.",
+      "vietnamese": "Vâng, bố tôi cũng làm việc ở bệnh viện, ông ấy cũng rất bận."
+    },
+    {
+      "speaker": "男",
+      "chinese": "你家有两个医生？",
+      "pinyin": "Nǐ jiā yǒu liǎng gè yīshēng?",
+      "english": "There are two doctors in your family?",
+      "vietnamese": "Nhà bạn có hai bác sĩ à?"
+    },
+    {
+      "speaker": "小胡",
+      "chinese": "对。",
+      "pinyin": "Duì.",
+      "english": "Yes.",
+      "vietnamese": "Đúng vậy."
+    }
+  ],
+  "8-6.mp3": [
+    {
+      "speaker": "朗读",
+      "chinese": "饭",
+      "pinyin": "fàn",
+      "english": "meal, cooked rice",
+      "vietnamese": "cơm, bữa ăn"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "大",
+      "pinyin": "dà",
+      "english": "big, large",
+      "vietnamese": "to, lớn"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "病人",
+      "pinyin": "bìngrén",
+      "english": "patient",
+      "vietnamese": "bệnh nhân"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "多",
+      "pinyin": "duō",
+      "english": "many, much",
+      "vietnamese": "nhiều"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "医生",
+      "pinyin": "yīshēng",
+      "english": "doctor",
+      "vietnamese": "bác sĩ"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "工作",
+      "pinyin": "gōngzuò",
+      "english": "work, job",
+      "vietnamese": "công việc, làm việc"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "胡医生",
+      "pinyin": "Hú yīshēng",
+      "english": "Doctor Hu",
+      "vietnamese": "Bác sĩ Hồ"
+    }
+  ],
+  "9-1.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "学校前边有一家电影院。",
+      "pinyin": "Xuéxiào qiánbian yǒu yī jiā diànyǐngyuàn.",
+      "english": "There is a movie theater in front of the school.",
+      "vietnamese": "Phía trước trường học có một rạp chiếu phim."
+    },
+    {
+      "speaker": "女",
+      "chinese": "对，我们晚上去那个电影院看电影吧。",
+      "pinyin": "Duì, wǒmen wǎnshang qù nàge diànyǐngyuàn kàn diànyǐng ba.",
+      "english": "Yes, let's go to that movie theater to watch a movie tonight.",
+      "vietnamese": "Đúng vậy, tối nay chúng ta đến rạp chiếu phim đó xem phim nhé."
+    },
+    {
+      "speaker": "男",
+      "chinese": "好，我们七点在电影院外边见，好吗？",
+      "pinyin": "Hǎo, wǒmen qī diǎn zài diànyǐngyuàn wàibian jiàn, hǎo ma?",
+      "english": "Okay, let's meet outside the movie theater at seven o'clock, alright?",
+      "vietnamese": "Được, bảy giờ chúng ta gặp nhau ở bên ngoài rạp chiếu phim, được không?"
+    },
+    {
+      "speaker": "女",
+      "chinese": "好的，晚上七点见。",
+      "pinyin": "Hǎo de, wǎnshang qī diǎn jiàn.",
+      "english": "Okay, see you at seven tonight.",
+      "vietnamese": "Được rồi, tối bảy giờ gặp nhé."
+    }
+  ],
+  "9-2.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "前边",
+      "pinyin": "qiánbian",
+      "english": "in front",
+      "vietnamese": "phía trước"
+    },
+    {
+      "speaker": "女",
+      "chinese": "前边",
+      "pinyin": "qiánbian",
+      "english": "in front",
+      "vietnamese": "phía trước"
+    },
+    {
+      "speaker": "男",
+      "chinese": "边，边",
+      "pinyin": "bian, biān",
+      "english": "side",
+      "vietnamese": "bên, phía"
+    },
+    {
+      "speaker": "女",
+      "chinese": "边，边",
+      "pinyin": "bian, biān",
+      "english": "side",
+      "vietnamese": "bên, phía"
+    },
+    {
+      "speaker": "男",
+      "chinese": "家",
+      "pinyin": "jiā",
+      "english": "measure word for shops, businesses, etc.",
+      "vietnamese": "lượng từ dùng cho cửa hàng, công ty, rạp..."
+    },
+    {
+      "speaker": "女",
+      "chinese": "家",
+      "pinyin": "jiā",
+      "english": "measure word for shops, businesses, etc.",
+      "vietnamese": "lượng từ dùng cho cửa hàng, công ty, rạp..."
+    },
+    {
+      "speaker": "男",
+      "chinese": "那个",
+      "pinyin": "nàge",
+      "english": "that",
+      "vietnamese": "cái đó / kia"
+    },
+    {
+      "speaker": "女",
+      "chinese": "那个",
+      "pinyin": "nàge",
+      "english": "that",
+      "vietnamese": "cái đó / kia"
+    },
+    {
+      "speaker": "男",
+      "chinese": "外边",
+      "pinyin": "wàibian",
+      "english": "outside",
+      "vietnamese": "bên ngoài"
+    },
+    {
+      "speaker": "女",
+      "chinese": "外边",
+      "pinyin": "wàibian",
+      "english": "outside",
+      "vietnamese": "bên ngoài"
+    }
+  ],
+  "9-3.mp3": [
+    {
+      "speaker": "女",
+      "chinese": "椅子上有一本中文书，那是谁的书？",
+      "pinyin": "Yǐzi shàng yǒu yī běn Zhōngwén shū, nà shì shéi de shū?",
+      "english": "There is a Chinese book on the chair. Whose book is that?",
+      "vietnamese": "Trên ghế có một quyển sách tiếng Trung, đó là sách của ai?"
+    },
+    {
+      "speaker": "男",
+      "chinese": "是我的书，谢谢。这是我的第二本中文书。",
+      "pinyin": "Shì wǒ de shū, xièxie. Zhè shì wǒ de dì-èr běn Zhōngwén shū.",
+      "english": "It's my book, thank you. This is my second Chinese book.",
+      "vietnamese": "Là sách của tôi, cảm ơn. Đây là quyển sách tiếng Trung thứ hai của tôi."
+    },
+    {
+      "speaker": "女",
+      "chinese": "不客气。你明天上午在哪儿？",
+      "pinyin": "Bú kèqi. Nǐ míngtiān shàngwǔ zài nǎr?",
+      "english": "You're welcome. Where will you be tomorrow morning?",
+      "vietnamese": "Không có gì. Sáng mai bạn ở đâu?"
+    },
+    {
+      "speaker": "男",
+      "chinese": "我明天上午在学校学习。",
+      "pinyin": "Wǒ míngtiān shàngwǔ zài xuéxiào xuéxí.",
+      "english": "I will study at school tomorrow morning.",
+      "vietnamese": "Sáng mai tôi học ở trường."
+    }
+  ],
+  "9-4.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "椅子",
+      "pinyin": "yǐzi",
+      "english": "chair",
+      "vietnamese": "cái ghế"
+    },
+    {
+      "speaker": "女",
+      "chinese": "椅子",
+      "pinyin": "yǐzi",
+      "english": "chair",
+      "vietnamese": "cái ghế"
+    },
+    {
+      "speaker": "男",
+      "chinese": "上，上",
+      "pinyin": "shang, shàng",
+      "english": "on, above",
+      "vietnamese": "trên, ở trên"
+    },
+    {
+      "speaker": "女",
+      "chinese": "上，上",
+      "pinyin": "shang, shàng",
+      "english": "on, above",
+      "vietnamese": "trên, ở trên"
+    },
+    {
+      "speaker": "男",
+      "chinese": "本",
+      "pinyin": "běn",
+      "english": "measure word for books",
+      "vietnamese": "quyển, cuốn (lượng từ cho sách)"
+    },
+    {
+      "speaker": "女",
+      "chinese": "本",
+      "pinyin": "běn",
+      "english": "measure word for books",
+      "vietnamese": "quyển, cuốn (lượng từ cho sách)"
+    },
+    {
+      "speaker": "男",
+      "chinese": "书",
+      "pinyin": "shū",
+      "english": "book",
+      "vietnamese": "sách"
+    },
+    {
+      "speaker": "女",
+      "chinese": "书",
+      "pinyin": "shū",
+      "english": "book",
+      "vietnamese": "sách"
+    },
+    {
+      "speaker": "男",
+      "chinese": "那",
+      "pinyin": "nà",
+      "english": "that",
+      "vietnamese": "đó, kia"
+    },
+    {
+      "speaker": "女",
+      "chinese": "那",
+      "pinyin": "nà",
+      "english": "that",
+      "vietnamese": "đó, kia"
+    },
+    {
+      "speaker": "男",
+      "chinese": "第",
+      "pinyin": "dì",
+      "english": "prefix for ordinal numbers",
+      "vietnamese": "thứ (tiền tố chỉ số thứ tự)"
+    },
+    {
+      "speaker": "女",
+      "chinese": "第",
+      "pinyin": "dì",
+      "english": "prefix for ordinal numbers",
+      "vietnamese": "thứ (tiền tố chỉ số thứ tự)"
+    },
+    {
+      "speaker": "男",
+      "chinese": "学习",
+      "pinyin": "xuéxí",
+      "english": "to study, to learn",
+      "vietnamese": "học tập"
+    },
+    {
+      "speaker": "女",
+      "chinese": "学习",
+      "pinyin": "xuéxí",
+      "english": "to study, to learn",
+      "vietnamese": "học tập"
+    }
+  ],
+  "9-5.mp3": [
+    {
+      "speaker": "女",
+      "chinese": "明天星期六，你做什么？",
+      "pinyin": "Míngtiān Xīngqīliù, nǐ zuò shénme?",
+      "english": "Tomorrow is Saturday. What are you doing?",
+      "vietnamese": "Ngày mai là thứ Bảy, bạn làm gì?"
+    },
+    {
+      "speaker": "男",
+      "chinese": "我白天在家里读书，晚上和朋友们去外边唱歌。",
+      "pinyin": "Wǒ báitiān zài jiāli dúshū, wǎnshang hé péngyoumen qù wàibian chànggē.",
+      "english": "During the day I read at home, and in the evening I go out to sing with friends.",
+      "vietnamese": "Ban ngày tôi đọc sách ở nhà, buổi tối đi ra ngoài hát với bạn bè."
+    },
+    {
+      "speaker": "女",
+      "chinese": "你唱歌很好听。",
+      "pinyin": "Nǐ chànggē hěn hǎotīng.",
+      "english": "Your singing sounds very nice.",
+      "vietnamese": "Bạn hát rất hay."
+    },
+    {
+      "speaker": "男",
+      "chinese": "谢谢。您星期六做什么？",
+      "pinyin": "Xièxie. Nín Xīngqīliù zuò shénme?",
+      "english": "Thank you. What are you doing on Saturday?",
+      "vietnamese": "Cảm ơn. Thứ Bảy bác/cô làm gì ạ?"
+    },
+    {
+      "speaker": "女",
+      "chinese": "我在家里做饭，看电视，和孩子们、小狗玩。",
+      "pinyin": "Wǒ zài jiāli zuòfàn, kàn diànshì, hé háizimen, xiǎogǒu wán.",
+      "english": "I cook at home, watch TV, and play with the children and the puppy.",
+      "vietnamese": "Tôi nấu cơm ở nhà, xem tivi, chơi với bọn trẻ và chú chó nhỏ."
+    },
+    {
+      "speaker": "男",
+      "chinese": "我也有一只小狗。",
+      "pinyin": "Wǒ yě yǒu yī zhī xiǎogǒu.",
+      "english": "I also have a puppy.",
+      "vietnamese": "Tôi cũng có một chú chó nhỏ."
+    }
+  ],
+  "9-6.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "做",
+      "pinyin": "zuò",
+      "english": "to do, to make",
+      "vietnamese": "làm"
+    },
+    {
+      "speaker": "女",
+      "chinese": "做",
+      "pinyin": "zuò",
+      "english": "to do, to make",
+      "vietnamese": "làm"
+    },
+    {
+      "speaker": "男",
+      "chinese": "白天",
+      "pinyin": "báitiān",
+      "english": "daytime",
+      "vietnamese": "ban ngày"
+    },
+    {
+      "speaker": "女",
+      "chinese": "白天",
+      "pinyin": "báitiān",
+      "english": "daytime",
+      "vietnamese": "ban ngày"
+    },
+    {
+      "speaker": "男",
+      "chinese": "读书",
+      "pinyin": "dúshū",
+      "english": "to read, to study",
+      "vietnamese": "đọc sách, đi học"
+    },
+    {
+      "speaker": "女",
+      "chinese": "读书",
+      "pinyin": "dúshū",
+      "english": "to read, to study",
+      "vietnamese": "đọc sách, đi học"
+    },
+    {
+      "speaker": "男",
+      "chinese": "和",
+      "pinyin": "hé",
+      "english": "and, with",
+      "vietnamese": "và, cùng với"
+    },
+    {
+      "speaker": "女",
+      "chinese": "和",
+      "pinyin": "hé",
+      "english": "and, with",
+      "vietnamese": "và, cùng với"
+    },
+    {
+      "speaker": "男",
+      "chinese": "朋友",
+      "pinyin": "péngyou",
+      "english": "friend",
+      "vietnamese": "bạn bè"
+    },
+    {
+      "speaker": "女",
+      "chinese": "朋友",
+      "pinyin": "péngyou",
+      "english": "friend",
+      "vietnamese": "bạn bè"
+    },
+    {
+      "speaker": "男",
+      "chinese": "唱",
+      "pinyin": "chàng",
+      "english": "to sing",
+      "vietnamese": "hát"
+    },
+    {
+      "speaker": "女",
+      "chinese": "唱",
+      "pinyin": "chàng",
+      "english": "to sing",
+      "vietnamese": "hát"
+    },
+    {
+      "speaker": "男",
+      "chinese": "歌",
+      "pinyin": "gē",
+      "english": "song",
+      "vietnamese": "bài hát"
+    },
+    {
+      "speaker": "女",
+      "chinese": "歌",
+      "pinyin": "gē",
+      "english": "song",
+      "vietnamese": "bài hát"
+    },
+    {
+      "speaker": "男",
+      "chinese": "好听",
+      "pinyin": "hǎotīng",
+      "english": "pleasant to listen to",
+      "vietnamese": "hay, êm tai"
+    },
+    {
+      "speaker": "女",
+      "chinese": "好听",
+      "pinyin": "hǎotīng",
+      "english": "pleasant to listen to",
+      "vietnamese": "hay, êm tai"
+    },
+    {
+      "speaker": "男",
+      "chinese": "电视",
+      "pinyin": "diànshì",
+      "english": "television",
+      "vietnamese": "tivi"
+    },
+    {
+      "speaker": "女",
+      "chinese": "电视",
+      "pinyin": "diànshì",
+      "english": "television",
+      "vietnamese": "tivi"
+    },
+    {
+      "speaker": "男",
+      "chinese": "狗",
+      "pinyin": "gǒu",
+      "english": "dog",
+      "vietnamese": "con chó"
+    },
+    {
+      "speaker": "女",
+      "chinese": "狗",
+      "pinyin": "gǒu",
+      "english": "dog",
+      "vietnamese": "con chó"
+    },
+    {
+      "speaker": "男",
+      "chinese": "玩",
+      "pinyin": "wán",
+      "english": "to play",
+      "vietnamese": "chơi"
+    },
+    {
+      "speaker": "女",
+      "chinese": "玩",
+      "pinyin": "wán",
+      "english": "to play",
+      "vietnamese": "chơi"
+    }
+  ],
+  "10-1.mp3": [
+    {
+      "speaker": "A",
+      "chinese": "请问，有杯子吗？",
+      "pinyin": "Qǐngwèn, yǒu bēizi ma?",
+      "english": "Excuse me, do you have cups?",
+      "vietnamese": "Xin hỏi, ở đây có bán cốc không ạ?"
+    },
+    {
+      "speaker": "B",
+      "chinese": "有，杯子在这边。",
+      "pinyin": "Yǒu, bēizi zài zhèbian.",
+      "english": "Yes, the cups are over here.",
+      "vietnamese": "Có ạ, cốc ở bên này."
+    },
+    {
+      "speaker": "A",
+      "chinese": "多少钱一个？",
+      "pinyin": "Duōshao qián yī gè?",
+      "english": "How much is one?",
+      "vietnamese": "Bao nhiêu tiền một cái?"
+    },
+    {
+      "speaker": "B",
+      "chinese": "这些五块钱一个，那些十块钱一个。",
+      "pinyin": "Zhèxiē wǔ kuài qián yī gè, nàxiē shí kuài qián yī gè.",
+      "english": "These are five yuan each, and those are ten yuan each.",
+      "vietnamese": "Những cái này năm tệ một cái, những cái kia mười tệ một cái."
+    },
+    {
+      "speaker": "A",
+      "chinese": "我买这个吧。",
+      "pinyin": "Wǒ mǎi zhège ba.",
+      "english": "I'll buy this one.",
+      "vietnamese": "Tôi mua cái này nhé."
+    }
+  ],
+  "10-2.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "杯子",
+      "pinyin": "bēizi",
+      "english": "cup, glass",
+      "vietnamese": "cái cốc, cái ly"
+    },
+    {
+      "speaker": "女",
+      "chinese": "杯子",
+      "pinyin": "bēizi",
+      "english": "cup, glass",
+      "vietnamese": "cái cốc, cái ly"
+    },
+    {
+      "speaker": "男",
+      "chinese": "售货员",
+      "pinyin": "shòuhuòyuán",
+      "english": "salesperson, shop assistant",
+      "vietnamese": "nhân viên bán hàng"
+    },
+    {
+      "speaker": "女",
+      "chinese": "售货员",
+      "pinyin": "shòuhuòyuán",
+      "english": "salesperson, shop assistant",
+      "vietnamese": "nhân viên bán hàng"
+    },
+    {
+      "speaker": "男",
+      "chinese": "这边",
+      "pinyin": "zhèbian",
+      "english": "this side, over here",
+      "vietnamese": "bên này"
+    },
+    {
+      "speaker": "女",
+      "chinese": "这边",
+      "pinyin": "zhèbian",
+      "english": "this side, over here",
+      "vietnamese": "bên này"
+    },
+    {
+      "speaker": "男",
+      "chinese": "钱",
+      "pinyin": "qián",
+      "english": "money",
+      "vietnamese": "tiền"
+    },
+    {
+      "speaker": "女",
+      "chinese": "钱",
+      "pinyin": "qián",
+      "english": "money",
+      "vietnamese": "tiền"
+    },
+    {
+      "speaker": "男",
+      "chinese": "这些",
+      "pinyin": "zhèxiē",
+      "english": "these",
+      "vietnamese": "những cái này"
+    },
+    {
+      "speaker": "女",
+      "chinese": "这些",
+      "pinyin": "zhèxiē",
+      "english": "these",
+      "vietnamese": "những cái này"
+    },
+    {
+      "speaker": "男",
+      "chinese": "块",
+      "pinyin": "kuài",
+      "english": "yuan (colloquial unit of RMB)",
+      "vietnamese": "tệ, đồng (đơn vị tiền tệ nói)"
+    },
+    {
+      "speaker": "女",
+      "chinese": "块",
+      "pinyin": "kuài",
+      "english": "yuan (colloquial unit of RMB)",
+      "vietnamese": "tệ, đồng (đơn vị tiền tệ nói)"
+    },
+    {
+      "speaker": "男",
+      "chinese": "那些",
+      "pinyin": "nàxiē",
+      "english": "those",
+      "vietnamese": "những cái kia"
+    },
+    {
+      "speaker": "女",
+      "chinese": "那些",
+      "pinyin": "nàxiē",
+      "english": "those",
+      "vietnamese": "những cái kia"
+    }
+  ],
+  "10-3.mp3": [
+    {
+      "speaker": "女",
+      "chinese": "这儿的水果真不少。",
+      "pinyin": "Zhèr de shuǐguǒ zhēn bù shǎo.",
+      "english": "There's really a lot of fruit here.",
+      "vietnamese": "Hoa quả ở đây nhiều thật đấy."
+    },
+    {
+      "speaker": "男",
+      "chinese": "您想买什么？",
+      "pinyin": "Nín xiǎng mǎi shénme?",
+      "english": "What would you like to buy?",
+      "vietnamese": "Chị/Cô muốn mua gì ạ?"
+    },
+    {
+      "speaker": "女",
+      "chinese": "我想买两斤苹果。",
+      "pinyin": "Wǒ xiǎng mǎi liǎng jīn píngguǒ.",
+      "english": "I'd like to buy two jin (1 kg) of apples.",
+      "vietnamese": "Tôi muốn mua hai cân (1 kg) táo."
+    },
+    {
+      "speaker": "男",
+      "chinese": "苹果三块五一斤，这些七块二，七块钱吧。",
+      "pinyin": "Píngguǒ sān kuài wǔ yī jīn, zhèxiē qī kuài èr, qī kuài qián ba.",
+      "english": "Apples are 3.5 yuan per jin; these come to 7.2 yuan, let's make it 7 yuan.",
+      "vietnamese": "Táo ba tệ rưỡi một cân, chỗ này là bảy tệ hai, lấy bảy tệ thôi nhé."
+    },
+    {
+      "speaker": "女",
+      "chinese": "好的，这儿的苹果真便宜。",
+      "pinyin": "Hǎo de, zhèr de píngguǒ zhēn piányi.",
+      "english": "Okay, the apples here are really cheap.",
+      "vietnamese": "Vâng, táo ở đây rẻ thật đấy."
+    }
+  ],
+  "10-4.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "这儿",
+      "pinyin": "zhèr",
+      "english": "here",
+      "vietnamese": "ở đây"
+    },
+    {
+      "speaker": "女",
+      "chinese": "这儿",
+      "pinyin": "zhèr",
+      "english": "here",
+      "vietnamese": "ở đây"
+    },
+    {
+      "speaker": "男",
+      "chinese": "水果",
+      "pinyin": "shuǐguǒ",
+      "english": "fruit",
+      "vietnamese": "hoa quả, trái cây"
+    },
+    {
+      "speaker": "女",
+      "chinese": "水果",
+      "pinyin": "shuǐguǒ",
+      "english": "fruit",
+      "vietnamese": "hoa quả, trái cây"
+    },
+    {
+      "speaker": "男",
+      "chinese": "少",
+      "pinyin": "shǎo",
+      "english": "few, little",
+      "vietnamese": "ít"
+    },
+    {
+      "speaker": "女",
+      "chinese": "少",
+      "pinyin": "shǎo",
+      "english": "few, little",
+      "vietnamese": "ít"
+    },
+    {
+      "speaker": "男",
+      "chinese": "斤",
+      "pinyin": "jīn",
+      "english": "jin (unit of weight equal to 500 grams)",
+      "vietnamese": "cân Trung Quốc (500g)"
+    },
+    {
+      "speaker": "女",
+      "chinese": "斤",
+      "pinyin": "jīn",
+      "english": "jin (unit of weight equal to 500 grams)",
+      "vietnamese": "cân Trung Quốc (500g)"
+    },
+    {
+      "speaker": "男",
+      "chinese": "苹果",
+      "pinyin": "píngguǒ",
+      "english": "apple",
+      "vietnamese": "quả táo"
+    },
+    {
+      "speaker": "女",
+      "chinese": "苹果",
+      "pinyin": "píngguǒ",
+      "english": "apple",
+      "vietnamese": "quả táo"
+    },
+    {
+      "speaker": "男",
+      "chinese": "便宜",
+      "pinyin": "piányi",
+      "english": "cheap, inexpensive",
+      "vietnamese": "rẻ"
+    },
+    {
+      "speaker": "女",
+      "chinese": "便宜",
+      "pinyin": "piányi",
+      "english": "cheap, inexpensive",
+      "vietnamese": "rẻ"
+    }
+  ],
+  "10-5.mp3": [
+    {
+      "speaker": "女",
+      "chinese": "这家商店衣服真多！这件一百元，怎么样？",
+      "pinyin": "Zhè jiā shāngdiàn yīfu zhēn duō! Zhè jiàn yībǎi yuán, zěnmeyàng?",
+      "english": "This shop has so many clothes! This piece is 100 yuan, how is it?",
+      "vietnamese": "Cửa hàng này nhiều quần áo thật! Chiếc này một trăm tệ, thế nào?"
+    },
+    {
+      "speaker": "男",
+      "chinese": "好看，也不贵。",
+      "pinyin": "Hǎokàn, yě bù guì.",
+      "english": "It looks nice, and it's not expensive either.",
+      "vietnamese": "Đẹp đấy, cũng không đắt."
+    },
+    {
+      "speaker": "女",
+      "chinese": "小雪能穿，买一件吧。",
+      "pinyin": "Xiǎoxuě néng chuān, mǎi yī jiàn ba.",
+      "english": "Xiaoxue can wear it, let's buy one.",
+      "vietnamese": "Tiểu Tuyết mặc vừa đấy, mua một chiếc đi."
+    },
+    {
+      "speaker": "男",
+      "chinese": "好的，小明能穿吗？",
+      "pinyin": "Hǎo de, Xiǎomíng néng chuān ma?",
+      "english": "Okay, can Xiaoming wear it?",
+      "vietnamese": "Được, Tiểu Minh có mặc được không?"
+    },
+    {
+      "speaker": "女",
+      "chinese": "不能，这些是女孩子穿的衣服，男孩子的衣服在那儿。",
+      "pinyin": "Bù néng, zhèxiē shì nǚháizi chuān de yīfu, nánháizi de yīfu zài nàr.",
+      "english": "No, these are clothes for girls; boys' clothes are over there.",
+      "vietnamese": "Không được, đây là quần áo cho con gái mặc, quần áo của con trai ở đằng kia."
+    },
+    {
+      "speaker": "男",
+      "chinese": "好的。",
+      "pinyin": "Hǎo de.",
+      "english": "Okay.",
+      "vietnamese": "Được rồi."
+    }
+  ],
+  "10-6.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "商店",
+      "pinyin": "shāngdiàn",
+      "english": "shop, store",
+      "vietnamese": "cửa hàng"
+    },
+    {
+      "speaker": "女",
+      "chinese": "商店",
+      "pinyin": "shāngdiàn",
+      "english": "shop, store",
+      "vietnamese": "cửa hàng"
+    },
+    {
+      "speaker": "男",
+      "chinese": "衣服",
+      "pinyin": "yīfu",
+      "english": "clothes",
+      "vietnamese": "quần áo"
+    },
+    {
+      "speaker": "女",
+      "chinese": "衣服",
+      "pinyin": "yīfu",
+      "english": "clothes",
+      "vietnamese": "quần áo"
+    },
+    {
+      "speaker": "男",
+      "chinese": "件",
+      "pinyin": "jiàn",
+      "english": "measure word for clothes, matters, etc.",
+      "vietnamese": "chiếc, bộ (lượng từ cho quần áo, sự việc)"
+    },
+    {
+      "speaker": "女",
+      "chinese": "件",
+      "pinyin": "jiàn",
+      "english": "measure word for clothes, matters, etc.",
+      "vietnamese": "chiếc, bộ (lượng từ cho quần áo, sự việc)"
+    },
+    {
+      "speaker": "男",
+      "chinese": "元",
+      "pinyin": "yuán",
+      "english": "yuan (unit of Chinese currency)",
+      "vietnamese": "tệ, nhân dân tệ (đơn vị tiền tệ)"
+    },
+    {
+      "speaker": "女",
+      "chinese": "元",
+      "pinyin": "yuán",
+      "english": "yuan (unit of Chinese currency)",
+      "vietnamese": "tệ, nhân dân tệ (đơn vị tiền tệ)"
+    },
+    {
+      "speaker": "男",
+      "chinese": "怎么样",
+      "pinyin": "zěnmeyàng",
+      "english": "how is it, what do you think",
+      "vietnamese": "như thế nào"
+    },
+    {
+      "speaker": "女",
+      "chinese": "怎么样",
+      "pinyin": "zěnmeyàng",
+      "english": "how is it, what do you think",
+      "vietnamese": "như thế nào"
+    },
+    {
+      "speaker": "男",
+      "chinese": "贵",
+      "pinyin": "guì",
+      "english": "expensive",
+      "vietnamese": "đắt"
+    },
+    {
+      "speaker": "女",
+      "chinese": "贵",
+      "pinyin": "guì",
+      "english": "expensive",
+      "vietnamese": "đắt"
+    },
+    {
+      "speaker": "男",
+      "chinese": "穿",
+      "pinyin": "chuān",
+      "english": "to wear, to put on",
+      "vietnamese": "mặc"
+    },
+    {
+      "speaker": "女",
+      "chinese": "穿",
+      "pinyin": "chuān",
+      "english": "to wear, to put on",
+      "vietnamese": "mặc"
+    },
+    {
+      "speaker": "男",
+      "chinese": "女",
+      "pinyin": "nǚ",
+      "english": "female",
+      "vietnamese": "nữ"
+    },
+    {
+      "speaker": "女",
+      "chinese": "女",
+      "pinyin": "nǚ",
+      "english": "female",
+      "vietnamese": "nữ"
+    },
+    {
+      "speaker": "男",
+      "chinese": "男",
+      "pinyin": "nán",
+      "english": "male",
+      "vietnamese": "nam"
+    },
+    {
+      "speaker": "女",
+      "chinese": "男",
+      "pinyin": "nán",
+      "english": "male",
+      "vietnamese": "nam"
+    },
+    {
+      "speaker": "男",
+      "chinese": "那儿",
+      "pinyin": "nàr",
+      "english": "there",
+      "vietnamese": "ở kia, đằng kia"
+    },
+    {
+      "speaker": "女",
+      "chinese": "那儿",
+      "pinyin": "nàr",
+      "english": "there",
+      "vietnamese": "ở kia, đằng kia"
+    }
+  ],
+  "11-1.mp3": [
+    {
+      "speaker": "女",
+      "chinese": "喂，李文，你什么时候能到饭店？",
+      "pinyin": "Wèi, Lǐ Wén, nǐ shénme shíhou néng dào fàndiàn?",
+      "english": "Hello, Li Wen, when can you arrive at the restaurant?",
+      "vietnamese": "Alo, Lý Văn, khi nào bạn có thể đến nhà hàng?"
+    },
+    {
+      "speaker": "男",
+      "chinese": "还不知道，正在找呢。它是不是在超市后边？",
+      "pinyin": "Hái bù zhīdào, zhèngzài zhǎo ne. Tā shì bu shì zài chāoshì hòubian?",
+      "english": "I don't know yet, I'm looking for it right now. Is it behind the supermarket?",
+      "vietnamese": "Vẫn chưa biết, đang tìm đây. Có phải nó ở phía sau siêu thị không?"
+    },
+    {
+      "speaker": "女",
+      "chinese": "是的。你开车没开车？",
+      "pinyin": "Shì de. Nǐ kāichē méi kāichē?",
+      "english": "Yes. Did you drive?",
+      "vietnamese": "Đúng vậy. Bạn có lái xe không?"
+    },
+    {
+      "speaker": "男",
+      "chinese": "我没开车，坐车呢。",
+      "pinyin": "Wǒ méi kāichē, zuòchē ne.",
+      "english": "I didn't drive, I'm taking a ride.",
+      "vietnamese": "Tôi không lái xe, tôi đang đi xe."
+    }
+  ],
+  "11-2.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "时候",
+      "pinyin": "shíhou",
+      "english": "time; moment",
+      "vietnamese": "lúc; khi; thời gian"
+    },
+    {
+      "speaker": "女",
+      "chinese": "时候",
+      "pinyin": "shíhou",
+      "english": "time; moment",
+      "vietnamese": "lúc; khi; thời gian"
+    },
+    {
+      "speaker": "男",
+      "chinese": "饭店",
+      "pinyin": "fàndiàn",
+      "english": "restaurant; hotel",
+      "vietnamese": "nhà hàng; khách sạn"
+    },
+    {
+      "speaker": "女",
+      "chinese": "饭店",
+      "pinyin": "fàndiàn",
+      "english": "restaurant; hotel",
+      "vietnamese": "nhà hàng; khách sạn"
+    },
+    {
+      "speaker": "男",
+      "chinese": "知道",
+      "pinyin": "zhīdào",
+      "english": "to know",
+      "vietnamese": "biết"
+    },
+    {
+      "speaker": "女",
+      "chinese": "知道",
+      "pinyin": "zhīdào",
+      "english": "to know",
+      "vietnamese": "biết"
+    },
+    {
+      "speaker": "男",
+      "chinese": "正在",
+      "pinyin": "zhèngzài",
+      "english": "in the process of (doing something)",
+      "vietnamese": "đang"
+    },
+    {
+      "speaker": "女",
+      "chinese": "正在",
+      "pinyin": "zhèngzài",
+      "english": "in the process of (doing something)",
+      "vietnamese": "đang"
+    },
+    {
+      "speaker": "男",
+      "chinese": "找",
+      "pinyin": "zhǎo",
+      "english": "to look for",
+      "vietnamese": "tìm; tìm kiếm"
+    },
+    {
+      "speaker": "女",
+      "chinese": "找",
+      "pinyin": "zhǎo",
+      "english": "to look for",
+      "vietnamese": "tìm; tìm kiếm"
+    },
+    {
+      "speaker": "男",
+      "chinese": "开车",
+      "pinyin": "kāichē",
+      "english": "to drive a car",
+      "vietnamese": "lái xe"
+    },
+    {
+      "speaker": "女",
+      "chinese": "开车",
+      "pinyin": "kāichē",
+      "english": "to drive a car",
+      "vietnamese": "lái xe"
+    },
+    {
+      "speaker": "男",
+      "chinese": "车",
+      "pinyin": "chē",
+      "english": "car; vehicle",
+      "vietnamese": "xe"
+    },
+    {
+      "speaker": "女",
+      "chinese": "车",
+      "pinyin": "chē",
+      "english": "car; vehicle",
+      "vietnamese": "xe"
+    }
+  ],
+  "11-3.mp3": [
+    {
+      "speaker": "女",
+      "chinese": "你还在读大学吗？",
+      "pinyin": "Nǐ hái zài dú dàxué ma?",
+      "english": "Are you still attending university?",
+      "vietnamese": "Bạn vẫn đang học đại học à?"
+    },
+    {
+      "speaker": "男",
+      "chinese": "对，我读大学呢，还是大学生。",
+      "pinyin": "Duì, wǒ dú dàxué ne, háishì dàxuéshēng.",
+      "english": "Yes, I'm attending university, I'm still a university student.",
+      "vietnamese": "Đúng vậy, tôi đang học đại học, vẫn là sinh viên đại học."
+    },
+    {
+      "speaker": "女",
+      "chinese": "你们学习忙不忙？",
+      "pinyin": "Nǐmen xuéxí máng bu máng?",
+      "english": "Are you busy with your studies?",
+      "vietnamese": "Việc học của các bạn có bận không?"
+    },
+    {
+      "speaker": "男",
+      "chinese": "非常忙，我学医，我们的课很多。",
+      "pinyin": "Fēicháng máng, wǒ xué yī, wǒmen de kè hěn duō.",
+      "english": "Very busy, I study medicine, we have a lot of classes.",
+      "vietnamese": "Rất bận, tôi học y, tiết học của chúng tôi rất nhiều."
+    }
+  ],
+  "11-4.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "在",
+      "pinyin": "zài",
+      "english": "(in the process of); at; in",
+      "vietnamese": "đang; ở"
+    },
+    {
+      "speaker": "女",
+      "chinese": "在",
+      "pinyin": "zài",
+      "english": "(in the process of); at; in",
+      "vietnamese": "đang; ở"
+    },
+    {
+      "speaker": "男",
+      "chinese": "读",
+      "pinyin": "dú",
+      "english": "to read; to study; to attend school",
+      "vietnamese": "đọc; học"
+    },
+    {
+      "speaker": "女",
+      "chinese": "读",
+      "pinyin": "dú",
+      "english": "to read; to study; to attend school",
+      "vietnamese": "đọc; học"
+    },
+    {
+      "speaker": "男",
+      "chinese": "大学",
+      "pinyin": "dàxué",
+      "english": "university; college",
+      "vietnamese": "đại học"
+    },
+    {
+      "speaker": "女",
+      "chinese": "大学",
+      "pinyin": "dàxué",
+      "english": "university; college",
+      "vietnamese": "đại học"
+    },
+    {
+      "speaker": "男",
+      "chinese": "大学生",
+      "pinyin": "dàxuéshēng",
+      "english": "university student",
+      "vietnamese": "sinh viên đại học"
+    },
+    {
+      "speaker": "女",
+      "chinese": "大学生",
+      "pinyin": "dàxuéshēng",
+      "english": "university student",
+      "vietnamese": "sinh viên đại học"
+    },
+    {
+      "speaker": "男",
+      "chinese": "学",
+      "pinyin": "xué",
+      "english": "to study; to learn",
+      "vietnamese": "học"
+    },
+    {
+      "speaker": "女",
+      "chinese": "学",
+      "pinyin": "xué",
+      "english": "to study; to learn",
+      "vietnamese": "học"
+    },
+    {
+      "speaker": "男",
+      "chinese": "医",
+      "pinyin": "yī",
+      "english": "medicine; medical science",
+      "vietnamese": "y học; ngành y"
+    },
+    {
+      "speaker": "女",
+      "chinese": "医",
+      "pinyin": "yī",
+      "english": "medicine; medical science",
+      "vietnamese": "y học; ngành y"
+    }
+  ],
+  "11-5.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "弟弟起床没起床呢？",
+      "pinyin": "Dìdi qǐchuáng méi qǐchuáng ne?",
+      "english": "Has younger brother gotten up yet?",
+      "vietnamese": "Em trai đã thức dậy chưa?"
+    },
+    {
+      "speaker": "女",
+      "chinese": "没起床呢，还在睡觉。",
+      "pinyin": "Méi qǐchuáng ne, hái zài shuìjiào.",
+      "english": "Not yet, he's still sleeping.",
+      "vietnamese": "Chưa dậy đâu, vẫn đang ngủ."
+    },
+    {
+      "speaker": "男",
+      "chinese": "还睡呢。他今天去不去那里？",
+      "pinyin": "Hái shuì ne. Tā jīntiān qù bu qù nàlǐ?",
+      "english": "Still sleeping. Is he going there today?",
+      "vietnamese": "Vẫn ngủ à. Hôm nay em ấy có đi đến đó không?"
+    },
+    {
+      "speaker": "女",
+      "chinese": "去哪里？",
+      "pinyin": "Qù nǎlǐ?",
+      "english": "Go where?",
+      "vietnamese": "Đi đâu?"
+    },
+    {
+      "speaker": "男",
+      "chinese": "去超市。",
+      "pinyin": "Qù chāoshì.",
+      "english": "Go to the supermarket.",
+      "vietnamese": "Đi siêu thị."
+    },
+    {
+      "speaker": "女",
+      "chinese": "我昨天问他，他对我说他不去，他今天要和小朋友玩。",
+      "pinyin": "Wǒ zuótiān wèn tā, tā duì wǒ shuō tā bú qù, tā jīntiān yào hé xiǎo péngyou wán.",
+      "english": "I asked him yesterday, and he told me he isn't going; he wants to play with his little friends today.",
+      "vietnamese": "Hôm qua tôi hỏi em ấy rồi, em ấy nói với tôi là không đi, hôm nay em ấy muốn chơi với các bạn nhỏ."
+    }
+  ],
+  "11-6.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "弟弟",
+      "pinyin": "dìdi",
+      "english": "younger brother",
+      "vietnamese": "em trai"
+    },
+    {
+      "speaker": "女",
+      "chinese": "弟弟",
+      "pinyin": "dìdi",
+      "english": "younger brother",
+      "vietnamese": "em trai"
+    },
+    {
+      "speaker": "男",
+      "chinese": "起床",
+      "pinyin": "qǐchuáng",
+      "english": "to get up (from bed)",
+      "vietnamese": "thức dậy"
+    },
+    {
+      "speaker": "女",
+      "chinese": "起床",
+      "pinyin": "qǐchuáng",
+      "english": "to get up (from bed)",
+      "vietnamese": "thức dậy"
+    },
+    {
+      "speaker": "男",
+      "chinese": "睡觉",
+      "pinyin": "shuìjiào",
+      "english": "to sleep",
+      "vietnamese": "ngủ"
+    },
+    {
+      "speaker": "女",
+      "chinese": "睡觉",
+      "pinyin": "shuìjiào",
+      "english": "to sleep",
+      "vietnamese": "ngủ"
+    },
+    {
+      "speaker": "男",
+      "chinese": "睡",
+      "pinyin": "shuì",
+      "english": "to sleep",
+      "vietnamese": "ngủ"
+    },
+    {
+      "speaker": "女",
+      "chinese": "睡",
+      "pinyin": "shuì",
+      "english": "to sleep",
+      "vietnamese": "ngủ"
+    },
+    {
+      "speaker": "男",
+      "chinese": "那里",
+      "pinyin": "nàlǐ",
+      "english": "there",
+      "vietnamese": "ở đó; chỗ đó"
+    },
+    {
+      "speaker": "女",
+      "chinese": "那里",
+      "pinyin": "nàlǐ",
+      "english": "there",
+      "vietnamese": "ở đó; chỗ đó"
+    },
+    {
+      "speaker": "男",
+      "chinese": "哪里",
+      "pinyin": "nǎlǐ",
+      "english": "where",
+      "vietnamese": "ở đâu; chỗ nào"
+    },
+    {
+      "speaker": "女",
+      "chinese": "哪里",
+      "pinyin": "nǎlǐ",
+      "english": "where",
+      "vietnamese": "ở đâu; chỗ nào"
+    },
+    {
+      "speaker": "男",
+      "chinese": "昨天",
+      "pinyin": "zuótiān",
+      "english": "yesterday",
+      "vietnamese": "hôm qua"
+    },
+    {
+      "speaker": "女",
+      "chinese": "昨天",
+      "pinyin": "zuótiān",
+      "english": "yesterday",
+      "vietnamese": "hôm qua"
+    },
+    {
+      "speaker": "男",
+      "chinese": "问",
+      "pinyin": "wèn",
+      "english": "to ask",
+      "vietnamese": "hỏi"
+    },
+    {
+      "speaker": "女",
+      "chinese": "问",
+      "pinyin": "wèn",
+      "english": "to ask",
+      "vietnamese": "hỏi"
+    },
+    {
+      "speaker": "男",
+      "chinese": "对",
+      "pinyin": "duì",
+      "english": "to; toward; correct",
+      "vietnamese": "đối với; với; đúng"
+    },
+    {
+      "speaker": "女",
+      "chinese": "对",
+      "pinyin": "duì",
+      "english": "to; toward; correct",
+      "vietnamese": "đối với; với; đúng"
+    },
+    {
+      "speaker": "男",
+      "chinese": "说",
+      "pinyin": "shuō",
+      "english": "to speak; to say",
+      "vietnamese": "nói"
+    },
+    {
+      "speaker": "女",
+      "chinese": "说",
+      "pinyin": "shuō",
+      "english": "to speak; to say",
+      "vietnamese": "nói"
+    },
+    {
+      "speaker": "男",
+      "chinese": "要",
+      "pinyin": "yào",
+      "english": "to want; to be going to",
+      "vietnamese": "muốn; sẽ"
+    },
+    {
+      "speaker": "女",
+      "chinese": "要",
+      "pinyin": "yào",
+      "english": "to want; to be going to",
+      "vietnamese": "muốn; sẽ"
+    },
+    {
+      "speaker": "男",
+      "chinese": "小朋友",
+      "pinyin": "xiǎo péngyou",
+      "english": "children; little friends",
+      "vietnamese": "bạn nhỏ; trẻ em"
+    },
+    {
+      "speaker": "女",
+      "chinese": "小朋友",
+      "pinyin": "xiǎo péngyou",
+      "english": "children; little friends",
+      "vietnamese": "bạn nhỏ; trẻ em"
+    }
+  ],
+  "12-1.mp3": [
+    {
+      "speaker": "A",
+      "chinese": "今天天气怎么样？",
+      "pinyin": "Jīntiān tiānqì zěnmeyàng?",
+      "english": "How is the weather today?",
+      "vietnamese": "Thời tiết hôm nay thế nào?"
+    },
+    {
+      "speaker": "B",
+      "chinese": "这里的天不太好，下雨了。",
+      "pinyin": "Zhèlǐ de tiān bú tài hǎo, xiàyǔ le.",
+      "english": "The weather here isn't very good, it's raining.",
+      "vietnamese": "Trời ở đây không tốt lắm, mưa rồi."
+    },
+    {
+      "speaker": "A",
+      "chinese": "雨大吗？",
+      "pinyin": "Yǔ dà ma?",
+      "english": "Is it raining heavily?",
+      "vietnamese": "Mưa có to không?"
+    },
+    {
+      "speaker": "B",
+      "chinese": "有点儿大，我觉得很冷。",
+      "pinyin": "Yǒudiǎnr dà, wǒ juéde hěn lěng.",
+      "english": "A bit heavy, I feel very cold.",
+      "vietnamese": "Hơi to, tôi cảm thấy rất lạnh."
+    }
+  ],
+  "12-2.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "天气",
+      "pinyin": "tiānqì",
+      "english": "weather",
+      "vietnamese": "thời tiết"
+    },
+    {
+      "speaker": "女",
+      "chinese": "天气",
+      "pinyin": "tiānqì",
+      "english": "weather",
+      "vietnamese": "thời tiết"
+    },
+    {
+      "speaker": "男",
+      "chinese": "这里",
+      "pinyin": "zhèlǐ",
+      "english": "here",
+      "vietnamese": "ở đây"
+    },
+    {
+      "speaker": "女",
+      "chinese": "这里",
+      "pinyin": "zhèlǐ",
+      "english": "here",
+      "vietnamese": "ở đây"
+    },
+    {
+      "speaker": "男",
+      "chinese": "天",
+      "pinyin": "tiān",
+      "english": "sky; weather; day",
+      "vietnamese": "trời; ngày"
+    },
+    {
+      "speaker": "女",
+      "chinese": "天",
+      "pinyin": "tiān",
+      "english": "sky; weather; day",
+      "vietnamese": "trời; ngày"
+    },
+    {
+      "speaker": "男",
+      "chinese": "下雨",
+      "pinyin": "xiàyǔ",
+      "english": "to rain",
+      "vietnamese": "trời mưa"
+    },
+    {
+      "speaker": "女",
+      "chinese": "下雨",
+      "pinyin": "xiàyǔ",
+      "english": "to rain",
+      "vietnamese": "trời mưa"
+    },
+    {
+      "speaker": "男",
+      "chinese": "了",
+      "pinyin": "le",
+      "english": "(particle indicating change of state or completion)",
+      "vietnamese": "rồi"
+    },
+    {
+      "speaker": "女",
+      "chinese": "了",
+      "pinyin": "le",
+      "english": "(particle indicating change of state or completion)",
+      "vietnamese": "rồi"
+    },
+    {
+      "speaker": "男",
+      "chinese": "雨",
+      "pinyin": "yǔ",
+      "english": "rain",
+      "vietnamese": "mưa"
+    },
+    {
+      "speaker": "女",
+      "chinese": "雨",
+      "pinyin": "yǔ",
+      "english": "rain",
+      "vietnamese": "mưa"
+    },
+    {
+      "speaker": "男",
+      "chinese": "有点儿",
+      "pinyin": "yǒudiǎnr",
+      "english": "a little bit; somewhat",
+      "vietnamese": "hơi; một chút"
+    },
+    {
+      "speaker": "女",
+      "chinese": "有点儿",
+      "pinyin": "yǒudiǎnr",
+      "english": "a little bit; somewhat",
+      "vietnamese": "hơi; một chút"
+    },
+    {
+      "speaker": "男",
+      "chinese": "觉得",
+      "pinyin": "juéde",
+      "english": "to feel; to think",
+      "vietnamese": "cảm thấy"
+    },
+    {
+      "speaker": "女",
+      "chinese": "觉得",
+      "pinyin": "juéde",
+      "english": "to feel; to think",
+      "vietnamese": "cảm thấy"
+    },
+    {
+      "speaker": "男",
+      "chinese": "冷",
+      "pinyin": "lěng",
+      "english": "cold",
+      "vietnamese": "lạnh"
+    },
+    {
+      "speaker": "女",
+      "chinese": "冷",
+      "pinyin": "lěng",
+      "english": "cold",
+      "vietnamese": "lạnh"
+    }
+  ],
+  "12-3.mp3": [
+    {
+      "speaker": "女",
+      "chinese": "昨天下雪了。",
+      "pinyin": "Zuótiān xiàxuě le.",
+      "english": "It snowed yesterday.",
+      "vietnamese": "Hôm qua tuyết rơi rồi."
+    },
+    {
+      "speaker": "男",
+      "chinese": "是的，太冷了。",
+      "pinyin": "Shì de, tài lěng le.",
+      "english": "Yes, it's too cold.",
+      "vietnamese": "Đúng vậy, lạnh quá."
+    },
+    {
+      "speaker": "女",
+      "chinese": "你昨天没来公司，生病了？",
+      "pinyin": "Nǐ zuótiān méi lái gōngsī, shēngbìng le?",
+      "english": "You didn't come to the company yesterday, were you sick?",
+      "vietnamese": "Hôm qua bạn không đến công ty, bị ốm à?"
+    },
+    {
+      "speaker": "男",
+      "chinese": "对，我昨天去医院看病了。",
+      "pinyin": "Duì, wǒ zuótiān qù yīyuàn kànbìng le.",
+      "english": "Yes, I went to the hospital to see a doctor yesterday.",
+      "vietnamese": "Đúng vậy, hôm qua tôi đã đi bệnh viện khám bệnh."
+    }
+  ],
+  "12-4.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "下",
+      "pinyin": "xià",
+      "english": "to fall (rain, snow)",
+      "vietnamese": "rơi; xuống"
+    },
+    {
+      "speaker": "女",
+      "chinese": "下",
+      "pinyin": "xià",
+      "english": "to fall (rain, snow)",
+      "vietnamese": "rơi; xuống"
+    },
+    {
+      "speaker": "男",
+      "chinese": "雪",
+      "pinyin": "xuě",
+      "english": "snow",
+      "vietnamese": "tuyết"
+    },
+    {
+      "speaker": "女",
+      "chinese": "雪",
+      "pinyin": "xuě",
+      "english": "snow",
+      "vietnamese": "tuyết"
+    },
+    {
+      "speaker": "男",
+      "chinese": "来",
+      "pinyin": "lái",
+      "english": "to come",
+      "vietnamese": "đến; tới"
+    },
+    {
+      "speaker": "女",
+      "chinese": "来",
+      "pinyin": "lái",
+      "english": "to come",
+      "vietnamese": "đến; tới"
+    },
+    {
+      "speaker": "男",
+      "chinese": "公司",
+      "pinyin": "gōngsī",
+      "english": "company",
+      "vietnamese": "công ty"
+    },
+    {
+      "speaker": "女",
+      "chinese": "公司",
+      "pinyin": "gōngsī",
+      "english": "company",
+      "vietnamese": "công ty"
+    },
+    {
+      "speaker": "男",
+      "chinese": "生病",
+      "pinyin": "shēngbìng",
+      "english": "to fall ill; to get sick",
+      "vietnamese": "bị ốm; bị bệnh"
+    },
+    {
+      "speaker": "女",
+      "chinese": "生病",
+      "pinyin": "shēngbìng",
+      "english": "to fall ill; to get sick",
+      "vietnamese": "bị ốm; bị bệnh"
+    },
+    {
+      "speaker": "男",
+      "chinese": "看病",
+      "pinyin": "kànbìng",
+      "english": "to see a doctor",
+      "vietnamese": "khám bệnh"
+    },
+    {
+      "speaker": "女",
+      "chinese": "看病",
+      "pinyin": "kànbìng",
+      "english": "to see a doctor",
+      "vietnamese": "khám bệnh"
+    }
+  ],
+  "12-5.mp3": [
+    {
+      "speaker": "A",
+      "chinese": "医生，我病了。",
+      "pinyin": "Yīshēng, wǒ bìng le.",
+      "english": "Doctor, I'm sick.",
+      "vietnamese": "Bác sĩ ơi, tôi bị ốm rồi."
+    },
+    {
+      "speaker": "B",
+      "chinese": "我看看，你觉得怎么样？",
+      "pinyin": "Wǒ kànkan, nǐ juéde zěnmeyàng?",
+      "english": "Let me take a look, how do you feel?",
+      "vietnamese": "Để tôi xem nào, bạn cảm thấy thế nào?"
+    },
+    {
+      "speaker": "A",
+      "chinese": "我很冷。",
+      "pinyin": "Wǒ hěn lěng.",
+      "english": "I feel very cold.",
+      "vietnamese": "Tôi rất lạnh."
+    },
+    {
+      "speaker": "B",
+      "chinese": "好的，吃一点儿药，今天休息半天吧。",
+      "pinyin": "Hǎo de, chī yìdiǎnr yào, jīntiān xiūxi bàntiān ba.",
+      "english": "Okay, take some medicine and rest for half a day today.",
+      "vietnamese": "Được rồi, uống một chút thuốc, hôm nay nghỉ ngơi nửa ngày nhé."
+    },
+    {
+      "speaker": "A",
+      "chinese": "好的。",
+      "pinyin": "Hǎo de.",
+      "english": "Okay.",
+      "vietnamese": "Vâng ạ."
+    },
+    {
+      "speaker": "B",
+      "chinese": "回家后再喝些热水。",
+      "pinyin": "Huíjiā hòu zài hē xiē rèshuǐ.",
+      "english": "Drink some hot water after you get home.",
+      "vietnamese": "Sau khi về nhà hãy uống thêm chút nước ấm."
+    }
+  ],
+  "12-6.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "病",
+      "pinyin": "bìng",
+      "english": "illness; to fall ill",
+      "vietnamese": "bệnh; ốm"
+    },
+    {
+      "speaker": "女",
+      "chinese": "病",
+      "pinyin": "bìng",
+      "english": "illness; to fall ill",
+      "vietnamese": "bệnh; ốm"
+    },
+    {
+      "speaker": "男",
+      "chinese": "一点儿",
+      "pinyin": "yìdiǎnr",
+      "english": "a little bit",
+      "vietnamese": "một chút"
+    },
+    {
+      "speaker": "女",
+      "chinese": "一点儿",
+      "pinyin": "yìdiǎnr",
+      "english": "a little bit",
+      "vietnamese": "một chút"
+    },
+    {
+      "speaker": "男",
+      "chinese": "药",
+      "pinyin": "yào",
+      "english": "medicine",
+      "vietnamese": "thuốc"
+    },
+    {
+      "speaker": "女",
+      "chinese": "药",
+      "pinyin": "yào",
+      "english": "medicine",
+      "vietnamese": "thuốc"
+    },
+    {
+      "speaker": "男",
+      "chinese": "天",
+      "pinyin": "tiān",
+      "english": "day",
+      "vietnamese": "ngày"
+    },
+    {
+      "speaker": "女",
+      "chinese": "天",
+      "pinyin": "tiān",
+      "english": "day",
+      "vietnamese": "ngày"
+    },
+    {
+      "speaker": "男",
+      "chinese": "回",
+      "pinyin": "huí",
+      "english": "to return; to go back",
+      "vietnamese": "về; trở về"
+    },
+    {
+      "speaker": "女",
+      "chinese": "回",
+      "pinyin": "huí",
+      "english": "to return; to go back",
+      "vietnamese": "về; trở về"
+    },
+    {
+      "speaker": "男",
+      "chinese": "再",
+      "pinyin": "zài",
+      "english": "again; then",
+      "vietnamese": "lại; rồi mới"
+    },
+    {
+      "speaker": "女",
+      "chinese": "再",
+      "pinyin": "zài",
+      "english": "again; then",
+      "vietnamese": "lại; rồi mới"
+    },
+    {
+      "speaker": "男",
+      "chinese": "喝",
+      "pinyin": "hē",
+      "english": "to drink",
+      "vietnamese": "uống"
+    },
+    {
+      "speaker": "女",
+      "chinese": "喝",
+      "pinyin": "hē",
+      "english": "to drink",
+      "vietnamese": "uống"
+    },
+    {
+      "speaker": "男",
+      "chinese": "热",
+      "pinyin": "rè",
+      "english": "hot",
+      "vietnamese": "nóng"
+    },
+    {
+      "speaker": "女",
+      "chinese": "热",
+      "pinyin": "rè",
+      "english": "hot",
+      "vietnamese": "nóng"
+    },
+    {
+      "speaker": "男",
+      "chinese": "水",
+      "pinyin": "shuǐ",
+      "english": "water",
+      "vietnamese": "nước"
+    },
+    {
+      "speaker": "女",
+      "chinese": "水",
+      "pinyin": "shuǐ",
+      "english": "water",
+      "vietnamese": "nước"
+    }
+  ],
+  "13-1.mp3": [
+    {
+      "speaker": "学生",
+      "chinese": "王老师，我可以再问您一个问题吗？",
+      "pinyin": "Wáng lǎoshī, wǒ kěyǐ zài wèn nín yí gè wèntí ma?",
+      "english": "Teacher Wang, may I ask you one more question?",
+      "vietnamese": "Thưa thầy/cô Vương, em có thể hỏi thầy/cô thêm một câu hỏi nữa không ạ?"
+    },
+    {
+      "speaker": "王老师",
+      "chinese": "可以，你有什么问题？",
+      "pinyin": "Kěyǐ, nǐ yǒu shénme wèntí?",
+      "english": "Sure, what question do you have?",
+      "vietnamese": "Được chứ, em có câu hỏi gì?"
+    },
+    {
+      "speaker": "学生",
+      "chinese": "那个小店卖不卖手机？",
+      "pinyin": "Nàge xiǎodiàn mài bu mài shǒujī?",
+      "english": "Does that small shop sell mobile phones?",
+      "vietnamese": "Cửa hàng nhỏ kia có bán điện thoại di động không ạ?"
+    },
+    {
+      "speaker": "王老师",
+      "chinese": "我不知道，你可以打电话问一下。",
+      "pinyin": "Wǒ bù zhīdào, nǐ kěyǐ dǎ diànhuà wèn yíxià.",
+      "english": "I don't know; you can call and ask.",
+      "vietnamese": "Thầy/cô không biết, em có thể gọi điện hỏi thử xem."
+    }
+  ],
+  "13-2.mp3": [
+    {
+      "speaker": "朗读",
+      "chinese": "可以",
+      "pinyin": "kěyǐ",
+      "english": "can; may",
+      "vietnamese": "có thể"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "再",
+      "pinyin": "zài",
+      "english": "again; more",
+      "vietnamese": "lại, nữa, thêm"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "问题",
+      "pinyin": "wèntí",
+      "english": "question; problem",
+      "vietnamese": "câu hỏi; vấn đề"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "卖",
+      "pinyin": "mài",
+      "english": "to sell",
+      "vietnamese": "bán"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "打电话",
+      "pinyin": "dǎ diànhuà",
+      "english": "to make a phone call",
+      "vietnamese": "gọi điện thoại"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "一下",
+      "pinyin": "yíxià",
+      "english": "a bit; once (indicates brief action)",
+      "vietnamese": "một chút, một lát"
+    }
+  ],
+  "13-3.mp3": [
+    {
+      "speaker": "服务员",
+      "chinese": "女士，请坐，您喝什么？",
+      "pinyin": "Nǚshì, qǐng zuò, nín hē shénme?",
+      "english": "Madam, please have a seat. What would you like to drink?",
+      "vietnamese": "Thưa bà, mời ngồi, bà muốn uống gì ạ?"
+    },
+    {
+      "speaker": "女士",
+      "chinese": "我看一下。请给我一杯牛奶。",
+      "pinyin": "Wǒ kàn yíxià. Qǐng gěi wǒ yì bēi niúnǎi.",
+      "english": "Let me take a look. Please give me a glass of milk.",
+      "vietnamese": "Để tôi xem một chút. Làm ơn cho tôi một cốc sữa."
+    },
+    {
+      "speaker": "服务员",
+      "chinese": "好的，您还要什么？",
+      "pinyin": "Hǎo de, nín hái yào shénme?",
+      "english": "Okay, what else would you like?",
+      "vietnamese": "Vâng ạ, bà còn muốn gọi thêm gì nữa không?"
+    },
+    {
+      "speaker": "女士",
+      "chinese": "我还没吃早饭，再要这个面包和鸡蛋吧。",
+      "pinyin": "Wǒ hái méi chī zǎofàn, zài yào zhège miànbāo hé jīdàn ba.",
+      "english": "I haven't eaten breakfast yet, so I'll also have this bread and egg.",
+      "vietnamese": "Tôi vẫn chưa ăn sáng, cho tôi thêm bánh mì này và trứng gà nữa nhé."
+    }
+  ],
+  "13-4.mp3": [
+    {
+      "speaker": "朗读",
+      "chinese": "服务员",
+      "pinyin": "fúwùyuán",
+      "english": "waiter; waitress; attendant",
+      "vietnamese": "nhân viên phục vụ"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "女士",
+      "pinyin": "nǚshì",
+      "english": "lady; madam",
+      "vietnamese": "bà, quý bà, nữ sĩ"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "请",
+      "pinyin": "qǐng",
+      "english": "please; to invite",
+      "vietnamese": "mời, xin"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "坐",
+      "pinyin": "zuò",
+      "english": "to sit",
+      "vietnamese": "ngồi"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "给",
+      "pinyin": "gěi",
+      "english": "to give; for",
+      "vietnamese": "cho, đưa"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "杯",
+      "pinyin": "bēi",
+      "english": "cup; glass (measure word)",
+      "vietnamese": "cốc, ly, tách"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "要",
+      "pinyin": "yào",
+      "english": "to want; to order",
+      "vietnamese": "muốn, cần, gọi (món)"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "早饭",
+      "pinyin": "zǎofàn",
+      "english": "breakfast",
+      "vietnamese": "bữa sáng"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "这个",
+      "pinyin": "zhège",
+      "english": "this (one)",
+      "vietnamese": "cái này"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "面包",
+      "pinyin": "miànbāo",
+      "english": "bread",
+      "vietnamese": "bánh mì"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "鸡蛋",
+      "pinyin": "jīdàn",
+      "english": "chicken egg",
+      "vietnamese": "trứng gà"
+    }
+  ],
+  "13-5.mp3": [
+    {
+      "speaker": "服务员",
+      "chinese": "先生，请坐，您要什么？",
+      "pinyin": "Xiānsheng, qǐng zuò, nín yào shénme?",
+      "english": "Sir, please have a seat. What would you like?",
+      "vietnamese": "Thưa ông, mời ngồi, ông muốn gọi gì ạ?"
+    },
+    {
+      "speaker": "先生",
+      "chinese": "我要一斤饺子。",
+      "pinyin": "Wǒ yào yì jīn jiǎozi.",
+      "english": "I want one jin (500g) of dumplings.",
+      "vietnamese": "Tôi muốn một cân (500g) sủi cảo."
+    },
+    {
+      "speaker": "服务员",
+      "chinese": "好的，一斤饺子四十个。",
+      "pinyin": "Hǎo de, yì jīn jiǎozi sìshí gè.",
+      "english": "Okay, one jin of dumplings is forty pieces.",
+      "vietnamese": "Vâng ạ, một cân sủi cảo có bốn mươi cái."
+    },
+    {
+      "speaker": "先生",
+      "chinese": "四十个太多了，我要一半吧。",
+      "pinyin": "Sìshí gè tài duō le, wǒ yào yíbàn ba.",
+      "english": "Forty is too many; I'll have half.",
+      "vietnamese": "Bốn mươi cái nhiều quá, tôi lấy một nửa thôi."
+    },
+    {
+      "speaker": "服务员",
+      "chinese": "半斤二十个。您想喝什么？",
+      "pinyin": "Bàn jīn èrshí gè. Nín xiǎng hē shénme?",
+      "english": "Half a jin is twenty pieces. What would you like to drink?",
+      "vietnamese": "Nửa cân là hai mươi cái. Ông muốn uống gì ạ?"
+    },
+    {
+      "speaker": "先生",
+      "chinese": "请给我一杯茶吧。",
+      "pinyin": "Qǐng gěi wǒ yì bēi chá ba.",
+      "english": "Please give me a cup of tea.",
+      "vietnamese": "Làm ơn cho tôi một cốc trà nhé."
+    }
+  ],
+  "13-6.mp3": [
+    {
+      "speaker": "朗读",
+      "chinese": "先生",
+      "pinyin": "xiānsheng",
+      "english": "sir; mister",
+      "vietnamese": "ông, ngài"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "一半",
+      "pinyin": "yíbàn",
+      "english": "half",
+      "vietnamese": "một nửa"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "茶",
+      "pinyin": "chá",
+      "english": "tea",
+      "vietnamese": "trà"
+    }
+  ],
+  "14-1.mp3": [
+    {
+      "speaker": "女",
+      "chinese": "你们上火车后看见王老师了吗？",
+      "pinyin": "Nǐmen shàng huǒchē hòu kànjiàn Wáng lǎoshī le ma?",
+      "english": "Did you see Teacher Wang after getting on the train?",
+      "vietnamese": "Sau khi lên tàu hỏa các bạn có nhìn thấy thầy/cô Vương không?"
+    },
+    {
+      "speaker": "男",
+      "chinese": "没看见。中午车开后，有些人在看书，有些人睡觉了。",
+      "pinyin": "Méi kànjiàn. Zhōngwǔ chē kāi hòu, yǒuxiē rén zài kànshū, yǒuxiē rén shuìjiào le.",
+      "english": "No. After the train departed at noon, some people were reading and some went to sleep.",
+      "vietnamese": "Không thấy. Buổi trưa sau khi tàu chạy, có một số người đang đọc sách, có một số người đi ngủ rồi."
+    },
+    {
+      "speaker": "女",
+      "chinese": "你呢？",
+      "pinyin": "Nǐ ne?",
+      "english": "What about you?",
+      "vietnamese": "Còn bạn thì sao?"
+    },
+    {
+      "speaker": "男",
+      "chinese": "我看了一个电影。",
+      "pinyin": "Wǒ kàn le yí gè diànyǐng.",
+      "english": "I watched a movie.",
+      "vietnamese": "Tôi đã xem một bộ phim."
+    }
+  ],
+  "14-2.mp3": [
+    {
+      "speaker": "朗读",
+      "chinese": "上",
+      "pinyin": "shàng",
+      "english": "to get on; to go up",
+      "vietnamese": "lên"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "火车",
+      "pinyin": "huǒchē",
+      "english": "train",
+      "vietnamese": "tàu hỏa"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "中午",
+      "pinyin": "zhōngwǔ",
+      "english": "noon",
+      "vietnamese": "buổi trưa"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "开",
+      "pinyin": "kāi",
+      "english": "to drive; to depart; to open",
+      "vietnamese": "lái, khởi hành (tàu xe); mở"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "有些",
+      "pinyin": "yǒuxiē",
+      "english": "some",
+      "vietnamese": "một số, vài"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "有的",
+      "pinyin": "yǒude",
+      "english": "some",
+      "vietnamese": "có cái, có người, một số"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "了",
+      "pinyin": "le",
+      "english": "particle indicating completed action or change of state",
+      "vietnamese": "rồi (trợ từ)"
+    }
+  ],
+  "14-3.mp3": [
+    {
+      "speaker": "老师",
+      "chinese": "你们会说汉语了，也会写汉字了吗？",
+      "pinyin": "Nǐmen huì shuō Hànyǔ le, yě huì xiě Hànzì le ma?",
+      "english": "You can speak Chinese now; can you also write Chinese characters?",
+      "vietnamese": "Các em biết nói tiếng Hán rồi, cũng biết viết chữ Hán rồi chứ?"
+    },
+    {
+      "speaker": "学生们",
+      "chinese": "我们都会写了。",
+      "pinyin": "Wǒmen dōu huì xiě le.",
+      "english": "We all know how to write them now.",
+      "vietnamese": "Chúng em đều biết viết rồi ạ."
+    },
+    {
+      "speaker": "男学生",
+      "chinese": "老师，我听不见。",
+      "pinyin": "Lǎoshī, wǒ tīng bu jiàn.",
+      "english": "Teacher, I can't hear.",
+      "vietnamese": "Thưa cô, em không nghe thấy ạ."
+    },
+    {
+      "speaker": "老师",
+      "chinese": "请大家不要说话，请听老师的问题。",
+      "pinyin": "Qǐng dàjiā búyào shuōhuà, qǐng tīng lǎoshī de wèntí.",
+      "english": "Everyone please stop talking and listen to the teacher's question.",
+      "vietnamese": "Xin mọi người đừng nói chuyện, hãy lắng nghe câu hỏi của cô."
+    },
+    {
+      "speaker": "老师",
+      "chinese": "你们都会写哪些汉字了？",
+      "pinyin": "Nǐmen dōu huì xiě nǎxiē Hànzì le?",
+      "english": "Which Chinese characters can you all write now?",
+      "vietnamese": "Các em đều đã biết viết những chữ Hán nào rồi?"
+    },
+    {
+      "speaker": "男学生",
+      "chinese": "我会写这些字了，您看。",
+      "pinyin": "Wǒ huì xiě zhèxiē zì le, nín kàn.",
+      "english": "I can write these characters now, take a look.",
+      "vietnamese": "Em biết viết những chữ này rồi, cô xem ạ."
+    }
+  ],
+  "14-4.mp3": [
+    {
+      "speaker": "朗读",
+      "chinese": "写",
+      "pinyin": "xiě",
+      "english": "to write",
+      "vietnamese": "viết"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "都",
+      "pinyin": "dōu",
+      "english": "all; both",
+      "vietnamese": "đều"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "听见",
+      "pinyin": "tīngjiàn",
+      "english": "to hear",
+      "vietnamese": "nghe thấy"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "不要",
+      "pinyin": "búyào",
+      "english": "don't; do not",
+      "vietnamese": "đừng, không muốn"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "说话",
+      "pinyin": "shuōhuà",
+      "english": "to speak; to talk",
+      "vietnamese": "nói chuyện"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "听",
+      "pinyin": "tīng",
+      "english": "to listen",
+      "vietnamese": "nghe"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "哪些",
+      "pinyin": "nǎxiē",
+      "english": "which (plural)",
+      "vietnamese": "những ... nào"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "字",
+      "pinyin": "zì",
+      "english": "character; word",
+      "vietnamese": "chữ"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "汉语",
+      "pinyin": "Hànyǔ",
+      "english": "Chinese language",
+      "vietnamese": "tiếng Hán, tiếng Trung"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "汉字",
+      "pinyin": "Hànzì",
+      "english": "Chinese character",
+      "vietnamese": "chữ Hán"
+    }
+  ],
+  "14-5.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "明年女儿上中学。",
+      "pinyin": "Míngnián nǚ'ér shàng zhōngxué.",
+      "english": "Next year our daughter will go to middle school.",
+      "vietnamese": "Sang năm con gái vào cấp hai (trung học)."
+    },
+    {
+      "speaker": "女",
+      "chinese": "对，儿子也上小学了。",
+      "pinyin": "Duì, érzi yě shàng xiǎoxué le.",
+      "english": "Yes, and our son is going to primary school too.",
+      "vietnamese": "Đúng vậy, con trai cũng vào tiểu học rồi."
+    },
+    {
+      "speaker": "男",
+      "chinese": "我们家有了一个中学生，",
+      "pinyin": "Wǒmen jiā yǒu le yí gè zhōngxuéshēng,",
+      "english": "Our family now has a middle school student,",
+      "vietnamese": "Nhà mình có một học sinh trung học rồi,"
+    },
+    {
+      "speaker": "女",
+      "chinese": "还有了一个小学生。",
+      "pinyin": "hái yǒu le yí gè xiǎoxuéshēng.",
+      "english": "and also a primary school student.",
+      "vietnamese": "lại có thêm một học sinh tiểu học nữa."
+    },
+    {
+      "speaker": "男",
+      "chinese": "上学后，他们都忙了。",
+      "pinyin": "Shàngxué hòu, tāmen dōu máng le.",
+      "english": "After school starts, they'll both be busy.",
+      "vietnamese": "Sau khi đi học, chúng đều bận rộn cả rồi."
+    },
+    {
+      "speaker": "女",
+      "chinese": "是的。太晚了，睡觉吧。",
+      "pinyin": "Shì de. Tài wǎn le, shuìjiào ba.",
+      "english": "Yes. It's too late, let's go to sleep.",
+      "vietnamese": "Đúng vậy. Muộn quá rồi, đi ngủ thôi."
+    }
+  ],
+  "14-6.mp3": [
+    {
+      "speaker": "朗读",
+      "chinese": "明年",
+      "pinyin": "míngnián",
+      "english": "next year",
+      "vietnamese": "năm sau, sang năm"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "上",
+      "pinyin": "shàng",
+      "english": "to attend (school)",
+      "vietnamese": "đi học, lên (lớp/trường)"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "中学",
+      "pinyin": "zhōngxué",
+      "english": "middle school; secondary school",
+      "vietnamese": "trường trung học"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "小学",
+      "pinyin": "xiǎoxué",
+      "english": "primary school; elementary school",
+      "vietnamese": "trường tiểu học"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "中学生",
+      "pinyin": "zhōngxuéshēng",
+      "english": "middle school student",
+      "vietnamese": "học sinh trung học"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "小学生",
+      "pinyin": "xiǎoxuéshēng",
+      "english": "primary school student",
+      "vietnamese": "học sinh tiểu học"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "上学",
+      "pinyin": "shàngxué",
+      "english": "to go to school; to attend school",
+      "vietnamese": "đi học"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "他们",
+      "pinyin": "tāmen",
+      "english": "they (male or mixed group)",
+      "vietnamese": "họ, các bạn ấy (nam hoặc chung)"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "她们",
+      "pinyin": "tāmen",
+      "english": "they (female)",
+      "vietnamese": "họ, các cô ấy (nữ)"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "它们",
+      "pinyin": "tāmen",
+      "english": "they (things or animals)",
+      "vietnamese": "chúng nó (đồ vật, con vật)"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "晚",
+      "pinyin": "wǎn",
+      "english": "late",
+      "vietnamese": "muộn, tối"
+    }
+  ],
+  "15-1.mp3": [
+    {
+      "speaker": "男1",
+      "chinese": "你们爱吃哪个菜？",
+      "pinyin": "Nǐmen ài chī nǎge cài?",
+      "english": "Which dish do you like to eat?",
+      "vietnamese": "Các bạn thích ăn món nào?"
+    },
+    {
+      "speaker": "女",
+      "chinese": "我喜欢这个，也喜欢那个。",
+      "pinyin": "Wǒ xǐhuan zhège, yě xǐhuan nàge.",
+      "english": "I like this one, and I also like that one.",
+      "vietnamese": "Tôi thích món này, cũng thích món kia."
+    },
+    {
+      "speaker": "男2",
+      "chinese": "这些菜都好吃，还很好看。",
+      "pinyin": "Zhèxiē cài dōu hǎochī, hái hěn hǎokàn.",
+      "english": "All of these dishes are delicious, and they look very nice too.",
+      "vietnamese": "Những món này đều ngon, lại còn rất đẹp mắt."
+    },
+    {
+      "speaker": "男1",
+      "chinese": "我爱吃中国菜，也喜欢做，大家多吃点儿。",
+      "pinyin": "Wǒ ài chī Zhōngguó cài, yě xǐhuan zuò, dàjiā duō chī diǎnr.",
+      "english": "I love eating Chinese food, and I also like cooking it. Everyone, please eat more.",
+      "vietnamese": "Tôi thích ăn món Trung Quốc, cũng thích nấu nữa, mọi người ăn nhiều một chút nhé."
+    }
+  ],
+  "15-2.mp3": [
+    {
+      "speaker": "朗读",
+      "chinese": "爱",
+      "pinyin": "ài",
+      "english": "to love; to like",
+      "vietnamese": "yêu; thích"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "哪个",
+      "pinyin": "nǎge",
+      "english": "which (one)",
+      "vietnamese": "cái nào"
+    }
+  ],
+  "15-3.mp3": [
+    {
+      "speaker": "男",
+      "chinese": "你们都想去哪儿？",
+      "pinyin": "Nǐmen dōu xiǎng qù nǎr?",
+      "english": "Where do you all want to go?",
+      "vietnamese": "Các bạn đều muốn đi đâu?"
+    },
+    {
+      "speaker": "女1",
+      "chinese": "去年我和男朋友去了西安，今年我想去北京。",
+      "pinyin": "Qùnián wǒ hé nánpéngyou qùle Xī'ān, jīnnián wǒ xiǎng qù Běijīng.",
+      "english": "Last year my boyfriend and I went to Xi'an; this year I want to go to Beijing.",
+      "vietnamese": "Năm ngoái tôi và bạn trai đã đi Tây An, năm nay tôi muốn đi Bắc Kinh."
+    },
+    {
+      "speaker": "女2",
+      "chinese": "前几年我去了西安，非常好玩儿，今年我也想去北京。",
+      "pinyin": "Qián jǐ nián wǒ qùle Xī'ān, fēicháng hǎowánr, jīnnián wǒ yě xiǎng qù Běijīng.",
+      "english": "A few years ago I went to Xi'an, and it was really fun; this year I also want to go to Beijing.",
+      "vietnamese": "Mấy năm trước tôi đã đi Tây An, rất vui, năm nay tôi cũng muốn đi Bắc Kinh."
+    },
+    {
+      "speaker": "男",
+      "chinese": "我和王老师都是北京人，北京非常漂亮。",
+      "pinyin": "Wǒ hé Wáng lǎoshī dōu shì Běijīngrén, Běijīng fēicháng piàoliang.",
+      "english": "Teacher Wang and I are both from Beijing; Beijing is very beautiful.",
+      "vietnamese": "Tôi và thầy Vương đều là người Bắc Kinh, Bắc Kinh rất đẹp."
+    }
+  ],
+  "15-4.mp3": [
+    {
+      "speaker": "朗读",
+      "chinese": "去年",
+      "pinyin": "qùnián",
+      "english": "last year",
+      "vietnamese": "năm ngoái"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "男朋友",
+      "pinyin": "nánpéngyou",
+      "english": "boyfriend",
+      "vietnamese": "bạn trai"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "几",
+      "pinyin": "jǐ",
+      "english": "several; a few; how many",
+      "vietnamese": "mấy; vài"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "年",
+      "pinyin": "nián",
+      "english": "year",
+      "vietnamese": "năm"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "好玩儿",
+      "pinyin": "hǎowánr",
+      "english": "fun; interesting",
+      "vietnamese": "vui; thú vị"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "西安",
+      "pinyin": "Xī'ān",
+      "english": "Xi'an",
+      "vietnamese": "Tây An"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "北京",
+      "pinyin": "Běijīng",
+      "english": "Beijing",
+      "vietnamese": "Bắc Kinh"
+    }
+  ],
+  "15-5.mp3": [
+    {
+      "speaker": "女1",
+      "chinese": "你们的飞机到北京要几个小时？",
+      "pinyin": "Nǐmen de fēijī dào Běijīng yào jǐ ge xiǎoshí?",
+      "english": "How many hours does your flight to Beijing take?",
+      "vietnamese": "Máy bay của các bạn đến Bắc Kinh mất mấy tiếng?"
+    },
+    {
+      "speaker": "女2",
+      "chinese": "九个小时。",
+      "pinyin": "Jiǔ ge xiǎoshí.",
+      "english": "Nine hours.",
+      "vietnamese": "Chín tiếng."
+    },
+    {
+      "speaker": "女1",
+      "chinese": "我家人都在北京，星期天我姐姐也有时间，她可以去机场接你们，你们也可以住我家。",
+      "pinyin": "Wǒ jiārén dōu zài Běijīng, xīngqītiān wǒ jiějie yě yǒu shíjiān, tā kěyǐ qù jīchǎng jiē nǐmen, nǐmen yě kěyǐ zhù wǒ jiā.",
+      "english": "My family is all in Beijing, and on Sunday my older sister also has time. She can go to the airport to pick you up, and you can also stay at my home.",
+      "vietnamese": "Người nhà tôi đều ở Bắc Kinh, Chủ nhật chị gái tôi cũng có thời gian, chị ấy có thể ra sân bay đón các bạn, các bạn cũng có thể ở nhà tôi."
+    },
+    {
+      "speaker": "女3",
+      "chinese": "我们星期日早上八点到大兴机场，早不早？",
+      "pinyin": "Wǒmen xīngqīrì zǎoshang bā diǎn dào Dàxīng Jīchǎng, zǎo bu zǎo?",
+      "english": "We arrive at Daxing Airport at 8:00 a.m. on Sunday. Is that early?",
+      "vietnamese": "Chúng em 8 giờ sáng Chủ nhật đến sân bay Đại Hưng, có sớm không ạ?"
+    },
+    {
+      "speaker": "女1",
+      "chinese": "不早。",
+      "pinyin": "Bù zǎo.",
+      "english": "Not early.",
+      "vietnamese": "Không sớm đâu."
+    },
+    {
+      "speaker": "女2",
+      "chinese": "谢谢老师，那我们和您姐姐在大兴机场见。",
+      "pinyin": "Xièxie lǎoshī, nà wǒmen hé nín jiějie zài Dàxīng Jīchǎng jiàn.",
+      "english": "Thank you, teacher. Then we will meet your older sister at Daxing Airport.",
+      "vietnamese": "Cảm ơn cô, vậy chúng em sẽ gặp chị gái cô ở sân bay Đại Hưng ạ."
+    }
+  ],
+  "15-6.mp3": [
+    {
+      "speaker": "朗读",
+      "chinese": "飞机",
+      "pinyin": "fēijī",
+      "english": "airplane",
+      "vietnamese": "máy bay"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "要",
+      "pinyin": "yào",
+      "english": "to need; to take (time); to want",
+      "vietnamese": "cần; mất (thời gian); muốn"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "小时",
+      "pinyin": "xiǎoshí",
+      "english": "hour",
+      "vietnamese": "tiếng; giờ đồng hồ"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "家人",
+      "pinyin": "jiārén",
+      "english": "family member(s)",
+      "vietnamese": "người nhà; gia đình"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "时间",
+      "pinyin": "shíjiān",
+      "english": "time",
+      "vietnamese": "thời gian"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "机场",
+      "pinyin": "jīchǎng",
+      "english": "airport",
+      "vietnamese": "sân bay"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "接",
+      "pinyin": "jiē",
+      "english": "to pick up; to meet",
+      "vietnamese": "đón"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "住",
+      "pinyin": "zhù",
+      "english": "to live; to stay",
+      "vietnamese": "ở; cư trú"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "早",
+      "pinyin": "zǎo",
+      "english": "early",
+      "vietnamese": "sớm"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "那",
+      "pinyin": "nà",
+      "english": "then; in that case",
+      "vietnamese": "vậy; thế thì"
+    },
+    {
+      "speaker": "朗读",
+      "chinese": "大兴机场",
+      "pinyin": "Dàxīng Jīchǎng",
+      "english": "Daxing Airport",
+      "vietnamese": "Sân bay Đại Hưng"
+    }
+  ]
+}

@@ -1051,50 +1051,103 @@ window.QCore = (function () {
   }
 
   /* Mandarin Putonghua Audio Synthesis (Server Cached MP3 + Web Speech zh-CN Fallback) */
+  let speechSessionSeq = 0;
+
+  function stopSpeech() {
+    speechSessionSeq += 1;
+    if (activeAudio) {
+      try {
+        activeAudio.onended = null;
+        activeAudio.onerror = null;
+        activeAudio.pause();
+      } catch (_) {}
+      activeAudio = null;
+    }
+    if (window.speechSynthesis) {
+      try { window.speechSynthesis.cancel(); } catch (_) {}
+    }
+  }
+
+  function setSpeechVolume(vol) {
+    const v = Math.max(0, Math.min(1, Number(vol)));
+    if (activeAudio) {
+      try { activeAudio.volume = v; } catch (_) {}
+    }
+  }
+
+  function setSpeechRate(rate) {
+    const r = Math.max(0.5, Math.min(2.0, Number(rate) || 1.0));
+    if (activeAudio) {
+      try { activeAudio.playbackRate = r; } catch (_) {}
+    }
+  }
+
   function speakChinese(text, opts = {}) {
     if (!text) return;
     const cleanText = String(text).trim();
     if (!cleanText) return;
 
     const baseRate = appState ? appState.profile.audioSpeed || 1.0 : 1.0;
-    const rate = opts.rate || (opts.slow ? 0.65 : baseRate);
+    const rate = Math.max(0.5, Math.min(2.0, Number(opts.rate || (opts.slow ? 0.65 : baseRate))));
+    const volume = typeof opts.volume === "number" ? Math.max(0, Math.min(1, opts.volume)) : 1.0;
     const slowFlag = opts.slow || rate <= 0.7 ? "1" : "0";
 
-    if (activeAudio) {
-      try { activeAudio.pause(); } catch (_) {}
-      activeAudio = null;
-    }
-    if (window.speechSynthesis) {
-      try { window.speechSynthesis.cancel(); } catch (_) {}
-    }
+    stopSpeech();
+    const mySeq = speechSessionSeq;
+    let started = false;
+    const fireStart = () => {
+      if (!started && mySeq === speechSessionSeq) {
+        started = true;
+        if (opts.onStart) opts.onStart();
+      }
+    };
+    const fireEnd = () => {
+      if (mySeq === speechSessionSeq && opts.onEnd) opts.onEnd();
+    };
 
     const fallbackWebSpeech = () => {
+      if (mySeq !== speechSessionSeq) return;
       if (!window.speechSynthesis) {
         showToast("Trình duyệt không hỗ trợ phát âm thanh.");
+        fireEnd();
         return;
       }
       const utter = new SpeechSynthesisUtterance(cleanText);
       utter.lang = "zh-CN";
-      utter.rate = Math.max(0.45, Math.min(1.4, rate));
+      utter.rate = rate;
+      utter.volume = volume;
       const voices = window.speechSynthesis.getVoices() || [];
       const zhVoice =
         voices.find((v) => v.lang === "zh-CN" && /Xiaoxiao|Yunxi|Huihui|Kangkang|Google|Putonghua/i.test(v.name)) ||
         voices.find((v) => /^zh(-|_)?CN/i.test(v.lang)) ||
         voices.find((v) => /^zh/i.test(v.lang));
       if (zhVoice) utter.voice = zhVoice;
-      if (opts.onEnd) utter.onend = opts.onEnd;
+      utter.onstart = () => fireStart();
+      utter.onend = () => fireEnd();
+      utter.onerror = () => fireEnd();
+      fireStart();
       window.speechSynthesis.speak(utter);
     };
 
-    if (serverHealth.ok) {
-      const audio = new Audio(`api/tts?text=${encodeURIComponent(cleanText)}&slow=${slowFlag}`);
-      audio.playbackRate = slowFlag === "1" ? 0.92 : Math.max(0.5, Math.min(1.4, rate));
+    if (serverHealth.ok && cleanText.length <= 200) {
+      const ttsUrl = resolveApiUrl(`/api/tts?text=${encodeURIComponent(cleanText)}&slow=${slowFlag}`);
+      const audio = new Audio(ttsUrl);
+      audio.playbackRate = slowFlag === "1" ? Math.min(1.0, rate / 0.7) : rate;
+      audio.volume = volume;
       activeAudio = audio;
+      audio.onplay = () => fireStart();
       audio.onended = () => {
-        if (opts.onEnd) opts.onEnd();
+        if (activeAudio === audio) activeAudio = null;
+        fireEnd();
       };
-      audio.onerror = () => fallbackWebSpeech();
-      audio.play().catch(() => fallbackWebSpeech());
+      audio.onerror = () => {
+        if (activeAudio === audio) activeAudio = null;
+        fallbackWebSpeech();
+      };
+      audio.play().catch(() => {
+        if (activeAudio === audio) activeAudio = null;
+        fallbackWebSpeech();
+      });
     } else {
       fallbackWebSpeech();
     }
@@ -1338,6 +1391,9 @@ window.QCore = (function () {
     recordHanziPractice,
     addToNotebook,
     speakChinese,
+    stopSpeech,
+    setSpeechVolume,
+    setSpeechRate,
     captureLearnerVoice,
     resolveHanziDetail,
     fetchStrokeData,

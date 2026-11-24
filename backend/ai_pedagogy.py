@@ -1325,164 +1325,583 @@ def handle_personalized_drills(payload: Dict[str, Any]) -> Dict[str, Any]:
 def handle_generate_lesson_exercise(payload: Dict[str, Any]) -> Dict[str, Any]:
     """
     Hạng mục 6.3: AI Adaptive Exercise Generator ('AI – TẠO BÀI TẬP MỚI').
-    Generates a non-duplicate exercise tailored to HSK level, lesson vocabulary, and learner's exact mistake focus,
-    then validates answers before returning.
+    Generates a non-duplicate, fully bilingual (ZH-EN + ZH-VI) exercise with real line-by-line
+    Pinyin, English, Vietnamese, and structured transcriptLines (for Listening) across all skills:
+    reading, listening, grammar, writing, speaking, and vocabulary.
     """
-    skill = (payload.get("skill") or "reading").lower()
+    skill = (payload.get("skill") or "reading").lower().strip()
     hsk_level = int(payload.get("hskLevel", 1))
     lesson_title = (payload.get("lessonTitle") or "Lesson 1").strip()
+    lesson_short = lesson_title.split(":")[0].strip() or "Lesson 1"
     vocab_words = payload.get("vocabWords") or []
     wrong_focuses = payload.get("wrongFocuses") or []
     variant_idx = int(payload.get("variantIndex", 2))
 
-    focus_label = (
+    focus_label_vi = (
         "kỹ năng tìm thông tin chi tiết (Detail)" if "detail" in wrong_focuses
         else "từ vựng trong ngữ cảnh (Vocab Context)" if "vocab_context" in wrong_focuses
         else "ý chính & suy luận (Main Idea)" if "main_idea" in wrong_focuses
         else "củng cố tổng hợp bài học"
     )
+    focus_label_en = (
+        "Detail Comprehension" if "detail" in wrong_focuses
+        else "Vocabulary in Context" if "vocab_context" in wrong_focuses
+        else "Main Idea & Inference" if "main_idea" in wrong_focuses
+        else "Comprehensive Lesson Review"
+    )
 
     system_prompt = (
-        f"Bạn là chuyên gia biên soạn đề HSK {hsk_level} (tiếng Trung Giản thể). "
-        f"Hãy tạo 1 bài tập MỚI HOÀN TOÀN (không sao chép bài cũ) cho kỹ năng '{skill}', chủ đề '{lesson_title}', "
-        f"tập trung củng cố điểm yếu: '{focus_label}'. Trả về JSON hợp lệ:\n"
-        '{"title":"...","focusReason":"...","chinese":"Đoạn văn/nội dung tiếng Trung giản thể","pinyin":"...","vietnamese":"...",'
-        '"questions":[{"id":"q1","type":"mcq|tf|fill","skillFocus":"detail|main_idea|vocab_context","question":"...","options":["..."],"answer":"Đáp án phải trùng khớp 1 phương án trong options nếu là mcq/tf","explain":"Giải thích rõ bằng tiếng Việt"}]}'
+        f"You are an expert HSK {hsk_level} (Simplified Chinese) curriculum designer. "
+        f"Create 1 BRAND-NEW non-duplicate '{skill}' exercise for '{lesson_title}', targeting '{focus_label_en}'. "
+        "Return strict JSON with REAL tone-marked Pinyin, English, and Vietnamese aligned line-by-line (separated by \\n), "
+        "and bilingual questions (both EN and VI fields). For 'listening', MUST also include 'transcriptLines' "
+        '[{"speaker":"...","chinese":"...","pinyin":"...","english":"...","vietnamese":"..."}]. Schema:\n'
+        '{"title":"English title","title_vi":"Vietnamese title","focusReason":"Vietnamese reason","focusReason_en":"English reason",'
+        '"chinese":"Line 1\\nLine 2\\nLine 3","pinyin":"Pinyin 1\\nPinyin 2\\nPinyin 3",'
+        '"english":"English 1\\nEnglish 2\\nEnglish 3","vietnamese":"Vietnamese 1\\nVietnamese 2\\nVietnamese 3",'
+        '"transcriptLines":[...],"prompt":"...","prompt_en":"...","sampleQuestion":"...","samplePinyin":"...","sampleEnglish":"...","sampleVietnamese":"...",'
+        '"formula":"...","explanation":"...","explanation_en":"...",'
+        '"questions":[{"id":"q1","type":"mcq|tf|fill","skillFocus":"detail|main_idea|vocab_context",'
+        '"question_en":"...","options_en":["..."],"answer_en":"...","explain_en":"...",'
+        '"question":"...","options":["..."],"answer":"...","explain":"..."}]}'
     )
     llm_res = _call_external_llm(system_prompt, json.dumps({
         "skill": skill, "hskLevel": hsk_level, "lessonTitle": lesson_title,
         "vocabWords": vocab_words[:8], "wrongFocuses": wrong_focuses, "variant": variant_idx,
     }, ensure_ascii=False))
-    if llm_res and isinstance(llm_res.get("questions"), list) and len(llm_res["questions"]) >= 3:
-        # Quality validation: ensure every MCQ/TF answer exists in options
-        valid_qs = []
-        for qi, q in enumerate(llm_res["questions"], start=1):
-            if q.get("type") in ("mcq", "tf") and isinstance(q.get("options"), list) and q.get("answer") not in q["options"]:
-                continue
-            q["id"] = f"ai_q{qi}"
-            valid_qs.append(q)
-        if len(valid_qs) >= 3:
-            llm_res["questions"] = valid_qs
-            llm_res["sourceTag"] = "ai_generated"
-            llm_res["validated"] = True
-            llm_res["provider"] = get_ai_config()["provider"]
-            return llm_res
+    if llm_res and isinstance(llm_res, dict):
+        if skill in ("reading", "listening"):
+            has_real_py = bool(str(llm_res.get("pinyin") or "").strip()) and "Bấm từng từ" not in str(llm_res.get("pinyin") or "")
+            has_en = bool(str(llm_res.get("english") or "").strip())
+            has_qs = isinstance(llm_res.get("questions"), list) and len(llm_res["questions"]) >= 3
+            if has_real_py and has_en and has_qs:
+                valid_qs = []
+                for qi, q in enumerate(llm_res["questions"], start=1):
+                    if q.get("type") in ("mcq", "tf") and isinstance(q.get("options"), list) and q.get("answer") not in q["options"]:
+                        continue
+                    q["id"] = f"ai_q{qi}"
+                    valid_qs.append(q)
+                if len(valid_qs) >= 3:
+                    llm_res["id"] = llm_res.get("id") or f"ai_ex_{skill}_{variant_idx}_{int(time.time()) % 10000}"
+                    llm_res["questions"] = valid_qs
+                    llm_res["sourceTag"] = "ai_generated"
+                    llm_res["validated"] = True
+                    llm_res["provider"] = get_ai_config()["provider"]
+                    if skill == "listening":
+                        llm_res["audioSource"] = "tts"
+                        llm_res["audioText"] = llm_res.get("chinese") or ""
+                        llm_res["transcriptSource"] = "ai_generated"
+                        llm_res["transcriptLabel"] = f"Phụ đề khớp 100% bài nghe AI tạo ({lesson_short})"
+                        if not isinstance(llm_res.get("transcriptLines"), list) or not llm_res["transcriptLines"]:
+                            z_lns = [x.strip() for x in str(llm_res.get("chinese") or "").split("\n") if x.strip()]
+                            p_lns = [x.strip() for x in str(llm_res.get("pinyin") or "").split("\n") if x.strip()]
+                            e_lns = [x.strip() for x in str(llm_res.get("english") or "").split("\n") if x.strip()]
+                            v_lns = [x.strip() for x in str(llm_res.get("vietnamese") or "").split("\n") if x.strip()]
+                            llm_res["transcriptLines"] = [
+                                {
+                                    "speaker": f"Người {i % 2 + 1}",
+                                    "chinese": zl,
+                                    "pinyin": p_lns[i] if i < len(p_lns) else "",
+                                    "english": e_lns[i] if i < len(e_lns) else "",
+                                    "vietnamese": v_lns[i] if i < len(v_lns) else "",
+                                }
+                                for i, zl in enumerate(z_lns)
+                            ]
+                    return llm_res
 
-    # High-quality non-duplicate deterministic adaptive generator when external LLM key is not set
-    w0 = vocab_words[0] if vocab_words else {"hanzi": "汉语", "pinyin": "Hànyǔ", "vi": "tiếng Hán"}
-    w1 = vocab_words[1] if len(vocab_words) > 1 else {"hanzi": "学习", "pinyin": "xuéxí", "vi": "học tập"}
-    w2 = vocab_words[2] if len(vocab_words) > 2 else {"hanzi": "朋友", "pinyin": "péngyou", "vi": "bạn bè"}
-    w3 = vocab_words[3] if len(vocab_words) > 3 else {"hanzi": "学校", "pinyin": "xuéxiào", "vi": "trường học"}
+    # Normalize lesson vocabulary words with guaranteed hanzi, pinyin, en, vi
+    def _norm_word(idx: int, fallback: Dict[str, str]) -> Dict[str, str]:
+        if idx < len(vocab_words) and isinstance(vocab_words[idx], dict) and vocab_words[idx].get("hanzi"):
+            raw = vocab_words[idx]
+            hz = str(raw.get("hanzi") or fallback["hanzi"]).strip()
+            py = str(raw.get("pinyin") or fallback["pinyin"]).strip() or hz
+            vi_v = str(raw.get("vi") or raw.get("en") or fallback["vi"]).strip()
+            en_v = str(raw.get("en") or raw.get("vi") or fallback["en"]).strip()
+            return {"hanzi": hz, "pinyin": py, "en": en_v, "vi": vi_v}
+        return dict(fallback)
 
-    names = [("张伟", "Trương Vỹ"), ("小梅", "Tiểu Mai"), ("安明", "An Minh"), ("陈芳", "Trần Phương")]
-    p_zh, p_vi = names[variant_idx % len(names)]
-    times = [("星期六上午九点", "9 giờ sáng thứ Bảy"), ("星期天下午三点", "3 giờ chiều Chủ nhật"), ("每天晚上八点", "8 giờ tối mỗi ngày")]
-    t_zh, t_vi = times[variant_idx % len(times)]
+    w0 = _norm_word(0, {"hanzi": "汉语", "pinyin": "Hànyǔ", "en": "Chinese language", "vi": "tiếng Hán"})
+    w1 = _norm_word(1, {"hanzi": "学习", "pinyin": "xuéxí", "en": "to study", "vi": "học tập"})
+    w2 = _norm_word(2, {"hanzi": "朋友", "pinyin": "péngyou", "en": "friend", "vi": "bạn bè"})
+    w3 = _norm_word(3, {"hanzi": "老师", "pinyin": "lǎoshī", "en": "teacher", "vi": "giáo viên"})
 
-    if skill in ("reading", "listening"):
-        passage_zh = (
-            f"{p_zh}是我的好朋友。{t_zh}，他常在图书馆复习{lesson_title.split(':')[0]}的生词，"
-            f"特别是“{w0['hanzi']}”和“{w1['hanzi']}”。他还会和同学一起练习“{w2['hanzi']}”的用法，"
-            f"觉得这样记忆效果最好。学完以后，他经常去{w3['hanzi']}附近喝茶休息二十分钟。"
-        )
-        passage_vi = (
-            f"{p_vi} là bạn tốt của tôi. Vào {t_vi}, bạn ấy thường ôn từ mới của bài này ở thư viện, "
-            f"đặc biệt là từ '{w0['hanzi']}' ({w0.get('vi', '')}) và '{w1['hanzi']}' ({w1.get('vi', '')}). "
-            f"Bạn ấy còn luyện cách dùng từ '{w2['hanzi']}' cùng bạn học, thấy cách này nhớ hiệu quả nhất. Học xong bạn ấy hay nghỉ ngơi uống trà 20 phút."
-        )
+    def _rotate_opts(opts: List[str], salt: int) -> List[str]:
+        if len(opts) <= 1:
+            return opts
+        pos = (variant_idx * 3 + salt) % len(opts)
+        correct = opts[0]
+        rest = opts[1:]
+        return rest[:pos] + [correct] + rest[pos:]
+
+    # High-quality non-duplicate deterministic adaptive scenarios (100% real Pinyin + English + Vietnamese!)
+    scenarios = [
+        {
+            "name_zh": "张伟", "name_py": "Zhāng Wěi", "name_en": "Zhang Wei", "name_vi": "Trương Vỹ",
+            "partner_zh": "王老师", "partner_py": "Wáng lǎoshī", "partner_en": "Teacher Wang", "partner_vi": "Cô Vương",
+            "time_zh": "星期六上午九点", "time_py": "Xīngqīliù shàngwǔ jiǔ diǎn",
+            "time_en": "9:00 a.m. on Saturday", "time_vi": "9 giờ sáng thứ Bảy",
+            "place_zh": "图书馆", "place_py": "túshūguǎn", "place_en": "the library", "place_vi": "thư viện",
+            "after_zh": "学校咖啡馆喝茶休息二十分钟", "after_py": "xuéxiào kāfēiguǎn hē chá xiūxi èrshí fēnzhōng",
+            "after_en": "the campus cafe to drink tea and rest for 20 minutes",
+            "after_vi": "quán cà phê trường uống trà và nghỉ ngơi 20 phút",
+            "mins": "20",
+        },
+        {
+            "name_zh": "小梅", "name_py": "Xiǎoméi", "name_en": "Xiaomei", "name_vi": "Tiểu Mai",
+            "partner_zh": "李文", "partner_py": "Lǐ Wén", "partner_en": "Li Wen", "partner_vi": "Lý Văn",
+            "time_zh": "星期天下午三点", "time_py": "Xīngqītiān xiàwǔ sān diǎn",
+            "time_en": "3:00 p.m. on Sunday", "time_vi": "3 giờ chiều Chủ nhật",
+            "place_zh": "教室", "place_py": "jiàoshì", "place_en": "the classroom", "place_vi": "phòng học",
+            "after_zh": "公园散步休息十五分钟", "after_py": "gōngyuán sànbù xiūxi shíwǔ fēnzhōng",
+            "after_en": "the park to take a walk and relax for 15 minutes",
+            "after_vi": "công viên đi dạo và thư giãn 15 phút",
+            "mins": "15",
+        },
+        {
+            "name_zh": "安明", "name_py": "Ān Míng", "name_en": "An Ming", "name_vi": "An Minh",
+            "partner_zh": "小雨", "partner_py": "Xiǎoyǔ", "partner_en": "Xiaoyu", "partner_vi": "Tiểu Vũ",
+            "time_zh": "每天晚上八点", "time_py": "Měitiān wǎnshang bā diǎn",
+            "time_en": "8:00 p.m. every evening", "time_vi": "8 giờ tối mỗi ngày",
+            "place_zh": "书房", "place_py": "shūfáng", "place_en": "the study room", "place_vi": "phòng học ở nhà",
+            "after_zh": "客厅听中文歌休息十分钟", "after_py": "kètīng tīng Zhōngwén gē xiūxi shí fēnzhōng",
+            "after_en": "the living room to listen to Chinese songs and rest for 10 minutes",
+            "after_vi": "phòng khách nghe nhạc Hoa và nghỉ ngơi 10 phút",
+            "mins": "10",
+        },
+        {
+            "name_zh": "陈芳", "name_py": "Chén Fāng", "name_en": "Chen Fang", "name_vi": "Trần Phương",
+            "partner_zh": "大卫", "partner_py": "Dàwèi", "partner_en": "David", "partner_vi": "Đại Vệ",
+            "time_zh": "星期三下午四点", "time_py": "Xīngqīsān xiàwǔ sì diǎn",
+            "time_en": "4:00 p.m. on Wednesday", "time_vi": "4 giờ chiều thứ Tư",
+            "place_zh": "汉语中心", "place_py": "Hànyǔ zhōngxīn", "place_en": "the Chinese center", "place_vi": "trung tâm tiếng Hán",
+            "after_zh": "书店看书休息三十分钟", "after_py": "shūdiàn kànshū xiūxi sānshí fēnzhōng",
+            "after_en": "the bookstore to read and rest for 30 minutes",
+            "after_vi": "hiệu sách đọc sách và nghỉ 30 phút",
+            "mins": "30",
+        },
+    ]
+    sc = scenarios[variant_idx % len(scenarios)]
+    uid_suffix = f"{variant_idx}_{int(time.time()) % 10000}"
+
+    if skill == "reading":
+        lines = [
+            (
+                f"{sc['name_zh']}是我的好朋友，他很喜欢学习汉语。",
+                f"{sc['name_py']} shì wǒ de hǎo péngyou, tā hěn xǐhuan xuéxí Hànyǔ.",
+                f"{sc['name_en']} is my good friend, and they really enjoy studying Chinese.",
+                f"{sc['name_vi']} là bạn tốt của tôi, bạn ấy rất thích học tiếng Hán.",
+            ),
+            (
+                f"{sc['time_zh']}，他常在{sc['place_zh']}复习新课的生词。",
+                f"{sc['time_py']}, tā cháng zài {sc['place_py']} fùxí xīnkè de shēngcí.",
+                f"At {sc['time_en']}, they often review the new lesson's vocabulary in {sc['place_en']}.",
+                f"Vào {sc['time_vi']}, bạn ấy thường ôn từ mới của bài học tại {sc['place_vi']}.",
+            ),
+            (
+                f"今天他重点练习“{w0['hanzi']}”和“{w1['hanzi']}”这两个词。",
+                f"Jīntiān tā zhòngdiǎn liànxí \"{w0['pinyin']}\" hé \"{w1['pinyin']}\" zhè liǎng gè cí.",
+                f"Today they focus on practicing the two words \"{w0['hanzi']}\" ({w0['en']}) and \"{w1['hanzi']}\" ({w1['en']}).",
+                f"Hôm nay bạn ấy tập trung luyện hai từ \"{w0['hanzi']}\" ({w0['vi']}) và \"{w1['hanzi']}\" ({w1['vi']}).",
+            ),
+            (
+                f"他还会和{sc['partner_zh']}一起用“{w2['hanzi']}”和“{w3['hanzi']}”造句，记忆效果很好。",
+                f"Tā hái huì hé {sc['partner_py']} yìqǐ yòng \"{w2['pinyin']}\" hé \"{w3['pinyin']}\" zàojù, jìyì xiàoguǒ hěn hǎo.",
+                f"They also make sentences using \"{w2['hanzi']}\" ({w2['en']}) and \"{w3['hanzi']}\" ({w3['en']}) with {sc['partner_en']}, which helps them remember very well.",
+                f"Bạn ấy còn cùng {sc['partner_vi']} đặt câu với \"{w2['hanzi']}\" ({w2['vi']}) và \"{w3['hanzi']}\" ({w3['vi']}), giúp ghi nhớ rất hiệu quả.",
+            ),
+            (
+                f"学完以后，他经常去{sc['after_zh']}。",
+                f"Xuéwán yǐhòu, tā jīngcháng qù {sc['after_py']}.",
+                f"After finishing studying, they often go to {sc['after_en']}.",
+                f"Sau khi học xong, bạn ấy thường đến {sc['after_vi']}.",
+            ),
+        ]
+        passage_zh = "\n".join(x[0] for x in lines)
+        passage_py = "\n".join(x[1] for x in lines)
+        passage_en = "\n".join(x[2] for x in lines)
+        passage_vi = "\n".join(x[3] for x in lines)
+
+        time_opts_en = _rotate_opts([sc["time_en"], "6:00 a.m. on Monday", "12:00 p.m. on Thursday", "11:00 p.m. on Friday"], 1)
+        time_opts_vi = _rotate_opts([sc["time_vi"], "6 giờ sáng thứ Hai", "12 giờ trưa thứ Năm", "11 giờ đêm thứ Sáu"], 1)
+        place_opts_en = _rotate_opts([f"{sc['place_en'].title()} ({sc['place_zh']})", "Airport (机场)", "Hospital (医院)", "Supermarket (超市)"], 2)
+        place_opts_vi = _rotate_opts([f"{sc['place_vi'].capitalize()} ({sc['place_zh']})", "Sân bay (机场)", "Bệnh viện (医院)", "Siêu thị (超市)"], 2)
+        w0_opts_en = _rotate_opts([w0["en"], "Train ticket (火车票)", "Cold weather (天气冷)", "Newspaper (报纸)"], 3)
+        w0_opts_vi = _rotate_opts([w0["vi"], "Vé tàu hỏa (火车票)", "Thời tiết lạnh (天气冷)", "Báo giấy (报纸)"], 3)
+
         qs = [
             {
                 "id": f"ai_{variant_idx}_q1", "type": "mcq", "skillFocus": "detail",
-                "question": f"{p_vi} ({p_zh}) thường ôn bài vào thời điểm nào?",
-                "options": [t_vi, "6 giờ sáng thứ Hai", "12 giờ trưa thứ Tư", "11 giờ đêm thứ Sáu"],
-                "answer": t_vi,
-                "explain": f"Chi tiết trong bài nêu rõ thời điểm: '{t_zh}' ({t_vi})."
+                "question_en": f"When does {sc['name_en']} ({sc['name_zh']}) usually review new vocabulary?",
+                "options_en": time_opts_en,
+                "answer_en": sc["time_en"],
+                "explain_en": f"Line 2 clearly states: '{sc['time_zh']}' ({sc['time_en']}).",
+                "question": f"{sc['name_vi']} ({sc['name_zh']}) thường ôn tập từ mới vào thời điểm nào?",
+                "options": time_opts_vi,
+                "answer": sc["time_vi"],
+                "explain": f"Câu 2 nêu rõ thời điểm: '{sc['time_zh']}' ({sc['time_vi']}).",
             },
             {
                 "id": f"ai_{variant_idx}_q2", "type": "mcq", "skillFocus": "detail",
-                "question": f"{p_vi} thường ôn tập từ mới ở địa điểm nào?",
-                "options": ["Thư viện (图书馆)", "Sân bay (机场)", "Bệnh viện (医院)", "Quán cà phê (咖啡馆)"],
-                "answer": "Thư viện (图书馆)",
-                "explain": "Trong bài ghi: '他常在图书馆复习...' (ở thư viện)."
+                "question_en": f"Where does {sc['name_en']} review the vocabulary of {lesson_short}?",
+                "options_en": place_opts_en,
+                "answer_en": f"{sc['place_en'].title()} ({sc['place_zh']})",
+                "explain_en": f"The passage states: '他常在{sc['place_zh']}复习新课的生词。'",
+                "question": f"{sc['name_vi']} thường ôn từ mới ở địa điểm nào?",
+                "options": place_opts_vi,
+                "answer": f"{sc['place_vi'].capitalize()} ({sc['place_zh']})",
+                "explain": f"Trong bài ghi: '他常在{sc['place_zh']}复习新课的生词。' (tại {sc['place_vi']}).",
             },
             {
                 "id": f"ai_{variant_idx}_q3", "type": "tf", "skillFocus": "detail",
-                "question": f"Đúng hay Sai: Sau khi học xong, {p_vi} nghỉ ngơi uống trà khoảng 20 phút.",
+                "question_en": f"True or False: After studying, {sc['name_en']} rests for about {sc['mins']} minutes.",
+                "options_en": ["True (正确)", "False (错误)"],
+                "answer_en": "True (正确)",
+                "explain_en": f"The final sentence confirms they rest for {sc['mins']} minutes: '{lines[-1][0]}'",
+                "question": f"Đúng hay Sai: Sau khi học xong, {sc['name_vi']} nghỉ ngơi khoảng {sc['mins']} phút.",
                 "options": ["Đúng (True)", "Sai (False)"],
                 "answer": "Đúng (True)",
-                "explain": "Câu cuối bài: '喝茶休息二十分钟' (uống trà nghỉ 20 phút)."
+                "explain": f"Câu cuối bài xác nhận nghỉ {sc['mins']} phút: '{lines[-1][0]}'",
             },
             {
                 "id": f"ai_{variant_idx}_q4", "type": "mcq", "skillFocus": "vocab_context",
-                "question": f"Từ trọng tâm '{w0['hanzi']}' ({w0.get('pinyin', '')}) trong bài có nghĩa là gì?",
-                "options": [w0.get("vi", "từ khóa"), "Tàu hỏa", "Thời tiết lạnh", "Báo giấy"],
-                "answer": w0.get("vi", "từ khóa"),
-                "explain": f"Theo từ vựng bài học: {w0['hanzi']} ({w0.get('pinyin', '')}) = {w0.get('vi', '')}."
+                "question_en": f"In the passage, what does the key word '{w0['hanzi']}' ({w0['pinyin']}) mean?",
+                "options_en": w0_opts_en,
+                "answer_en": w0["en"],
+                "explain_en": f"Lesson vocabulary: {w0['hanzi']} ({w0['pinyin']}) = {w0['en']}.",
+                "question": f"Trong đoạn văn, từ trọng tâm '{w0['hanzi']}' ({w0['pinyin']}) có nghĩa là gì?",
+                "options": w0_opts_vi,
+                "answer": w0["vi"],
+                "explain": f"Theo từ vựng bài học: {w0['hanzi']} ({w0['pinyin']}) = {w0['vi']}.",
             },
             {
                 "id": f"ai_{variant_idx}_q5", "type": "fill", "skillFocus": "vocab_context",
-                "question": f"Điền chữ Hán Giản thể cho từ có nghĩa '{w1.get('vi', '')}' ({w1.get('pinyin', '')}):",
+                "question_en": f"Type the Simplified Chinese word meaning '{w1['en']}' ({w1['pinyin']}):",
+                "answer_en": w1["hanzi"],
+                "explain_en": f"Correct answer: '{w1['hanzi']}' ({w1['pinyin']}).",
+                "question": f"Điền chữ Hán Giản thể cho từ có nghĩa '{w1['vi']}' ({w1['pinyin']}):",
                 "answer": w1["hanzi"],
-                "explain": f"Đáp án chuẩn là '{w1['hanzi']}' ({w1.get('pinyin', '')})."
-            }
+                "explain": f"Đáp án chuẩn là '{w1['hanzi']}' ({w1['pinyin']}).",
+            },
         ]
         return {
-            "id": f"ai_ex_{skill}_{variant_idx}_{int(time.time()) % 10000}",
-            "title": f"Bài {variant_idx} (AI Tạo Mới · Củng cố {focus_label})",
-            "focusReason": f"AI đã phân tích bài gốc & lỗi sai trước đó để tạo đoạn mới nhắm vào: {focus_label}.",
+            "id": f"ai_ex_reading_{uid_suffix}",
+            "title": f"Exercise {variant_idx} (AI Generated · {focus_label_en})",
+            "title_vi": f"Bài {variant_idx} (AI Tạo Mới · Củng cố {focus_label_vi})",
+            "focusReason": f"AI đã phân tích bài gốc & lỗi sai trước đó để tạo bài đọc mới nhắm vào: {focus_label_vi}.",
+            "focusReason_en": f"AI analyzed your lesson & mistakes to generate a fresh passage targeting: {focus_label_en}.",
             "sourceTag": "ai_generated",
-            "audioSource": "tts" if skill == "listening" else None,
-            "audioText": passage_zh if skill == "listening" else None,
             "chinese": passage_zh,
-            "pinyin": "Bấm từng từ trong đoạn để xem Pinyin tức thì hoặc bấm nút Loa để nghe chuẩn Putonghua.",
+            "pinyin": passage_py,
+            "english": passage_en,
             "vietnamese": passage_vi,
             "questions": qs,
             "validated": True,
             "provider": "pedagogical-engine",
         }
 
-    if skill == "writing":
+    if skill == "listening":
+        # Genuine multi-turn dialogue with 100% aligned speaker, Chinese, Pinyin, English & Vietnamese
+        t_lines = [
+            {
+                "speaker": sc["partner_zh"],
+                "chinese": f"{sc['name_zh']}，你好！你现在在{sc['place_zh']}吗？",
+                "pinyin": f"{sc['name_py']}, nǐ hǎo! Nǐ xiànzài zài {sc['place_py']} ma?",
+                "english": f"Hello, {sc['name_en']}! Are you at {sc['place_en']} right now?",
+                "vietnamese": f"Chào {sc['name_vi']}! Bây giờ bạn đang ở {sc['place_vi']} phải không?",
+            },
+            {
+                "speaker": sc["name_zh"],
+                "chinese": f"是的，我在复习{lesson_short}的生词，特别是“{w0['hanzi']}”和“{w1['hanzi']}”。",
+                "pinyin": f"Shì de, wǒ zài fùxí {lesson_short} de shēngcí, tèbié shì \"{w0['pinyin']}\" hé \"{w1['pinyin']}\".",
+                "english": f"Yes, I'm reviewing the new words of {lesson_short}, especially \"{w0['hanzi']}\" ({w0['en']}) and \"{w1['hanzi']}\" ({w1['en']}).",
+                "vietnamese": f"Đúng vậy, mình đang ôn từ mới của {lesson_short}, đặc biệt là \"{w0['hanzi']}\" ({w0['vi']}) và \"{w1['hanzi']}\" ({w1['vi']}).",
+            },
+            {
+                "speaker": sc["partner_zh"],
+                "chinese": f"太好了！我们{sc['time_zh']}一起练习“{w2['hanzi']}”吧。",
+                "pinyin": f"Tài hǎo le! Wǒmen {sc['time_py']} yìqǐ liànxí \"{w2['pinyin']}\" ba.",
+                "english": f"Great! Let's practice \"{w2['hanzi']}\" ({w2['en']}) together at {sc['time_en']}.",
+                "vietnamese": f"Tuyệt quá! Vào {sc['time_vi']} chúng ta cùng luyện \"{w2['hanzi']}\" ({w2['vi']}) nhé.",
+            },
+            {
+                "speaker": sc["name_zh"],
+                "chinese": f"没问题！学完以后我们去{sc['after_zh']}。",
+                "pinyin": f"Méi wèntí! Xuéwán yǐhòu wǒmen qù {sc['after_py']}.",
+                "english": f"No problem! After studying, let's go to {sc['after_en']}.",
+                "vietnamese": f"Không thành vấn đề! Học xong chúng ta đi {sc['after_vi']}.",
+            },
+            {
+                "speaker": sc["partner_zh"],
+                "chinese": f"好的，那就这样说定了，再见！",
+                "pinyin": "Hǎo de, nà jiù zhèyàng shuōdìng le, zàijiàn!",
+                "english": "Okay, then it's a deal. Goodbye!",
+                "vietnamese": "Được rồi, cứ quyết định vậy nhé, tạm biệt!",
+            },
+        ]
+        full_zh = "\n".join(x["chinese"] for x in t_lines)
+        full_py = "\n".join(x["pinyin"] for x in t_lines)
+        full_en = "\n".join(x["english"] for x in t_lines)
+        full_vi = "\n".join(x["vietnamese"] for x in t_lines)
+
+        qs = [
+            {
+                "id": f"ai_lis_{variant_idx}_q1", "type": "mcq", "skillFocus": "detail",
+                "question_en": f"Where is {sc['name_en']} right now in the dialogue?",
+                "options_en": _rotate_opts([f"{sc['place_en'].title()} ({sc['place_zh']})", "Hospital (医院)", "Train station (火车站)", "Supermarket (超市)"], 1),
+                "answer_en": f"{sc['place_en'].title()} ({sc['place_zh']})",
+                "explain_en": f"{sc['partner_en']} asks if they are at {sc['place_en']} ({sc['place_zh']}), and {sc['name_en']} replies '是的' (Yes).",
+                "question": f"Trong đoạn hội thoại, {sc['name_vi']} hiện đang ở đâu?",
+                "options": _rotate_opts([f"{sc['place_vi'].capitalize()} ({sc['place_zh']})", "Bệnh viện (医院)", "Ga tàu hỏa (火车站)", "Siêu thị (超市)"], 1),
+                "answer": f"{sc['place_vi'].capitalize()} ({sc['place_zh']})",
+                "explain": f"{sc['partner_vi']} hỏi đang ở {sc['place_vi']} ({sc['place_zh']}) phải không và {sc['name_vi']} đáp '是的' (Đúng vậy).",
+            },
+            {
+                "id": f"ai_lis_{variant_idx}_q2", "type": "mcq", "skillFocus": "detail",
+                "question_en": "When do they plan to practice together?",
+                "options_en": _rotate_opts([sc["time_en"], "7:00 a.m. on Tuesday", "1:00 p.m. on Friday", "10:30 p.m. tonight"], 2),
+                "answer_en": sc["time_en"],
+                "explain_en": f"{sc['partner_en']} suggests: '我们{sc['time_zh']}一起练习...' ({sc['time_en']}).",
+                "question": "Hai người hẹn cùng nhau luyện tập vào lúc nào?",
+                "options": _rotate_opts([sc["time_vi"], "7 giờ sáng thứ Ba", "1 giờ chiều thứ Sáu", "10 giờ 30 tối nay"], 2),
+                "answer": sc["time_vi"],
+                "explain": f"{sc['partner_vi']} rủ: '我们{sc['time_zh']}一起练习...' ({sc['time_vi']}).",
+            },
+            {
+                "id": f"ai_lis_{variant_idx}_q3", "type": "mcq", "skillFocus": "vocab_context",
+                "question_en": f"What is the meaning of '{w0['hanzi']}' ({w0['pinyin']}) mentioned in the audio?",
+                "options_en": _rotate_opts([w0["en"], "Airplane (飞机)", "Watermelon (西瓜)", "Winter (冬天)"], 3),
+                "answer_en": w0["en"],
+                "explain_en": f"{w0['hanzi']} ({w0['pinyin']}) means: {w0['en']}.",
+                "question": f"Từ '{w0['hanzi']}' ({w0['pinyin']}) xuất hiện trong đoạn nghe có nghĩa là gì?",
+                "options": _rotate_opts([w0["vi"], "Máy bay (飞机)", "Quả dưa hấu (西瓜)", "Mùa đông (冬天)"], 3),
+                "answer": w0["vi"],
+                "explain": f"{w0['hanzi']} ({w0['pinyin']}) có nghĩa là: {w0['vi']}.",
+            },
+            {
+                "id": f"ai_lis_{variant_idx}_q4", "type": "tf", "skillFocus": "detail",
+                "question_en": f"True or False: After studying, they plan to rest for {sc['mins']} minutes.",
+                "options_en": ["True (正确)", "False (错误)"],
+                "answer_en": "True (正确)",
+                "explain_en": f"Turn 4 states: '{t_lines[3]['chinese']}'",
+                "question": f"Đúng hay Sai: Sau khi học xong, hai người dự định nghỉ ngơi {sc['mins']} phút.",
+                "options": ["Đúng (True)", "Sai (False)"],
+                "answer": "Đúng (True)",
+                "explain": f"Lời thoại 4 nêu rõ: '{t_lines[3]['chinese']}'",
+            },
+        ]
         return {
-            "id": f"ai_ex_wr_{variant_idx}_{int(time.time()) % 10000}",
-            "title": f"Đề viết {variant_idx} (AI Tạo Mới – HSK {hsk_level})",
-            "focusReason": f"Luyện viết câu/đoạn ứng dụng các từ mới của {lesson_title}.",
+            "id": f"ai_ex_listening_{uid_suffix}",
+            "title": f"Listening {variant_idx} (AI Dialogue · {focus_label_en})",
+            "title_vi": f"Bài nghe {variant_idx} (AI Tạo Mới · Hội thoại {focus_label_vi})",
+            "focusReason": f"Hội thoại nghe hiểu AI tạo riêng theo từ vựng {lesson_short}, đồng bộ phụ đề từng câu.",
+            "focusReason_en": f"AI-generated dialogue tailored to {lesson_short} vocabulary with sentence-synced subtitles.",
             "sourceTag": "ai_generated",
-            "prompt": f"Hãy viết 2–3 câu tiếng Trung Giản thể kể về thói quen học tập hoặc hoạt động vào {t_vi}, sử dụng ít nhất 2 từ: {w0['hanzi']}, {w1['hanzi']}, {w2['hanzi']}.",
+            "audioSource": "tts",
+            "audioFile": "",
+            "audioUrl": "",
+            "audioText": full_zh,
+            "chinese": full_zh,
+            "pinyin": full_py,
+            "english": full_en,
+            "vietnamese": full_vi,
+            "transcriptSource": "ai_generated",
+            "transcriptLabel": f"Phụ đề khớp 100% Hội thoại AI tạo (Bài {variant_idx} · {lesson_short})",
+            "transcriptLines": t_lines,
+            "targetHint_en": f"Listen to the AI dialogue between {sc['partner_en']} and {sc['name_en']}. Focus on '{w0['hanzi']}' ({w0['pinyin']}) and '{w2['hanzi']}' ({w2['pinyin']}).",
+            "targetHint": f"Nghe hội thoại giữa {sc['partner_vi']} và {sc['name_vi']}, chú ý từ '{w0['hanzi']}' ({w0['pinyin']}) và '{w2['hanzi']}' ({w2['pinyin']}).",
+            "questions": qs,
+            "validated": True,
+            "provider": "pedagogical-engine",
+        }
+
+    if skill == "writing":
+        wr_prompts = [
+            (
+                f"Write 2–3 Simplified Chinese sentences about your study routine at {sc['time_en']}, using at least 2 words: {w0['hanzi']}, {w1['hanzi']}, {w2['hanzi']}.",
+                f"Hãy viết 2–3 câu tiếng Trung Giản thể kể về thói quen học tập vào {sc['time_vi']}, sử dụng ít nhất 2 từ: {w0['hanzi']} ({w0['vi']}), {w1['hanzi']} ({w1['vi']}), {w2['hanzi']} ({w2['vi']}).",
+                f"{sc['time_zh']}，我在{sc['place_zh']}学习汉语。今天我练习了“{w0['hanzi']}”和“{w1['hanzi']}”。",
+                f"{sc['time_py']}, wǒ zài {sc['place_py']} xuéxí Hànyǔ. Jīntiān wǒ liànxí le \"{w0['pinyin']}\" hé \"{w1['pinyin']}\".",
+                f"At {sc['time_en']}, I study Chinese at {sc['place_en']}. Today I practiced \"{w0['hanzi']}\" and \"{w1['hanzi']}\".",
+                f"Vào {sc['time_vi']}, tôi học tiếng Hán ở {sc['place_vi']}. Hôm nay tôi đã luyện \"{w0['hanzi']}\" và \"{w1['hanzi']}\".",
+            ),
+            (
+                f"Write a short 3-line mini dialogue with a friend ({sc['partner_en']}) using '{w0['hanzi']}' ({w0['en']}) and '{w2['hanzi']}' ({w2['en']}).",
+                f"Viết 1 đoạn hội thoại ngắn 3 câu với bạn ({sc['partner_vi']}), trong đó dùng từ '{w0['hanzi']}' ({w0['vi']}) và '{w2['hanzi']}' ({w2['vi']}).",
+                f"你好！你每天都学习汉语吗？是的，我常练习“{w0['hanzi']}”和“{w2['hanzi']}”。",
+                f"Nǐ hǎo! Nǐ měitiān dōu xuéxí Hànyǔ ma? Shì de, wǒ cháng liànxí \"{w0['pinyin']}\" hé \"{w2['pinyin']}\".",
+                f"Hello! Do you study Chinese every day? Yes, I often practice \"{w0['hanzi']}\" and \"{w2['hanzi']}\".",
+                f"Xin chào! Bạn có học tiếng Hán mỗi ngày không? Đúng vậy, tôi thường luyện \"{w0['hanzi']}\" và \"{w2['hanzi']}\".",
+            ),
+            (
+                f"Describe what you and {sc['name_en']} do at {sc['place_en']} in 2–3 sentences, including '{w1['hanzi']}' ({w1['en']}) and '{w3['hanzi']}' ({w3['en']}).",
+                f"Miêu tả hoạt động của bạn và {sc['name_vi']} tại {sc['place_vi']} trong 2–3 câu, có dùng '{w1['hanzi']}' ({w1['vi']}) và '{w3['hanzi']}' ({w3['vi']}).",
+                f"我和{sc['name_zh']}一起在{sc['place_zh']}复习生词。我们都会用“{w1['hanzi']}”和“{w3['hanzi']}”造句。",
+                f"Wǒ hé {sc['name_py']} yìqǐ zài {sc['place_py']} fùxí shēngcí. Wǒmen dōu huì yòng \"{w1['pinyin']}\" hé \"{w3['pinyin']}\" zàojù.",
+                f"{sc['name_en']} and I review new words together at {sc['place_en']}. We can both make sentences with \"{w1['hanzi']}\" and \"{w3['hanzi']}\".",
+                f"Tôi và {sc['name_vi']} cùng nhau ôn từ mới tại {sc['place_vi']}. Chúng tôi đều biết đặt câu với \"{w1['hanzi']}\" và \"{w3['hanzi']}\".",
+            ),
+        ]
+        wp = wr_prompts[variant_idx % len(wr_prompts)]
+        return {
+            "id": f"ai_ex_wr_{uid_suffix}",
+            "title": f"Writing Task {variant_idx} (AI Generated – HSK {hsk_level})",
+            "title_vi": f"Đề viết {variant_idx} (AI Tạo Mới – HSK {hsk_level})",
+            "focusReason": f"Luyện viết câu/đoạn ứng dụng các từ mới của {lesson_title}.",
+            "focusReason_en": f"Guided writing applying core vocabulary from {lesson_title}.",
+            "sourceTag": "ai_generated",
+            "prompt_en": wp[0],
+            "prompt": wp[1],
+            "sampleAnswer": wp[2],
+            "samplePinyin": wp[3],
+            "sampleEnglish": wp[4],
+            "sampleVietnamese": wp[5],
             "targetWord": w0["hanzi"],
             "hskLevel": hsk_level,
             "validated": True,
             "provider": "pedagogical-engine",
         }
 
-    # Grammar / Vocab / Speaking adaptive exercise
+    if skill == "speaking":
+        sp_prompts = [
+            (
+                f"Shadowing Drill: Listen to the model sentence and read aloud clearly with accurate tones.",
+                f"Luyện đọc theo mẫu (Shadowing): Nghe câu mẫu và đọc to, rõ 4 thanh điệu.",
+                f"{sc['time_zh']}，我常在{sc['place_zh']}复习“{w0['hanzi']}”和“{w1['hanzi']}”。",
+                f"{sc['time_py']}, wǒ cháng zài {sc['place_py']} fùxí \"{w0['pinyin']}\" hé \"{w1['pinyin']}\".",
+                f"At {sc['time_en']}, I often review \"{w0['hanzi']}\" and \"{w1['hanzi']}\" at {sc['place_en']}.",
+                f"Vào {sc['time_vi']}, tôi thường ôn \"{w0['hanzi']}\" và \"{w1['hanzi']}\" tại {sc['place_vi']}.",
+            ),
+            (
+                f"Q&A Reflex: Answer the question aloud in 1–2 Mandarin sentences using '{w0['hanzi']}' ({w0['en']}).",
+                f"Phản xạ hỏi–đáp: Trả lời to câu hỏi sau bằng 1–2 câu tiếng Trung có dùng '{w0['hanzi']}' ({w0['vi']}).",
+                f"你平时怎么用“{w0['hanzi']}”？请用它说一句话。",
+                f"Nǐ píngshí zěnme yòng \"{w0['pinyin']}\"? Qǐng yòng tā shuō yí jù huà.",
+                f"How do you usually use \"{w0['hanzi']}\"? Please say one sentence with it.",
+                f"Bình thường bạn dùng \"{w0['hanzi']}\" như thế nào? Hãy nói một câu có chứa từ này.",
+            ),
+            (
+                f"Roleplay Response: Reply naturally to {sc['partner_en']}'s invitation in Mandarin.",
+                f"Đóng vai giao tiếp: Đáp lại lời rủ của {sc['partner_vi']} một cách tự nhiên bằng tiếng Trung.",
+                f"你好！{sc['time_zh']}我们一起去{sc['place_zh']}学习汉语，好吗？",
+                f"Nǐ hǎo! {sc['time_py']} wǒmen yìqǐ qù {sc['place_py']} xuéxí Hànyǔ, hǎo ma?",
+                f"Hello! Shall we go to {sc['place_en']} together to study Chinese at {sc['time_en']}?",
+                f"Xin chào! Vào {sc['time_vi']} chúng ta cùng đi {sc['place_vi']} học tiếng Hán nhé?",
+            ),
+        ]
+        sp = sp_prompts[variant_idx % len(sp_prompts)]
+        return {
+            "id": f"ai_ex_sp_{uid_suffix}",
+            "title": f"Speaking Drill {variant_idx} (AI Generated · HSK {hsk_level})",
+            "title_vi": f"Bài luyện nói {variant_idx} (AI Tạo Mới · HSK {hsk_level})",
+            "focusReason": f"Luyện phát âm & phản xạ giao tiếp trực tiếp theo chủ đề {lesson_title}.",
+            "focusReason_en": f"Pronunciation & speaking reflex drill tailored to {lesson_title}.",
+            "sourceTag": "ai_generated",
+            "prompt_en": sp[0],
+            "prompt": sp[1],
+            "sampleQuestion": sp[2],
+            "samplePinyin": sp[3],
+            "sampleEnglish": sp[4],
+            "sampleVietnamese": sp[5],
+            "hskLevel": hsk_level,
+            "validated": True,
+            "provider": "pedagogical-engine",
+        }
+
+    # Grammar (and Vocabulary fallback) dedicated bilingual drill generator
+    gr_patterns = [
+        (
+            "Time & Place Word Order (Thời gian + Địa điểm + Động từ)",
+            "Subject + Time (时间) + 在 Place (地点) + Verb + Object",
+            "In Mandarin, both Time and Location (在 + place) MUST come BEFORE the main verb.",
+            "Trong tiếng Trung, trạng ngữ Thời gian và Địa điểm (在 + nơi chốn) LUÔN đứng TRƯỚC động từ chính.",
+            "Which sentence has the CORRECT Chinese word order?",
+            "Chọn câu tiếng Trung có trật tự từ ĐÚNG ngữ pháp:",
+            [f"我{sc['time_zh']}在{sc['place_zh']}学习汉语。", f"我学习汉语在{sc['place_zh']}{sc['time_zh']}。", f"我在{sc['place_zh']}学习汉语{sc['time_zh']}。", f"学习汉语我{sc['time_zh']}在{sc['place_zh']}。"],
+            f"我{sc['time_zh']}在{sc['place_zh']}学习汉语。",
+            f"Order: Subject (我) + Time ({sc['time_zh']}) + Place (在{sc['place_zh']}) + Verb-Object (学习汉语).",
+            f"Trật tự chuẩn: Chủ ngữ (我) + Thời gian ({sc['time_zh']}) + Địa điểm (在{sc['place_zh']}) + Động từ (学习汉语).",
+        ),
+        (
+            "Negation: 不 vs 没(有)",
+            "Subject + 不 + Verb/Adj (present/habit)  |  Subject + 没(有) + Noun / Past Verb",
+            "Use 没(有) to negate 有 (to have) or completed past actions; use 不 for general/habitual negation or adjectives.",
+            "Dùng 没(有) để phủ định động từ 有 hoặc hành động quá khứ; dùng 不 cho hiện tại, thói quen và tính từ.",
+            "Choose the grammatically CORRECT negative sentence:",
+            "Chọn câu phủ định ĐÚNG chuẩn ngữ pháp tiếng Trung:",
+            ["今天我没有时间去图书馆。", "今天我不有时间去图书馆。", "今天我没是学生。", "今天我有很多不书。"],
+            "今天我没有时间去图书馆。",
+            "The verb 有 is ALWAYS negated with 没 (没有), never 不有!",
+            "Động từ 有 LUÔN đi với 没 (没有), tuyệt đối không dùng 不有!",
+        ),
+        (
+            "Yes/No & Follow-up Questions (吗 & 呢)",
+            "Statement + 吗？ (Yes/No)  |  Noun/Pronoun + 呢？ (What about...?)",
+            "Add 吗 at the end of a statement to form a Yes/No question; never combine 吗 with a wh-question word like 什么.",
+            "Thêm 吗 vào cuối câu trần thuật để tạo câu hỏi Có/Không; KHÔNG dùng 吗 chung với từ để hỏi như 什么, 谁, 哪儿.",
+            "Which question is grammatically CORRECT?",
+            "Câu hỏi nào dưới đây ĐÚNG ngữ pháp tiếng Trung?",
+            ["你是中国学生吗？", "你叫什么名字吗？", "你去哪儿吗？", "谁是你的老师吗？"],
+            "你是中国学生吗？",
+            "Never add 吗 when the sentence already contains a question word (什么 / 哪儿 / 谁).",
+            "Không thêm 吗 khi trong câu đã có từ để hỏi (什么 / 哪儿 / 谁).",
+        ),
+    ]
+    gp = gr_patterns[variant_idx % len(gr_patterns)]
+    q2_opts = _rotate_opts(gp[6], 2)
+
     return {
-        "id": f"ai_ex_{skill}_{variant_idx}_{int(time.time()) % 10000}",
-        "title": f"Bài luyện {variant_idx} (AI Tạo Mới · {focus_label})",
-        "focusReason": f"Bài tập củng cố tự động dựa trên từ vựng & cấu trúc của {lesson_title}.",
+        "id": f"ai_ex_{skill}_{uid_suffix}",
+        "title": f"Grammar Exercise {variant_idx} (AI Generated · {gp[0].split('(')[0].strip()})",
+        "title_vi": f"Bài ngữ pháp {variant_idx} (AI Tạo Mới · {gp[0]})",
+        "focusReason": f"Bài tập ngữ pháp & từ vựng củng cố trực tiếp cho {lesson_title}.",
+        "focusReason_en": f"Targeted grammar & vocabulary drill for {lesson_title}.",
         "sourceTag": "ai_generated",
-        "prompt": f"Trả lời câu hỏi hoặc hoàn thành 4 câu trắc nghiệm củng cố cho {lesson_title}:",
-        "sampleQuestion": f"你什么时候用“{w0['hanzi']}”？请造一个句子。",
+        "formula": gp[1],
+        "explanation_en": gp[2],
+        "explanation": gp[3],
         "questions": [
             {
                 "id": f"ai_g_{variant_idx}_1", "type": "mcq", "skillFocus": "vocab_context",
-                "question": f"Nghĩa đúng của '{w0['hanzi']}' ({w0.get('pinyin', '')}) là gì?",
-                "options": [w0.get("vi", ""), "Quả táo", "Chạy bộ", "Sân bay"],
-                "answer": w0.get("vi", ""),
-                "explain": f"{w0['hanzi']} ({w0.get('pinyin', '')}) = {w0.get('vi', '')}."
+                "question_en": f"What is the correct meaning of '{w0['hanzi']}' ({w0['pinyin']})?",
+                "options_en": _rotate_opts([w0["en"], "Apple (苹果)", "Running (跑步)", "Airport (机场)"], 1),
+                "answer_en": w0["en"],
+                "explain_en": f"{w0['hanzi']} ({w0['pinyin']}) = {w0['en']}.",
+                "question": f"Nghĩa đúng của từ '{w0['hanzi']}' ({w0['pinyin']}) là gì?",
+                "options": _rotate_opts([w0["vi"], "Quả táo (苹果)", "Chạy bộ (跑步)", "Sân bay (机场)"], 1),
+                "answer": w0["vi"],
+                "explain": f"{w0['hanzi']} ({w0['pinyin']}) = {w0['vi']}.",
             },
             {
                 "id": f"ai_g_{variant_idx}_2", "type": "mcq", "skillFocus": "detail",
-                "question": "Chọn câu tiếng Trung ĐÚNG ngữ pháp:",
-                "options": ["我每天早上七点起床。", "我起床每天早上七点。", "我是很忙今天。", "他不有时间。"],
-                "answer": "我每天早上七点起床。",
-                "explain": "Trạng ngữ thời gian (每天早上七点) đứng TRƯỚC động từ (起床)."
+                "question_en": gp[4],
+                "options_en": q2_opts,
+                "answer_en": gp[7],
+                "explain_en": gp[8],
+                "question": gp[5],
+                "options": q2_opts,
+                "answer": gp[7],
+                "explain": gp[9],
             },
             {
-                "id": f"ai_g_{variant_idx}_3", "type": "fill", "skillFocus": "vocab_context",
-                "question": f"Nhập chữ Hán Giản thể tương ứng với '{w2.get('vi', '')}' ({w2.get('pinyin', '')}):",
+                "id": f"ai_g_{variant_idx}_3", "type": "mcq", "skillFocus": "vocab_context",
+                "question_en": f"What does '{w1['hanzi']}' ({w1['pinyin']}) mean?",
+                "options_en": _rotate_opts([w1["en"], "Bus (公共汽车)", "Doctor (医生)", "Winter (冬天)"], 3),
+                "answer_en": w1["en"],
+                "explain_en": f"{w1['hanzi']} ({w1['pinyin']}) = {w1['en']}.",
+                "question": f"Từ '{w1['hanzi']}' ({w1['pinyin']}) có nghĩa là gì?",
+                "options": _rotate_opts([w1["vi"], "Xe buýt (公共汽车)", "Bác sĩ (医生)", "Mùa đông (冬天)"], 3),
+                "answer": w1["vi"],
+                "explain": f"{w1['hanzi']} ({w1['pinyin']}) = {w1['vi']}.",
+            },
+            {
+                "id": f"ai_g_{variant_idx}_4", "type": "fill", "skillFocus": "vocab_context",
+                "question_en": f"Type the Simplified Chinese word meaning '{w2['en']}' ({w2['pinyin']}):",
+                "answer_en": w2["hanzi"],
+                "explain_en": f"Correct answer: {w2['hanzi']} ({w2['pinyin']}).",
+                "question": f"Nhập chữ Hán Giản thể tương ứng với '{w2['vi']}' ({w2['pinyin']}):",
                 "answer": w2["hanzi"],
-                "explain": f"Đáp án: {w2['hanzi']} ({w2.get('pinyin', '')})."
-            }
+                "explain": f"Đáp án chuẩn: {w2['hanzi']} ({w2['pinyin']}).",
+            },
         ],
         "validated": True,
         "provider": "pedagogical-engine",

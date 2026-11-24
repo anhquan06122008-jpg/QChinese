@@ -8663,50 +8663,103 @@ window.QCore = (function () {
   }
 
   /* Mandarin Putonghua Audio Synthesis (Server Cached MP3 + Web Speech zh-CN Fallback) */
+  let speechSessionSeq = 0;
+
+  function stopSpeech() {
+    speechSessionSeq += 1;
+    if (activeAudio) {
+      try {
+        activeAudio.onended = null;
+        activeAudio.onerror = null;
+        activeAudio.pause();
+      } catch (_) {}
+      activeAudio = null;
+    }
+    if (window.speechSynthesis) {
+      try { window.speechSynthesis.cancel(); } catch (_) {}
+    }
+  }
+
+  function setSpeechVolume(vol) {
+    const v = Math.max(0, Math.min(1, Number(vol)));
+    if (activeAudio) {
+      try { activeAudio.volume = v; } catch (_) {}
+    }
+  }
+
+  function setSpeechRate(rate) {
+    const r = Math.max(0.5, Math.min(2.0, Number(rate) || 1.0));
+    if (activeAudio) {
+      try { activeAudio.playbackRate = r; } catch (_) {}
+    }
+  }
+
   function speakChinese(text, opts = {}) {
     if (!text) return;
     const cleanText = String(text).trim();
     if (!cleanText) return;
 
     const baseRate = appState ? appState.profile.audioSpeed || 1.0 : 1.0;
-    const rate = opts.rate || (opts.slow ? 0.65 : baseRate);
+    const rate = Math.max(0.5, Math.min(2.0, Number(opts.rate || (opts.slow ? 0.65 : baseRate))));
+    const volume = typeof opts.volume === "number" ? Math.max(0, Math.min(1, opts.volume)) : 1.0;
     const slowFlag = opts.slow || rate <= 0.7 ? "1" : "0";
 
-    if (activeAudio) {
-      try { activeAudio.pause(); } catch (_) {}
-      activeAudio = null;
-    }
-    if (window.speechSynthesis) {
-      try { window.speechSynthesis.cancel(); } catch (_) {}
-    }
+    stopSpeech();
+    const mySeq = speechSessionSeq;
+    let started = false;
+    const fireStart = () => {
+      if (!started && mySeq === speechSessionSeq) {
+        started = true;
+        if (opts.onStart) opts.onStart();
+      }
+    };
+    const fireEnd = () => {
+      if (mySeq === speechSessionSeq && opts.onEnd) opts.onEnd();
+    };
 
     const fallbackWebSpeech = () => {
+      if (mySeq !== speechSessionSeq) return;
       if (!window.speechSynthesis) {
         showToast("Trình duyệt không hỗ trợ phát âm thanh.");
+        fireEnd();
         return;
       }
       const utter = new SpeechSynthesisUtterance(cleanText);
       utter.lang = "zh-CN";
-      utter.rate = Math.max(0.45, Math.min(1.4, rate));
+      utter.rate = rate;
+      utter.volume = volume;
       const voices = window.speechSynthesis.getVoices() || [];
       const zhVoice =
         voices.find((v) => v.lang === "zh-CN" && /Xiaoxiao|Yunxi|Huihui|Kangkang|Google|Putonghua/i.test(v.name)) ||
         voices.find((v) => /^zh(-|_)?CN/i.test(v.lang)) ||
         voices.find((v) => /^zh/i.test(v.lang));
       if (zhVoice) utter.voice = zhVoice;
-      if (opts.onEnd) utter.onend = opts.onEnd;
+      utter.onstart = () => fireStart();
+      utter.onend = () => fireEnd();
+      utter.onerror = () => fireEnd();
+      fireStart();
       window.speechSynthesis.speak(utter);
     };
 
-    if (serverHealth.ok) {
-      const audio = new Audio(`api/tts?text=${encodeURIComponent(cleanText)}&slow=${slowFlag}`);
-      audio.playbackRate = slowFlag === "1" ? 0.92 : Math.max(0.5, Math.min(1.4, rate));
+    if (serverHealth.ok && cleanText.length <= 200) {
+      const ttsUrl = resolveApiUrl(`/api/tts?text=${encodeURIComponent(cleanText)}&slow=${slowFlag}`);
+      const audio = new Audio(ttsUrl);
+      audio.playbackRate = slowFlag === "1" ? Math.min(1.0, rate / 0.7) : rate;
+      audio.volume = volume;
       activeAudio = audio;
+      audio.onplay = () => fireStart();
       audio.onended = () => {
-        if (opts.onEnd) opts.onEnd();
+        if (activeAudio === audio) activeAudio = null;
+        fireEnd();
       };
-      audio.onerror = () => fallbackWebSpeech();
-      audio.play().catch(() => fallbackWebSpeech());
+      audio.onerror = () => {
+        if (activeAudio === audio) activeAudio = null;
+        fallbackWebSpeech();
+      };
+      audio.play().catch(() => {
+        if (activeAudio === audio) activeAudio = null;
+        fallbackWebSpeech();
+      });
     } else {
       fallbackWebSpeech();
     }
@@ -8950,6 +9003,9 @@ window.QCore = (function () {
     recordHanziPractice,
     addToNotebook,
     speakChinese,
+    stopSpeech,
+    setSpeechVolume,
+    setSpeechRate,
     captureLearnerVoice,
     resolveHanziDetail,
     fetchStrokeData,
@@ -15137,6 +15193,7 @@ window.QLessonStudio = (function () {
 
   /* ---------- SPLIT-SCREEN READING (LEFT: PASSAGE · RIGHT: 5 QUESTIONS + GRADING) ---------- */
   function renderReadingSplit(stage, lesson, ex, parentContainer) {
+    stopActiveTtsPlayer();
     const vi = isViMode();
     if (!ex) { stage.innerHTML = `<div class="card">${vi ? 'Chưa có bài đọc. Bấm "✨ AI – TẠO BÀI TẬP MỚI" phía trên!' : 'No reading exercise yet. Click "✨ AI – Generate New Exercise" above!'}</div>`; return; }
     const st = QCore.getState();
@@ -15145,6 +15202,9 @@ window.QLessonStudio = (function () {
     const alignedEn = formatAlignedLines(ex.english, ex.chinese);
     const alignedVi = formatAlignedLines(ex.vietnamese, ex.chinese);
 
+    const rdTitle = (vi && ex.title_vi) ? ex.title_vi : (ex.title || "");
+    const rdFocus = (!vi && ex.focusReason_en) ? ex.focusReason_en : (ex.focusReason || "");
+
     stage.innerHTML = `
       <div class="grid-2" style="align-items:start;gap:16px;">
         <!-- LEFT PANE: Chinese Passage + Line-Aligned Pinyin, English & Vietnamese -->
@@ -15152,7 +15212,7 @@ window.QLessonStudio = (function () {
           <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
             <div>
               ${sourceTagBadge(ex.sourceTag)}
-              <h3 style="margin:6px 0 0;font-size:17px;">${QCore.escapeHtml(ex.title)}</h3>
+              <h3 style="margin:6px 0 0;font-size:17px;">${QCore.escapeHtml(rdTitle)}</h3>
             </div>
             <div style="display:flex;gap:6px;flex-wrap:wrap;">
               <button class="btn ${showPinyin ? "btn-primary" : "btn-outline"} btn-sm" id="lrd-py">ā Pinyin</button>
@@ -15162,7 +15222,7 @@ window.QLessonStudio = (function () {
             </div>
           </div>
 
-          ${ex.focusReason ? `<div class="vi-hint-banner" style="margin-bottom:10px;"><span>🎯</span><div>${QCore.escapeHtml(ex.focusReason)}</div></div>` : ""}
+          ${rdFocus ? `<div class="vi-hint-banner" style="margin-bottom:10px;"><span>🎯</span><div>${QCore.escapeHtml(rdFocus)}</div></div>` : ""}
 
           <div class="card-subtle hanzi-text" style="font-size:21px;line-height:2.0;white-space:pre-line;margin-bottom:12px;">${QCore.escapeHtml(ex.chinese)}</div>
 
@@ -15294,8 +15354,21 @@ window.QLessonStudio = (function () {
 
   /* ---------- LISTENING INSIDE AI PDF HSK 3.0 (QEnglish-style Full Audio Player + Collapsible Synced Transcript) ---------- */
   let lisPlaybackRate = 1.0;
+  let lisVolume = 1.0;
+  let lisMuted = false;
   let lisTranscriptOpen = false;
   let lisActiveLineIdx = -1;
+  let activeTtsCleanup = null;
+
+  function stopActiveTtsPlayer() {
+    if (typeof activeTtsCleanup === "function") {
+      try { activeTtsCleanup(); } catch (_) {}
+      activeTtsCleanup = null;
+    }
+    if (window.QCore && typeof QCore.stopSpeech === "function") {
+      QCore.stopSpeech();
+    }
+  }
 
   function fmtTime(sec) {
     const s = Math.max(0, Math.floor(Number(sec) || 0));
@@ -15346,6 +15419,7 @@ window.QLessonStudio = (function () {
   }
 
   function renderListeningEx(stage, lesson, ex, parentContainer) {
+    stopActiveTtsPlayer();
     const vi = isViMode();
     if (!ex) { stage.innerHTML = `<div class="card">${vi ? "Chưa có bài nghe." : "No listening exercise yet."}</div>`; return; }
     lisActiveLineIdx = -1;
@@ -15500,14 +15574,18 @@ window.QLessonStudio = (function () {
             return `
             <div class="card-subtle">
               <div style="font-weight:700;margin-bottom:8px;">${vi ? `Câu ${qi + 1}.` : `Question ${qi + 1}.`} ${QCore.escapeHtml(qf.text)}</div>
-              <div style="display:flex;flex-direction:column;gap:6px;">
-                ${qf.options.map((opt) => `
-                  <label style="display:flex;gap:8px;align-items:center;cursor:pointer;font-size:13.5px;">
-                    <input type="radio" name="llis_q_${qi}" value="${QCore.escapeHtml(opt)}" />
-                    <span>${QCore.escapeHtml(opt)}</span>
-                  </label>
-                `).join("")}
-              </div>
+              ${q.type === "fill" ? `
+                <input class="input-field hanzi-text" id="llis-fill-${qi}" data-pinyin-ime="true" placeholder="${vi ? "Nhập đáp án chữ Hán Giản thể..." : "Type Simplified Chinese answer..."}" />
+              ` : `
+                <div style="display:flex;flex-direction:column;gap:6px;">
+                  ${qf.options.map((opt) => `
+                    <label style="display:flex;gap:8px;align-items:center;cursor:pointer;font-size:13.5px;">
+                      <input type="radio" name="llis_q_${qi}" value="${QCore.escapeHtml(opt)}" />
+                      <span>${QCore.escapeHtml(opt)}</span>
+                    </label>
+                  `).join("")}
+                </div>
+              `}
               <div id="llis-fb-${qi}" style="margin-top:6px;font-size:13px;"></div>
             </div>
           `;
@@ -15549,22 +15627,34 @@ window.QLessonStudio = (function () {
     const rewindBtn = stage.querySelector("#ls-rewind-5");
     const statusEl = stage.querySelector("#ls-audio-status");
 
-    function highlightTranscriptRow(activeIdx) {
-      if (activeIdx === lisActiveLineIdx) return;
+    function highlightTranscriptRow(activeIdx, force) {
+      if (!force && activeIdx === lisActiveLineIdx) return;
       lisActiveLineIdx = activeIdx;
       const rows = stage.querySelectorAll(".ls-ts-row");
       rows.forEach((r, idx) => {
         const isAct = idx === activeIdx;
+        r.setAttribute("data-active", isAct ? "true" : "false");
         r.style.borderLeftColor = isAct ? "var(--primary)" : "transparent";
-        r.style.background = isAct ? "rgba(16,185,129,0.14)" : "var(--bg-subtle)";
+        r.style.background = isAct ? "rgba(16,185,129,0.18)" : "var(--bg-subtle)";
+        r.style.boxShadow = isAct ? "0 0 0 1.5px rgba(16,185,129,0.55)" : "none";
         if (isAct && lisTranscriptOpen) {
           r.scrollIntoView({ behavior: "smooth", block: "nearest" });
         }
       });
     }
 
+    // Apply saved volume/mute UI state
+    if (volSlider) volSlider.value = String(lisMuted ? 0 : lisVolume);
+    if (muteBtn) muteBtn.textContent = (lisMuted || lisVolume === 0) ? "🔇" : "🔊";
+
+    // Controller hook for speed & transcript-row clicks (works identically for MP3 AND TTS!)
+    let onSpeedChanged = null;
+    let onTranscriptRowClicked = null;
+
     if (player) {
       player.playbackRate = lisPlaybackRate;
+      player.volume = lisVolume;
+      player.muted = lisMuted;
 
       // Fallback to static path if API route fails (e.g. offline or static server)
       player.addEventListener("error", () => {
@@ -15593,7 +15683,7 @@ window.QLessonStudio = (function () {
           seekSlider.max = String(player.duration);
           seekSlider.value = String(player.currentTime);
           if (tLines.length > 0) {
-            const ratio = player.currentTime / Math.max(1, player.duration);
+            const ratio = player.currentTime / Math.max(0.1, player.duration);
             const idx = Math.min(tLines.length - 1, Math.floor(ratio * tLines.length));
             highlightTranscriptRow(idx);
           }
@@ -15612,7 +15702,7 @@ window.QLessonStudio = (function () {
 
       player.addEventListener("ended", () => {
         playPauseBtn.textContent = "▶";
-        highlightTranscriptRow(-1);
+        highlightTranscriptRow(-1, true);
         if (statusEl) statusEl.textContent = "✅ Đã phát xong";
       });
 
@@ -15620,7 +15710,7 @@ window.QLessonStudio = (function () {
         if (player.paused) {
           player.playbackRate = lisPlaybackRate;
           player.play().catch(() => {
-            QCore.speakChinese(tLines.map((x) => x.chinese).join("。"), { rate: lisPlaybackRate });
+            QCore.speakChinese(tLines.map((x) => x.chinese).join("。"), { rate: lisPlaybackRate, volume: lisMuted ? 0 : lisVolume });
           });
         } else {
           player.pause();
@@ -15632,6 +15722,10 @@ window.QLessonStudio = (function () {
         currTimeEl.textContent = fmtTime(targetSec);
         if (player.duration && isFinite(player.duration)) {
           player.currentTime = targetSec;
+          if (tLines.length > 0) {
+            const ratio = targetSec / Math.max(0.1, player.duration);
+            highlightTranscriptRow(Math.min(tLines.length - 1, Math.floor(ratio * tLines.length)), true);
+          }
         }
       });
 
@@ -15641,25 +15735,247 @@ window.QLessonStudio = (function () {
       };
 
       volSlider.addEventListener("input", () => {
-        player.volume = Number(volSlider.value);
-        player.muted = player.volume === 0;
-        muteBtn.textContent = player.muted ? "🔇" : "🔊";
+        lisVolume = Number(volSlider.value);
+        lisMuted = lisVolume === 0;
+        player.volume = lisVolume;
+        player.muted = lisMuted;
+        muteBtn.textContent = lisMuted ? "🔇" : "🔊";
       });
 
       muteBtn.onclick = () => {
-        player.muted = !player.muted;
-        muteBtn.textContent = player.muted ? "🔇" : "🔊";
+        lisMuted = !lisMuted;
+        player.muted = lisMuted;
+        muteBtn.textContent = lisMuted ? "🔇" : "🔊";
+        if (volSlider) volSlider.value = String(lisMuted ? 0 : (lisVolume || 1));
+      };
+
+      onSpeedChanged = (rate) => {
+        player.playbackRate = rate;
+        if (!player.paused && statusEl) statusEl.textContent = `🔊 Đang phát (${rate}x)`;
+      };
+
+      onTranscriptRowClicked = (idx) => {
+        highlightTranscriptRow(idx, true);
+        if (player.duration && isFinite(player.duration) && tLines.length > 0) {
+          player.currentTime = (idx / tLines.length) * player.duration;
+          player.playbackRate = lisPlaybackRate;
+          player.play().catch(() => {
+            if (tLines[idx]) QCore.speakChinese(tLines[idx].chinese, { rate: lisPlaybackRate, volume: lisMuted ? 0 : lisVolume });
+          });
+        } else if (tLines[idx]) {
+          QCore.speakChinese(tLines[idx].chinese, { rate: lisPlaybackRate, volume: lisMuted ? 0 : lisVolume });
+        }
       };
     } else {
-      // TTS fallback mode when no MP3 file is linked
-      durTimeEl.textContent = fmtTime(Math.max(15, tLines.length * 4));
-      playPauseBtn.onclick = () => {
-        const text = ex.audioText || tLines.map((x) => x.chinese).join("。");
-        QCore.speakChinese(text, { rate: lisPlaybackRate });
+      // FULL INTERACTIVE SENTENCE-SYNCED TTS PLAYER (for AI-generated Listening exercises!)
+      const ttsLines = tLines.length > 0
+        ? tLines
+        : (ex.audioText ? [{ speaker: "AI", chinese: ex.audioText, pinyin: "", english: "", vietnamese: "" }] : []);
+
+      let ttsSegments = [];
+      let ttsTotalDur = 15;
+      let ttsCurrentTime = 0;
+      let ttsCurrentIdx = 0;
+      let ttsIsPlaying = false;
+      let ttsRunToken = 0;
+      let ttsTimer = null;
+
+      function computeTtsSegments(rate) {
+        const effRate = Math.max(0.5, Math.min(2.0, Number(rate) || 1.0));
+        let cursor = 0;
+        ttsSegments = ttsLines.map((ln, idx) => {
+          const chLen = Math.max(6, String(ln.chinese || "").replace(/\s+/g, "").length);
+          const dur = Math.max(2.0, (chLen * 0.30) / effRate);
+          const seg = { idx, start: cursor, end: cursor + dur, dur };
+          cursor += dur;
+          return seg;
+        });
+        ttsTotalDur = Math.max(4, cursor);
+        durTimeEl.textContent = fmtTime(ttsTotalDur);
+        seekSlider.max = String(Number(ttsTotalDur.toFixed(2)));
+      }
+
+      function segIndexForTime(sec) {
+        if (!ttsSegments.length) return 0;
+        for (let i = 0; i < ttsSegments.length; i++) {
+          if (sec < ttsSegments[i].end - 0.05) return i;
+        }
+        return ttsSegments.length - 1;
+      }
+
+      function syncTtsUi() {
+        const clamped = Math.max(0, Math.min(ttsTotalDur, ttsCurrentTime));
+        currTimeEl.textContent = fmtTime(clamped);
+        seekSlider.value = String(Number(clamped.toFixed(2)));
+      }
+
+      function clearTtsTimer() {
+        if (ttsTimer) {
+          clearInterval(ttsTimer);
+          ttsTimer = null;
+        }
+      }
+
+      function ttsPause(markEnded) {
+        ttsRunToken += 1;
+        ttsIsPlaying = false;
+        clearTtsTimer();
+        if (window.QCore && typeof QCore.stopSpeech === "function") QCore.stopSpeech();
+        playPauseBtn.textContent = "▶";
+        if (markEnded) {
+          ttsCurrentTime = ttsTotalDur;
+          ttsCurrentIdx = 0;
+          syncTtsUi();
+          highlightTranscriptRow(-1, true);
+          if (statusEl) statusEl.textContent = "✅ Đã phát xong";
+        } else {
+          if (statusEl) statusEl.textContent = "⏸ Đã tạm dừng";
+        }
+      }
+
+      function ttsSpeakLine(idx, myToken) {
+        if (myToken !== ttsRunToken || !ttsIsPlaying) return;
+        if (idx >= ttsLines.length) {
+          ttsPause(true);
+          return;
+        }
+        ttsCurrentIdx = idx;
+        const seg = ttsSegments[idx] || { start: 0, end: ttsTotalDur, dur: 3 };
+        ttsCurrentTime = seg.start;
+        syncTtsUi();
+        highlightTranscriptRow(idx, true);
+        if (statusEl) statusEl.textContent = `🔊 Đang phát câu ${idx + 1}/${ttsLines.length} (${lisPlaybackRate}x)`;
+
+        clearTtsTimer();
+        const startedAt = Date.now();
+        ttsTimer = setInterval(() => {
+          if (myToken !== ttsRunToken || !ttsIsPlaying) {
+            clearTtsTimer();
+            return;
+          }
+          const elapsed = (Date.now() - startedAt) / 1000;
+          ttsCurrentTime = Math.min(seg.end - 0.05, seg.start + elapsed);
+          syncTtsUi();
+        }, 100);
+
+        const effVol = lisMuted ? 0 : lisVolume;
+        QCore.speakChinese(ttsLines[idx].chinese, {
+          rate: lisPlaybackRate,
+          volume: effVol,
+          onStart: () => {
+            if (myToken === ttsRunToken && ttsIsPlaying) {
+              highlightTranscriptRow(idx, true);
+            }
+          },
+          onEnd: () => {
+            if (myToken !== ttsRunToken || !ttsIsPlaying) return;
+            clearTtsTimer();
+            ttsCurrentTime = seg.end;
+            syncTtsUi();
+            setTimeout(() => {
+              if (myToken === ttsRunToken && ttsIsPlaying) {
+                ttsSpeakLine(idx + 1, myToken);
+              }
+            }, 220);
+          }
+        });
+      }
+
+      function ttsStartFromIndex(idx) {
+        if (!ttsLines.length) return;
+        ttsRunToken += 1;
+        const myToken = ttsRunToken;
+        ttsIsPlaying = true;
+        playPauseBtn.textContent = "⏸";
+        ttsSpeakLine(Math.max(0, Math.min(ttsLines.length - 1, idx)), myToken);
+      }
+
+      computeTtsSegments(lisPlaybackRate);
+      syncTtsUi();
+
+      activeTtsCleanup = () => {
+        ttsRunToken += 1;
+        ttsIsPlaying = false;
+        clearTtsTimer();
       };
+
+      playPauseBtn.onclick = () => {
+        if (ttsIsPlaying) {
+          ttsPause(false);
+        } else {
+          const startIdx = (ttsCurrentTime >= ttsTotalDur - 0.2) ? 0 : segIndexForTime(ttsCurrentTime);
+          ttsStartFromIndex(startIdx);
+        }
+      };
+
+      seekSlider.addEventListener("input", () => {
+        const targetSec = Number(seekSlider.value) || 0;
+        ttsCurrentTime = Math.max(0, Math.min(ttsTotalDur, targetSec));
+        const targetIdx = segIndexForTime(ttsCurrentTime);
+        ttsCurrentIdx = targetIdx;
+        currTimeEl.textContent = fmtTime(ttsCurrentTime);
+        highlightTranscriptRow(targetIdx, true);
+      });
+
+      seekSlider.addEventListener("change", () => {
+        const targetSec = Number(seekSlider.value) || 0;
+        ttsCurrentTime = Math.max(0, Math.min(ttsTotalDur, targetSec));
+        const targetIdx = segIndexForTime(ttsCurrentTime);
+        if (ttsIsPlaying) {
+          ttsStartFromIndex(targetIdx);
+        } else {
+          ttsCurrentIdx = targetIdx;
+          highlightTranscriptRow(targetIdx, true);
+        }
+      });
+
       rewindBtn.onclick = () => {
-        const text = ex.audioText || tLines.map((x) => x.chinese).join("。");
-        QCore.speakChinese(text, { rate: lisPlaybackRate });
+        const nextTime = Math.max(0, ttsCurrentTime - 5);
+        ttsCurrentTime = nextTime;
+        const targetIdx = segIndexForTime(nextTime);
+        ttsCurrentIdx = targetIdx;
+        syncTtsUi();
+        highlightTranscriptRow(targetIdx, true);
+        if (ttsIsPlaying) {
+          ttsStartFromIndex(targetIdx);
+        }
+      };
+
+      volSlider.addEventListener("input", () => {
+        lisVolume = Number(volSlider.value);
+        lisMuted = lisVolume === 0;
+        muteBtn.textContent = lisMuted ? "🔇" : "🔊";
+        if (window.QCore && typeof QCore.setSpeechVolume === "function") {
+          QCore.setSpeechVolume(lisMuted ? 0 : lisVolume);
+        }
+      });
+
+      muteBtn.onclick = () => {
+        lisMuted = !lisMuted;
+        muteBtn.textContent = lisMuted ? "🔇" : "🔊";
+        if (volSlider) volSlider.value = String(lisMuted ? 0 : (lisVolume || 1));
+        if (window.QCore && typeof QCore.setSpeechVolume === "function") {
+          QCore.setSpeechVolume(lisMuted ? 0 : lisVolume);
+        }
+      };
+
+      onSpeedChanged = (rate) => {
+        const prevRatio = ttsTotalDur > 0 ? (ttsCurrentTime / ttsTotalDur) : 0;
+        computeTtsSegments(rate);
+        ttsCurrentTime = prevRatio * ttsTotalDur;
+        syncTtsUi();
+        if (window.QCore && typeof QCore.setSpeechRate === "function") {
+          QCore.setSpeechRate(rate);
+        }
+        if (ttsIsPlaying) {
+          ttsStartFromIndex(ttsCurrentIdx);
+        }
+      };
+
+      onTranscriptRowClicked = (idx) => {
+        if (idx >= 0 && idx < ttsLines.length) {
+          ttsStartFromIndex(idx);
+        }
       };
     }
 
@@ -15668,7 +15984,7 @@ window.QLessonStudio = (function () {
       b.onclick = () => {
         const rate = Number(b.getAttribute("data-lspd"));
         lisPlaybackRate = rate;
-        if (player) player.playbackRate = rate;
+        if (typeof onSpeedChanged === "function") onSpeedChanged(rate);
         const rateLbl = stage.querySelector("#ls-rate-label");
         if (rateLbl) rateLbl.textContent = `${rate}x`;
         stage.querySelectorAll("[data-lspd]").forEach((btn) => {
@@ -15678,31 +15994,29 @@ window.QLessonStudio = (function () {
       };
     });
 
-    // Clicking a transcript sentence jumps audio to that sentence's timestamp (or speaks it)
+    // Clicking a transcript sentence jumps audio to that sentence's timestamp and highlights it
     stage.querySelectorAll("[data-ts-idx]").forEach((row) => {
       row.onclick = () => {
         const idx = Number(row.getAttribute("data-ts-idx"));
-        highlightTranscriptRow(idx);
-        if (player && player.duration && isFinite(player.duration) && tLines.length > 0) {
-          player.currentTime = (idx / tLines.length) * player.duration;
-          player.playbackRate = lisPlaybackRate;
-          player.play().catch(() => {
-            if (tLines[idx]) QCore.speakChinese(tLines[idx].chinese, { rate: lisPlaybackRate });
-          });
-        } else if (tLines[idx]) {
-          QCore.speakChinese(tLines[idx].chinese, { rate: lisPlaybackRate });
-        }
+        if (typeof onTranscriptRowClicked === "function") onTranscriptRowClicked(idx);
       };
     });
 
     stage.querySelector("#llis-submit").onclick = () => {
       const qs = ex.questions || [];
       let okCnt = 0;
+      const norm = (s) => String(s || "").replace(/[。！？!?,，\s]/g, "");
       qs.forEach((q, qi) => {
         const qf = pickQuestionFields(q);
-        const sel = stage.querySelector(`input[name="llis_q_${qi}"]:checked`);
-        const val = sel ? sel.value : "";
-        const ok = val === qf.answer || val === q.answer;
+        let val = "";
+        if (q.type === "fill") {
+          const inp = stage.querySelector(`#llis-fill-${qi}`);
+          val = inp ? inp.value.trim() : "";
+        } else {
+          const sel = stage.querySelector(`input[name="llis_q_${qi}"]:checked`);
+          val = sel ? sel.value : "";
+        }
+        const ok = norm(val) === norm(qf.answer) || (q.answer && norm(val) === norm(q.answer));
         if (ok) okCnt++;
         stage.querySelector(`#llis-fb-${qi}`).innerHTML = ok
           ? `<span style="color:var(--primary);font-weight:700;">✅ ${vi ? "Chính xác!" : "Correct!"} ${QCore.escapeHtml(qf.explain)}</span>`
@@ -15718,6 +16032,7 @@ window.QLessonStudio = (function () {
 
   /* ---------- VOCABULARY / GRAMMAR / WRITING / SPEAKING INSIDE LESSON ---------- */
   function renderVocabEx(stage, lesson) {
+    stopActiveTtsPlayer();
     const words = lesson.skills.vocabulary || [];
     const vi = isViMode();
     stage.innerHTML = `
@@ -15748,16 +16063,20 @@ window.QLessonStudio = (function () {
   }
 
   function renderGrammarEx(stage, lesson, ex) {
+    stopActiveTtsPlayer();
     const vi = isViMode();
     if (!ex) { stage.innerHTML = `<div class="card">${vi ? "Chưa có bài ngữ pháp." : "No grammar exercise yet."}</div>`; return; }
-    const expText = (!vi && ex.explanation_en) ? ex.explanation_en : (ex.explanation || ex.focusReason || "");
+    const titleTxt = (vi && ex.title_vi) ? ex.title_vi : (ex.title || "");
+    const focusTxt = (!vi && ex.focusReason_en) ? ex.focusReason_en : (ex.focusReason || "");
+    const expText = (!vi && ex.explanation_en) ? ex.explanation_en : (ex.explanation || focusTxt || "");
     stage.innerHTML = `
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
           <div>${sourceTagBadge(ex.sourceTag)}</div>
           <button class="btn btn-outline btn-sm" id="lgr-q-lang">${vi ? "🌐 ZH–EN" : "🇻🇳 Trung–Việt"}</button>
         </div>
-        <h3 style="margin:6px 0;">🧩 ${QCore.escapeHtml(ex.title)}</h3>
+        <h3 style="margin:6px 0;">🧩 ${QCore.escapeHtml(titleTxt)}</h3>
+        ${focusTxt ? `<div class="vi-hint-banner" style="margin-bottom:8px;"><span>🎯</span><div>${QCore.escapeHtml(focusTxt)}</div></div>` : ""}
         ${ex.formula ? `<div class="badge badge-amber" style="margin-bottom:8px;white-space:normal;">📐 ${QCore.escapeHtml(ex.formula)}</div>` : ""}
         <p style="font-size:14px;color:var(--text-secondary);">${QCore.escapeHtml(expText)}</p>
         ${(ex.questions || []).map((q, qi) => {
@@ -15765,12 +16084,13 @@ window.QLessonStudio = (function () {
           return `
           <div class="card-subtle" style="margin-bottom:10px;">
             <div style="font-weight:700;margin-bottom:6px;">${vi ? `Câu ${qi + 1}.` : `Question ${qi + 1}.`} ${QCore.escapeHtml(qf.text)}</div>
-            ${q.type === "fill" ? `<input class="input-field hanzi-text" id="lgr-a-${qi}" />` : qf.options.map((o) => `<label style="display:block;margin:4px 0;cursor:pointer;"><input type="radio" name="lgr_${qi}" value="${QCore.escapeHtml(o)}"/> ${QCore.escapeHtml(o)}</label>`).join("")}
+            ${q.type === "fill" ? `<input class="input-field hanzi-text" id="lgr-a-${qi}" data-pinyin-ime="true" placeholder="${vi ? "Nhập chữ Hán Giản thể..." : "Type Simplified Chinese..."}" />` : qf.options.map((o) => `<label style="display:block;margin:4px 0;cursor:pointer;"><input type="radio" name="lgr_${qi}" value="${QCore.escapeHtml(o)}"/> ${QCore.escapeHtml(o)}</label>`).join("")}
             <div id="lgr-fb-${qi}" style="margin-top:6px;font-size:13px;"></div>
           </div>
         `;
         }).join("")}
         <button class="btn btn-primary" id="lgr-sub">✅ ${vi ? "Kiểm tra ngữ pháp" : "Check Grammar"}</button>
+        <div id="lgr-sum" style="margin-top:12px;"></div>
       </div>
     `;
     stage.querySelector("#lgr-q-lang").onclick = () => {
@@ -15781,10 +16101,11 @@ window.QLessonStudio = (function () {
     stage.querySelector("#lgr-sub").onclick = () => {
       const qs = ex.questions || [];
       let right = 0;
+      const norm = (s) => String(s || "").replace(/[。！？!?,，\s]/g, "");
       qs.forEach((q, qi) => {
         const qf = pickQuestionFields(q);
         const val = q.type === "fill" ? (stage.querySelector(`#lgr-a-${qi}`).value || "").trim() : ((stage.querySelector(`input[name="lgr_${qi}"]:checked`) || {}).value || "");
-        const ok = val === qf.answer || val === q.answer;
+        const ok = norm(val) === norm(qf.answer) || (q.answer && norm(val) === norm(q.answer));
         if (ok) right++;
         stage.querySelector(`#lgr-fb-${qi}`).innerHTML = ok
           ? `<span style="color:var(--primary);font-weight:700;">✅ ${vi ? "Đúng!" : "Correct!"} ${QCore.escapeHtml(qf.explain)}</span>`
@@ -15794,24 +16115,53 @@ window.QLessonStudio = (function () {
       QCore.recordLessonExercise(ex.id, score);
       QCore.updateSkillScore("grammar", score);
       QCore.logDailyActivity("grammarCount", 1);
+      stage.querySelector("#lgr-sum").innerHTML = `<div class="card-subtle" style="border-color:var(--primary);"><strong>🎯 ${vi ? `Điểm ngữ pháp: ${score}/100 (${right}/${qs.length} đúng)` : `Grammar Score: ${score}/100 (${right}/${qs.length} correct)`}</strong></div>`;
     };
   }
 
   function renderWritingEx(stage, lesson, ex) {
+    stopActiveTtsPlayer();
     const vi = isViMode();
     if (!ex) { stage.innerHTML = `<div class="card">${vi ? "Chưa có bài viết." : "No writing exercise yet."}</div>`; return; }
     const promptTxt = (!vi && ex.prompt_en) ? ex.prompt_en : (ex.prompt || "");
     const titleTxt = (vi && ex.title_vi) ? ex.title_vi : (ex.title || "");
+    const focusTxt = (!vi && ex.focusReason_en) ? ex.focusReason_en : (ex.focusReason || "");
     stage.innerHTML = `
       <div class="card">
         ${sourceTagBadge(ex.sourceTag)}
         <h3 style="margin:6px 0;">🖋️ ${QCore.escapeHtml(titleTxt)}</h3>
+        ${focusTxt ? `<div class="vi-hint-banner" style="margin-bottom:10px;"><span>🎯</span><div>${QCore.escapeHtml(focusTxt)}</div></div>` : ""}
         <div class="card-subtle" style="margin-bottom:12px;"><strong>${vi ? "Đề bài:" : "Prompt:"}</strong> ${QCore.escapeHtml(promptTxt)}</div>
+        ${ex.sampleAnswer ? `
+          <div style="margin-bottom:12px;">
+            <button type="button" class="btn btn-outline btn-sm" id="lwr-toggle-sample">💡 ${vi ? "Xem câu mẫu tham khảo" : "Show Model Answer"}</button>
+            <div id="lwr-sample-box" class="card-subtle" style="display:none;margin-top:8px;border-left:3px solid var(--primary);">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+                <span class="hanzi-text" style="font-size:18px;font-weight:700;">${QCore.escapeHtml(ex.sampleAnswer)}</span>
+                <button type="button" class="btn btn-soft btn-sm" id="lwr-sample-speak">🔊</button>
+              </div>
+              ${ex.samplePinyin ? `<div class="pinyin-text" style="font-size:13.5px;color:var(--primary);margin-top:4px;">${QCore.escapeHtml(ex.samplePinyin)}</div>` : ""}
+              ${ex.sampleEnglish ? `<div style="font-size:13px;color:var(--text-secondary);margin-top:4px;">🇬🇧 ${QCore.escapeHtml(ex.sampleEnglish)}</div>` : ""}
+              ${ex.sampleVietnamese ? `<div style="font-size:13px;color:var(--text-secondary);margin-top:2px;">🇻🇳 ${QCore.escapeHtml(ex.sampleVietnamese)}</div>` : ""}
+            </div>
+          </div>
+        ` : ""}
         <textarea class="textarea-field hanzi-text" id="lwr-txt" rows="4" data-pinyin-ime="true" placeholder="${vi ? "Viết bài bằng Chữ Hán Giản thể..." : "Write in Simplified Chinese (Pinyin IME supported)..."}"></textarea>
         <button class="btn btn-primary" style="margin-top:10px;" id="lwr-sub">👩‍🏫 ${vi ? "Nộp bài & AI Chấm Rubric" : "Submit & AI Evaluate"}</button>
         <div id="lwr-out" style="margin-top:12px;"></div>
       </div>
     `;
+    const togS = stage.querySelector("#lwr-toggle-sample");
+    const boxS = stage.querySelector("#lwr-sample-box");
+    if (togS && boxS) {
+      togS.onclick = () => {
+        const show = boxS.style.display === "none";
+        boxS.style.display = show ? "block" : "none";
+        togS.textContent = show ? (vi ? "🙈 Ẩn câu mẫu" : "🙈 Hide Model Answer") : (vi ? "💡 Xem câu mẫu tham khảo" : "💡 Show Model Answer");
+      };
+    }
+    const spS = stage.querySelector("#lwr-sample-speak");
+    if (spS) spS.onclick = () => QCore.speakChinese(ex.sampleAnswer);
     stage.querySelector("#lwr-sub").onclick = async () => {
       const text = (stage.querySelector("#lwr-txt").value || "").trim();
       if (!text) return;
@@ -15825,17 +16175,29 @@ window.QLessonStudio = (function () {
   }
 
   function renderSpeakingEx(stage, lesson, ex) {
+    stopActiveTtsPlayer();
     const vi = isViMode();
     if (!ex) { stage.innerHTML = `<div class="card">${vi ? "Chưa có bài nói." : "No speaking exercise yet."}</div>`; return; }
     const promptTxt = (!vi && ex.prompt_en) ? ex.prompt_en : (ex.prompt || "");
     const titleTxt = (vi && ex.title_vi) ? ex.title_vi : (ex.title || "");
+    const focusTxt = (!vi && ex.focusReason_en) ? ex.focusReason_en : (ex.focusReason || "");
     stage.innerHTML = `
       <div class="card">
         ${sourceTagBadge(ex.sourceTag)}
         <h3 style="margin:6px 0;">🎙️ ${QCore.escapeHtml(titleTxt)}</h3>
+        ${focusTxt ? `<div class="vi-hint-banner" style="margin-bottom:10px;"><span>🎯</span><div>${QCore.escapeHtml(focusTxt)}</div></div>` : ""}
         <div class="card-subtle" style="margin-bottom:12px;">
-          <div>${QCore.escapeHtml(promptTxt)}</div>
-          ${ex.sampleQuestion ? `<div class="hanzi-text" style="font-size:20px;font-weight:700;margin-top:8px;">${QCore.escapeHtml(ex.sampleQuestion)} <button class="btn btn-soft btn-sm" id="lspk-hear">🔊</button></div>` : ""}
+          <div style="margin-bottom:6px;">${QCore.escapeHtml(promptTxt)}</div>
+          ${ex.sampleQuestion ? `
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;">
+              <span class="hanzi-text" style="font-size:21px;font-weight:700;">${QCore.escapeHtml(ex.sampleQuestion)}</span>
+              <button class="btn btn-soft btn-sm" id="lspk-hear" title="Nghe tốc độ chuẩn">🔊</button>
+              <button class="btn btn-outline btn-sm" id="lspk-slow" title="Nghe chậm 0.7x">🐢</button>
+            </div>
+          ` : ""}
+          ${ex.samplePinyin ? `<div class="pinyin-text" style="font-size:14px;color:var(--primary);margin-top:6px;">${QCore.escapeHtml(ex.samplePinyin)}</div>` : ""}
+          ${ex.sampleEnglish ? `<div style="font-size:13px;color:var(--text-secondary);margin-top:4px;">🇬🇧 ${QCore.escapeHtml(ex.sampleEnglish)}</div>` : ""}
+          ${ex.sampleVietnamese ? `<div style="font-size:13px;color:var(--text-secondary);margin-top:2px;">🇻🇳 ${QCore.escapeHtml(ex.sampleVietnamese)}</div>` : ""}
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
           <button class="btn btn-primary" id="lspk-rec">🎙️ ${vi ? "Ghi âm câu trả lời (5 giây)" : "Record Speaking (5s)"}</button>
@@ -15845,6 +16207,8 @@ window.QLessonStudio = (function () {
     `;
     const hear = stage.querySelector("#lspk-hear");
     if (hear) hear.onclick = () => QCore.speakChinese(ex.sampleQuestion);
+    const slow = stage.querySelector("#lspk-slow");
+    if (slow) slow.onclick = () => QCore.speakChinese(ex.sampleQuestion, { slow: true });
     stage.querySelector("#lspk-rec").onclick = () => {
       const out = stage.querySelector("#lspk-out");
       out.innerHTML = `<div class="card-subtle" style="color:var(--accent-red);">🔴 ${vi ? "Đang thu âm 5 giây..." : "Recording for 5 seconds..."}</div>`;
@@ -16517,13 +16881,14 @@ window.QLessonStudio = (function () {
     `;
 
     container.querySelector("#hub-back-up").onclick = () => {
+      stopActiveTtsPlayer();
       hubState.view = isVocab ? "skills" : "exercises";
       drawCourseHub(container);
     };
     const prevBtn = container.querySelector("#hub-prev-ex");
-    if (prevBtn) prevBtn.onclick = () => { hubState.exIdx--; drawCourseHub(container); };
+    if (prevBtn) prevBtn.onclick = () => { stopActiveTtsPlayer(); hubState.exIdx--; drawCourseHub(container); };
     const nextBtn = container.querySelector("#hub-next-ex");
-    if (nextBtn) nextBtn.onclick = () => { hubState.exIdx++; drawCourseHub(container); };
+    if (nextBtn) nextBtn.onclick = () => { stopActiveTtsPlayer(); hubState.exIdx++; drawCourseHub(container); };
     if (!isVocab) {
       bindAiGenButton(container, "#ls-ai-gen-btn", lesson, skKey, () => {
         hubState.exIdx = lesson.skills[skKey].length - 1;

@@ -74,7 +74,9 @@ from backend.pdf_engine import (
     get_course_detail,
     get_pdf_overview,
     init_pdf_tables,
+    list_shared_ai_exercises,
     publish_course,
+    save_shared_ai_exercise,
     upload_and_process_pdf,
 )
 
@@ -775,6 +777,13 @@ class QChineseRequestHandler(BaseHTTPRequestHandler):
             self._send_json(200 if res.get("ok") else 404, res)
             return
 
+        if route == "/api/pdf/shared-exercises":
+            lvl_str = (query.get("hskLevel") or [""])[0].strip()
+            lvl = int(lvl_str) if lvl_str.isdigit() else None
+            items = list_shared_ai_exercises(get_db, DB_LOCK, hsk_level=lvl)
+            self._send_json(200, {"ok": True, "items": items})
+            return
+
         if route == "/api/pdf/audio":
             fname = (query.get("file") or [""])[0].strip()
             if not re.match(r"^[0-9]{1,2}-[0-9]{1,2}\.mp3$", fname):
@@ -1420,7 +1429,24 @@ class QChineseRequestHandler(BaseHTTPRequestHandler):
             elif route == "/api/ai/pronunciation":
                 self._send_json(200, handle_pronunciation_analysis(body))
             elif route == "/api/ai/generate-lesson-exercise":
-                self._send_json(200, handle_generate_lesson_exercise(body))
+                new_ex = handle_generate_lesson_exercise(body)
+                if isinstance(new_ex, dict) and new_ex.get("id") and body.get("sharePublic", True):
+                    user = self._get_authenticated_user()
+                    author = (
+                        str(body.get("authorName") or "").strip()
+                        or (user.get("display_name") or user.get("username") if user else "")
+                        or "Học viên QChinese"
+                    )
+                    hsk_lvl = int(body.get("hskLevel") or 1)
+                    l_num = int(body.get("lessonNum") or 0)
+                    if not l_num:
+                        m_ln = re.search(r"Lesson\s*(\d+)", str(body.get("lessonTitle") or ""), re.I)
+                        l_num = int(m_ln.group(1)) if m_ln else 1
+                    sk = str(body.get("skill") or "reading").lower().strip()
+                    saved = save_shared_ai_exercise(get_db, DB_LOCK, hsk_lvl, l_num, sk, new_ex, author_name=author)
+                    if saved.get("ok"):
+                        new_ex = saved["exercise"]
+                self._send_json(200, new_ex)
             else:
                 self._send_json(200, handle_personalized_drills(body))
             return
@@ -1472,6 +1498,24 @@ class QChineseRequestHandler(BaseHTTPRequestHandler):
             cid = (body.get("courseId") or "").strip()
             res = publish_course(get_db, DB_LOCK, cid)
             self._send_json(200 if res.get("ok") else 404, res)
+            return
+
+        if route == "/api/pdf/shared-exercises":
+            ex_obj = body.get("exercise") if isinstance(body.get("exercise"), dict) else None
+            if not ex_obj:
+                self._send_json(400, {"ok": False, "error": "Missing exercise object"})
+                return
+            user = self._get_authenticated_user()
+            author = str(body.get("authorName") or (user.get("display_name") if user else "") or "Học viên QChinese").strip()
+            res = save_shared_ai_exercise(
+                get_db, DB_LOCK,
+                int(body.get("hskLevel") or 1),
+                int(body.get("lessonNum") or 1),
+                str(body.get("skill") or "reading"),
+                ex_obj,
+                author_name=author,
+            )
+            self._send_json(200 if res.get("ok") else 400, res)
             return
 
         if route == "/api/pdf/delete":

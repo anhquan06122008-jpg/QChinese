@@ -103,8 +103,108 @@ def init_pdf_tables(conn: sqlite3.Connection) -> None:
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL
         );
+
+        CREATE TABLE IF NOT EXISTS shared_ai_exercises (
+            id TEXT PRIMARY KEY,
+            hsk_level INTEGER NOT NULL DEFAULT 1,
+            lesson_num INTEGER NOT NULL DEFAULT 1,
+            skill TEXT NOT NULL,
+            author_name TEXT NOT NULL DEFAULT 'Học viên QChinese',
+            is_public INTEGER NOT NULL DEFAULT 1,
+            exercise_json TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_shared_ai_ex_lookup
+            ON shared_ai_exercises (hsk_level, lesson_num, skill, created_at ASC);
         """
     )
+
+
+def save_shared_ai_exercise(
+    get_db_fn: Callable[[], sqlite3.Connection],
+    db_lock: threading.Lock,
+    hsk_level: int,
+    lesson_num: int,
+    skill: str,
+    exercise: Dict[str, Any],
+    author_name: str = "",
+) -> Dict[str, Any]:
+    """Persist a publicly shared AI-generated exercise so every account sees it inside the shared course."""
+    if not isinstance(exercise, dict) or not exercise.get("id"):
+        return {"ok": False, "error": "Invalid exercise payload"}
+    ex_copy = dict(exercise)
+    clean_author = str(author_name or ex_copy.get("authorName") or "Học viên QChinese").strip()[:60]
+    now = ex_copy.get("createdAt") or _utc_now()
+    ex_copy["hskLevel"] = int(hsk_level or 1)
+    ex_copy["lessonNum"] = int(lesson_num or 1)
+    ex_copy["skill"] = str(skill or "reading").lower().strip()
+    ex_copy["authorName"] = clean_author
+    ex_copy["isSharedPublic"] = True
+    ex_copy["createdAt"] = now
+
+    with db_lock:
+        conn = get_db_fn()
+        try:
+            init_pdf_tables(conn)
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO shared_ai_exercises
+                (id, hsk_level, lesson_num, skill, author_name, is_public, exercise_json, created_at)
+                VALUES (?, ?, ?, ?, ?, 1, ?, ?)
+                """,
+                (
+                    str(ex_copy["id"]),
+                    ex_copy["hskLevel"],
+                    ex_copy["lessonNum"],
+                    ex_copy["skill"],
+                    clean_author,
+                    json.dumps(ex_copy, ensure_ascii=False),
+                    now,
+                ),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+    return {"ok": True, "exercise": ex_copy}
+
+
+def list_shared_ai_exercises(
+    get_db_fn: Callable[[], sqlite3.Connection],
+    db_lock: threading.Lock,
+    hsk_level: Optional[int] = None,
+) -> List[Dict[str, Any]]:
+    """List all publicly shared AI-generated exercises (optionally filtered by HSK level)."""
+    with db_lock:
+        conn = get_db_fn()
+        try:
+            init_pdf_tables(conn)
+            if hsk_level is not None:
+                rows = conn.execute(
+                    "SELECT id, hsk_level, lesson_num, skill, author_name, exercise_json, created_at FROM shared_ai_exercises WHERE is_public = 1 AND hsk_level = ? ORDER BY created_at ASC",
+                    (int(hsk_level),),
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    "SELECT id, hsk_level, lesson_num, skill, author_name, exercise_json, created_at FROM shared_ai_exercises WHERE is_public = 1 ORDER BY created_at ASC"
+                ).fetchall()
+        finally:
+            conn.close()
+    items: List[Dict[str, Any]] = []
+    for r in rows:
+        try:
+            ex = json.loads(r["exercise_json"])
+            if isinstance(ex, dict):
+                ex["id"] = ex.get("id") or r["id"]
+                ex["hskLevel"] = int(r["hsk_level"])
+                ex["lessonNum"] = int(r["lesson_num"])
+                ex["skill"] = str(r["skill"])
+                ex["authorName"] = ex.get("authorName") or r["author_name"]
+                ex["isSharedPublic"] = True
+                ex["createdAt"] = ex.get("createdAt") or r["created_at"]
+                items.append(ex)
+        except Exception:
+            pass
+    return items
 
 
 def sanitize_pdf_text(text: str) -> str:
@@ -1466,4 +1566,18 @@ def get_course_detail(get_db_fn: Callable[[], sqlite3.Connection], db_lock: thre
     data = json.loads(row["course_json"])
     data["id"] = row["id"]
     data["isPublished"] = bool(row["is_published"])
+
+    # Merge publicly shared AI-generated exercises for this HSK level into each Lesson's skill list
+    shared_items = list_shared_ai_exercises(get_db_fn, db_lock, int(row["hsk_level"]))
+    if shared_items and isinstance(data.get("lessons"), list):
+        by_lesson_num = {int(ls.get("lessonNum", i + 1)): ls for i, ls in enumerate(data["lessons"])}
+        for sh in shared_items:
+            ls_target = by_lesson_num.get(int(sh.get("lessonNum", 1)))
+            sk = str(sh.get("skill") or "").lower()
+            if ls_target and sk in ("reading", "listening", "grammar", "writing", "speaking"):
+                skills_dict = ls_target.setdefault("skills", {})
+                ex_arr = skills_dict.setdefault(sk, [])
+                if not any(x.get("id") == sh.get("id") for x in ex_arr):
+                    ex_arr.append(sh)
+
     return {"ok": True, "course": data}

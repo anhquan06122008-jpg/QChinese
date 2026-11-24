@@ -946,7 +946,7 @@ window.QCore = (function () {
     saveState(false);
   }
 
-  function recordLessonExercise(exId, score, wrongFocuses = []) {
+  function recordLessonExercise(exId, score, wrongFocuses = [], opts = {}) {
     if (!appState || !exId) return;
     const prev = appState.lessonProgress[exId] || {
       status: "not_started",
@@ -957,10 +957,12 @@ window.QCore = (function () {
       history: []
     };
     const s = Math.max(0, Math.min(100, Math.round(Number(score || 0))));
+    const requirePerfect = opts && opts.perfectRequired === false ? false : true;
+    const threshold = requirePerfect ? 100 : 80;
     prev.attempts += 1;
     prev.lastScore = s;
     prev.bestScore = Math.max(prev.bestScore || 0, s);
-    prev.status = s >= 60 ? "completed" : "in_progress";
+    prev.status = prev.bestScore >= threshold ? "completed" : "in_progress";
     prev.contentSource = "AI_PDF_HSK3";
     prev.updatedAt = new Date().toISOString();
     prev.history = Array.isArray(prev.history) ? prev.history : [];

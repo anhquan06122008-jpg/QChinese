@@ -80,6 +80,7 @@ window.QLessonStudio = (function () {
         : `hskLevel=${encodeURIComponent(activeHsk)}`;
       const res = await QCore.apiFetch(`/api/pdf/course?${qs}`);
       activeCourse = res.course;
+      await syncSharedExercisesForCourse(activeCourse);
       if (activeLessonIdx >= (activeCourse.lessons || []).length) activeLessonIdx = 0;
     } catch (err) {
       container.innerHTML = `
@@ -96,16 +97,120 @@ window.QLessonStudio = (function () {
     drawStudio(container);
   }
 
+  const SHARED_EX_LOCAL_KEY = "qchinese_shared_exercises_v1";
+
+  function readLocalSharedExercises() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(SHARED_EX_LOCAL_KEY) || "[]");
+      return Array.isArray(raw) ? raw : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function saveLocalSharedExercise(ex) {
+    if (!ex || !ex.id) return;
+    try {
+      const list = readLocalSharedExercises();
+      const idx = list.findIndex((x) => x && x.id === ex.id);
+      if (idx >= 0) list[idx] = ex;
+      else list.push(ex);
+      localStorage.setItem(SHARED_EX_LOCAL_KEY, JSON.stringify(list.slice(-300)));
+    } catch (_) {}
+  }
+
+  function mergeSharedExercisesIntoCourse(course, items) {
+    if (!course || !Array.isArray(course.lessons) || !Array.isArray(items) || !items.length) return false;
+    let addedAny = false;
+    const hskLvl = Number(course.hskLevel || 1);
+    const byLessonNum = {};
+    course.lessons.forEach((ls, i) => {
+      byLessonNum[Number(ls.lessonNum || i + 1)] = ls;
+    });
+    const sorted = items.slice().sort((a, b) => String(a.createdAt || "").localeCompare(String(b.createdAt || "")));
+    sorted.forEach((sh) => {
+      if (!sh || !sh.id) return;
+      if (Number(sh.hskLevel || 1) !== hskLvl) return;
+      const ls = byLessonNum[Number(sh.lessonNum || 1)];
+      const sk = String(sh.skill || "").toLowerCase();
+      if (!ls || !["reading", "listening", "grammar", "writing", "speaking"].includes(sk)) return;
+      ls.skills = ls.skills || {};
+      if (!Array.isArray(ls.skills[sk])) ls.skills[sk] = [];
+      if (!ls.skills[sk].some((x) => x && x.id === sh.id)) {
+        ls.skills[sk].push(Object.assign({}, sh, { isSharedPublic: true }));
+        addedAny = true;
+      }
+    });
+    return addedAny;
+  }
+
+  async function syncSharedExercisesForCourse(course) {
+    if (!course) return;
+    const hskLvl = Number(course.hskLevel || 1);
+    const collected = readLocalSharedExercises();
+
+    // 1. Fetch from Backend SQLite shared pool
+    if (QCore.getServerHealth().ok) {
+      try {
+        const bRes = await QCore.apiFetch(`/api/pdf/shared-exercises?hskLevel=${encodeURIComponent(hskLvl)}`);
+        if (bRes && Array.isArray(bRes.items)) {
+          bRes.items.forEach((it) => {
+            collected.push(it);
+            saveLocalSharedExercise(it);
+          });
+        }
+      } catch (_) {}
+    }
+
+    // 2. Fetch from Supabase Cloud shared pool (24/7 cross-account & cross-device!)
+    if (window.QCloud && typeof QCloud.fetchSharedExercises === "function") {
+      try {
+        const cRes = await QCloud.fetchSharedExercises(hskLvl);
+        if (cRes && cRes.ok && Array.isArray(cRes.items)) {
+          cRes.items.forEach((it) => {
+            collected.push(it);
+            saveLocalSharedExercise(it);
+          });
+        }
+      } catch (_) {}
+    }
+
+    mergeSharedExercisesIntoCourse(course, collected);
+  }
+
+  function isExCompleted(rec, skillKey) {
+    if (!rec || rec.status !== "completed") return false;
+    if (skillKey === "writing" || skillKey === "speaking") return true;
+    return Number(rec.bestScore || 0) >= 100;
+  }
+
   function getLessonCompletion(lesson, lp) {
-    const ids = [
-      ...(lesson.skills.reading || []).map((x) => x.id),
-      ...(lesson.skills.listening || []).map((x) => x.id),
-      ...(lesson.skills.grammar || []).map((x) => x.id),
-      ...(lesson.skills.writing || []).map((x) => x.id),
-      ...(lesson.skills.speaking || []).map((x) => x.id)
-    ];
-    const done = ids.filter((id) => lp[id] && lp[id].status === "completed").length;
-    return { done, total: ids.length, pct: ids.length ? Math.round((done / ids.length) * 100) : 0 };
+    const skillKeys = ["reading", "listening", "grammar", "writing", "speaking"];
+    let total = 0;
+    let done = 0;
+    skillKeys.forEach((sk) => {
+      const arr = (lesson.skills && Array.isArray(lesson.skills[sk])) ? lesson.skills[sk] : [];
+      arr.forEach((ex) => {
+        total += 1;
+        if (isExCompleted(lp[ex.id], sk)) done += 1;
+      });
+    });
+    return { done, total, pct: total ? Math.round((done / total) * 100) : 0 };
+  }
+
+  // Listen for live shared exercises published by friends on Supabase Realtime
+  if (window.QCloud && typeof QCloud.onSharedExercise === "function") {
+    QCloud.onSharedExercise((ex) => {
+      saveLocalSharedExercise(ex);
+      if (activeCourse && mergeSharedExercisesIntoCourse(activeCourse, [ex])) {
+        const vi = isViMode();
+        QCore.showToast(
+          vi
+            ? `🌐 ${ex.authorName || "Bạn học"} vừa chia sẻ bài mới vào Lesson ${ex.lessonNum}!`
+            : `🌐 ${ex.authorName || "A learner"} shared a new exercise in Lesson ${ex.lessonNum}!`
+        );
+      }
+    });
   }
 
   function drawStudio(container) {
@@ -1228,7 +1333,7 @@ window.QLessonStudio = (function () {
       const out = stage.querySelector("#lwr-out");
       out.innerHTML = `<div class="card-subtle">⏳ ${vi ? "AI đang chấm bài viết theo rubric 7 tiêu chí..." : "AI is evaluating your Chinese writing..."}</div>`;
       const res = await window.QAiTutor.evaluateSentenceSmart({ text, prompt: promptTxt, targetWord: ex.targetWord || "", hskLevel: ex.hskLevel || 1 });
-      QCore.recordLessonExercise(ex.id, res.score || 70);
+      QCore.recordLessonExercise(ex.id, res.score || 70, [], { perfectRequired: false });
       QCore.updateSkillScore("writing", res.score || 70);
       out.innerHTML = window.QAiTutor.renderSentenceEvaluationCard(res);
     };
@@ -1275,7 +1380,7 @@ window.QLessonStudio = (function () {
       QCore.captureLearnerVoice({
         durationMs: 5000,
         onAudioReady: (url, tr) => {
-          QCore.recordLessonExercise(ex.id, 85);
+          QCore.recordLessonExercise(ex.id, 85, [], { perfectRequired: false });
           QCore.logDailyActivity("speakingMinutes", 1);
           out.innerHTML = `<div class="card-subtle"><audio controls src="${url}" style="width:100%;height:38px;margin-bottom:6px;"></audio><div>${tr ? `✅ ${vi ? "Nhận diện" : "Recognized"}: "${QCore.escapeHtml(tr)}"` : (vi ? "🎧 Đã lưu băng thu âm — hãy bấm Play đối chiếu phát âm!" : "🎧 Recording saved — press Play to review your pronunciation!")}</div></div>`;
         }
@@ -1321,6 +1426,7 @@ window.QLessonStudio = (function () {
       activeHsk = reqLvl;
       activeCourseId = reqCid;
     } else {
+      await syncSharedExercisesForCourse(activeCourse);
       return true;
     }
     if (!QCore.getServerHealth().ok) return false;
@@ -1330,6 +1436,7 @@ window.QLessonStudio = (function () {
         : `hskLevel=${encodeURIComponent(activeHsk)}`;
       const res = await QCore.apiFetch(`/api/pdf/course?${qs}`);
       activeCourse = res.course;
+      if (activeCourse) await syncSharedExercisesForCourse(activeCourse);
       return Boolean(activeCourse);
     } catch (_) {
       return false;
@@ -1493,7 +1600,7 @@ window.QLessonStudio = (function () {
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;">
           ${lessons.map((l, idx) => {
             const exs = Array.isArray(l.skills && l.skills[skillKey]) ? l.skills[skillKey] : [];
-            const doneCnt = exs.filter((e) => lp[e.id] && lp[e.id].status === "completed").length;
+            const doneCnt = exs.filter((e) => isExCompleted(lp[e.id], skillKey)).length;
             const pct = exs.length ? Math.round((doneCnt / exs.length) * 100) : 0;
             return `
               <div class="card" data-open-lfolder="${idx}" style="padding:16px;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;gap:10px;border-color:${pct === 100 && exs.length ? "var(--primary)" : "var(--border-color)"};transition:transform .15s ease;">
@@ -1552,24 +1659,29 @@ window.QLessonStudio = (function () {
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;">
           ${exList.map((ex, idx) => {
             const rec = lp[ex.id];
+            const isDone = isExCompleted(rec, skillKey);
             const exTitle = (vi && ex.title_vi) ? ex.title_vi : (ex.title || `${vi ? "Bài" : "Exercise"} ${idx + 1}`);
             const qCnt = Array.isArray(ex.questions) ? ex.questions.length : 0;
             return `
-              <div class="card" data-open-ex="${idx}" style="padding:18px;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;gap:12px;border-color:${rec && rec.status === "completed" ? "var(--primary)" : "var(--border-color)"};">
+              <div class="card" data-open-ex="${idx}" style="padding:18px;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;gap:12px;border-color:${isDone ? "var(--primary)" : "var(--border-color)"};">
                 <div>
                   <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;">
                     <span class="badge badge-jade">${vi ? `Bài ${idx + 1}` : `Exercise ${idx + 1}`}</span>
-                    ${rec
-                      ? `<span class="badge ${rec.status === "completed" ? "badge-jade" : "badge-amber"}">${rec.status === "completed" ? "✅" : "🟡"} ${rec.bestScore}/100</span>`
-                      : `<span style="font-size:12px;color:var(--text-muted);">${vi ? "Chưa làm" : "Not started"}</span>`}
+                    ${isDone
+                      ? `<span class="badge badge-jade">💯 ${rec.bestScore}/100</span>`
+                      : (rec && rec.attempts > 0 ? `<span class="badge badge-amber">🟡 ${rec.bestScore}/100</span>` : "")}
                   </div>
                   <div style="font-weight:700;font-size:15.5px;line-height:1.45;margin-bottom:6px;">${QCore.escapeHtml(exTitle)}</div>
-                  <div style="font-size:12.5px;color:var(--text-muted);">
-                    ${qCnt ? `📝 ${qCnt} ${vi ? "câu hỏi" : "questions"}` : (skillKey === "writing" ? (vi ? "🖋️ Luyện viết & AI chấm điểm" : "🖋️ Writing & AI Rubric") : (vi ? "🎙️ Luyện nói & Thu âm" : "🎙️ Speaking & Audio Check"))}
+                  <div style="font-size:12.5px;color:var(--text-muted);display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
+                    <span>${qCnt ? `📝 ${qCnt} ${vi ? "câu hỏi" : "questions"}` : (skillKey === "writing" ? (vi ? "🖋️ Luyện viết & AI chấm điểm" : "🖋️ Writing & AI Rubric") : (vi ? "🎙️ Luyện nói & Thu âm" : "🎙️ Speaking & Audio Check"))}</span>
+                    ${ex.isSharedPublic && ex.authorName ? `<span class="badge badge-blue" style="font-size:11px;">🌐 ${vi ? `Tạo bởi ${ex.authorName}` : `By ${ex.authorName}`}</span>` : ""}
                   </div>
                 </div>
-                <div style="display:flex;justify-content:flex-end;">
-                  <button class="btn btn-primary btn-sm">${rec ? (vi ? "Làm lại →" : "Practice Again →") : (vi ? "Bắt đầu làm →" : "Start Exercise →")}</button>
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding-top:8px;border-top:1px solid var(--border-color);">
+                  ${isDone
+                    ? `<span class="badge badge-jade" data-ex-completed="true" style="font-weight:700;">✅ ${vi ? "Đã hoàn thành" : "Completed"}</span>`
+                    : `<span></span>`}
+                  <button class="btn btn-primary btn-sm">${isDone ? (vi ? "Làm lại →" : "Practice Again →") : (vi ? "Bắt đầu làm →" : "Start Exercise →")}</button>
                 </div>
               </div>
             `;
@@ -1661,23 +1773,49 @@ window.QLessonStudio = (function () {
     btn.onclick = async () => {
       const vi = isViMode();
       btn.disabled = true;
-      btn.textContent = vi ? "⏳ AI đang tạo bài tập mới..." : "⏳ Generating new exercise...";
+      btn.textContent = vi ? "⏳ AI đang tạo & chia sẻ bài mới..." : "⏳ Generating & sharing exercise...";
       try {
         const currList = (lesson.skills && lesson.skills[skillKey]) || [];
+        const user = (QCore.getUser && QCore.getUser()) || null;
+        const authorName = (user && (user.displayName || user.username)) || "Học viên QChinese";
+        const hskLevel = (activeCourse && activeCourse.hskLevel) || 1;
+        const lessonNum = Number(lesson.lessonNum || 1);
         const newEx = await QCore.apiFetch("/api/ai/generate-lesson-exercise", {
           method: "POST",
           body: {
             skill: skillKey,
-            hskLevel: (activeCourse && activeCourse.hskLevel) || 1,
+            hskLevel,
+            lessonNum,
             lessonTitle: lesson.title,
             vocabWords: (lesson.skills && lesson.skills.vocabulary) || [],
             wrongFocuses: lastWrongFocuses,
-            variantIndex: currList.length + 1
+            variantIndex: currList.length + 1,
+            authorName,
+            sharePublic: true
           }
         });
+        newEx.hskLevel = hskLevel;
+        newEx.lessonNum = lessonNum;
+        newEx.skill = skillKey;
+        newEx.authorName = newEx.authorName || authorName;
+        newEx.isSharedPublic = true;
+        newEx.createdAt = newEx.createdAt || new Date().toISOString();
+
         if (!Array.isArray(lesson.skills[skillKey])) lesson.skills[skillKey] = [];
-        lesson.skills[skillKey].push(newEx);
-        QCore.showToast(vi ? "✨ AI đã tạo xong bài tập mới!" : "✨ AI generated a new focused exercise!");
+        if (!lesson.skills[skillKey].some((x) => x && x.id === newEx.id)) {
+          lesson.skills[skillKey].push(newEx);
+        }
+        saveLocalSharedExercise(newEx);
+        if (window.QCloud && typeof QCloud.publishSharedExercise === "function") {
+          QCloud.publishSharedExercise({
+            hskLevel,
+            lessonNum,
+            skill: skillKey,
+            exercise: newEx,
+            authorName: newEx.authorName
+          }).catch(() => {});
+        }
+        QCore.showToast(vi ? "✨ AI đã tạo bài mới & chia sẻ công khai cho mọi tài khoản!" : "✨ AI generated & publicly shared the new exercise!");
         onCreated();
       } catch (err) {
         QCore.showToast("❌ " + err.message);
@@ -1808,7 +1946,7 @@ window.QLessonStudio = (function () {
           ${SKILL_CARDS_6.map((sk) => {
             const list = (lesson.skills && Array.isArray(lesson.skills[sk.id])) ? lesson.skills[sk.id] : [];
             const isVocab = sk.id === "vocabulary";
-            const doneCnt = isVocab ? 0 : list.filter((e) => lp[e.id] && lp[e.id].status === "completed").length;
+            const doneCnt = isVocab ? 0 : list.filter((e) => isExCompleted(lp[e.id], sk.id)).length;
             const pct = (!isVocab && list.length) ? Math.round((doneCnt / list.length) * 100) : 0;
             return `
               <div class="card" data-hub-skill="${sk.id}" style="padding:20px;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;gap:16px;border-color:${pct === 100 && list.length ? "var(--primary)" : "var(--border-color)"};transition:transform .15s ease;">
@@ -1861,37 +1999,60 @@ window.QLessonStudio = (function () {
                 ${vi ? `Chọn 1 bài tập nhỏ bên dưới để làm tập trung (tổng ${exList.length} bài):` : `Pick one focused exercise below (${exList.length} exercises):`}
               </p>
             </div>
-            <button class="btn btn-primary btn-sm" id="hub-ai-gen">✨ ${vi ? `AI – Tạo thêm Bài ${exList.length + 1}` : `AI – Generate Exercise ${exList.length + 1}`}</button>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+              <button class="btn btn-outline btn-sm" id="hub-share-link">🔗 ${vi ? "Chia sẻ công khai" : "Share Course"}</button>
+              <button class="btn btn-primary btn-sm" id="hub-ai-gen">✨ ${vi ? `AI – Tạo thêm Bài ${exList.length + 1}` : `AI – Generate Exercise ${exList.length + 1}`}</button>
+            </div>
           </div>
         </div>
 
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;">
           ${exList.map((ex, idx) => {
             const rec = lp[ex.id];
+            const isDone = isExCompleted(rec, skKey);
             const exTitle = (vi && ex.title_vi) ? ex.title_vi : (ex.title || `${vi ? "Bài" : "Exercise"} ${idx + 1}`);
             const qCnt = Array.isArray(ex.questions) ? ex.questions.length : 0;
             return `
-              <div class="card" data-hub-ex="${idx}" style="padding:18px;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;gap:12px;border-color:${rec && rec.status === "completed" ? "var(--primary)" : "var(--border-color)"};">
+              <div class="card" data-hub-ex="${idx}" style="padding:18px;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;gap:12px;border-color:${isDone ? "var(--primary)" : "var(--border-color)"};">
                 <div>
                   <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;">
                     <span class="badge badge-jade">${vi ? `Bài ${idx + 1}` : `Exercise ${idx + 1}`}</span>
-                    ${rec
-                      ? `<span class="badge ${rec.status === "completed" ? "badge-jade" : "badge-amber"}">${rec.status === "completed" ? "✅" : "🟡"} ${rec.bestScore}/100</span>`
-                      : `<span style="font-size:12px;color:var(--text-muted);">${vi ? "Chưa làm" : "Not started"}</span>`}
+                    ${isDone
+                      ? `<span class="badge badge-jade">💯 ${rec.bestScore}/100</span>`
+                      : (rec && rec.attempts > 0 ? `<span class="badge badge-amber">🟡 ${rec.bestScore}/100</span>` : "")}
                   </div>
                   <div style="font-weight:700;font-size:15.5px;line-height:1.45;margin-bottom:6px;">${QCore.escapeHtml(exTitle)}</div>
-                  <div style="font-size:12.5px;color:var(--text-muted);">
-                    ${qCnt ? `📝 ${qCnt} ${vi ? "câu hỏi" : "questions"}` : (skKey === "writing" ? (vi ? "🖋️ Luyện viết & AI chấm điểm" : "🖋️ Writing & AI Rubric") : (vi ? "🎙️ Luyện nói & Thu âm" : "🎙️ Speaking & Audio Check"))}
+                  <div style="font-size:12.5px;color:var(--text-muted);display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
+                    <span>${qCnt ? `📝 ${qCnt} ${vi ? "câu hỏi" : "questions"}` : (skKey === "writing" ? (vi ? "🖋️ Luyện viết & AI chấm điểm" : "🖋️ Writing & AI Rubric") : (vi ? "🎙️ Luyện nói & Thu âm" : "🎙️ Speaking & Audio Check"))}</span>
+                    ${ex.isSharedPublic && ex.authorName ? `<span class="badge badge-blue" style="font-size:11px;">🌐 ${vi ? `Công khai · Tạo bởi ${ex.authorName}` : `Shared · By ${ex.authorName}`}</span>` : ""}
                   </div>
                 </div>
-                <div style="display:flex;justify-content:flex-end;">
-                  <button class="btn btn-primary btn-sm">${rec ? (vi ? "Làm lại →" : "Practice Again →") : (vi ? "Bắt đầu làm →" : "Start Exercise →")}</button>
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding-top:8px;border-top:1px solid var(--border-color);">
+                  ${isDone
+                    ? `<span class="badge badge-jade" data-ex-completed="true" style="font-weight:700;">✅ ${vi ? "Đã hoàn thành" : "Completed"}</span>`
+                    : `<span></span>`}
+                  <button class="btn btn-primary btn-sm">${isDone ? (vi ? "Làm lại →" : "Practice Again →") : (vi ? "Bắt đầu làm →" : "Start Exercise →")}</button>
                 </div>
               </div>
             `;
           }).join("")}
         </div>
       `;
+
+      const shareBtn = container.querySelector("#hub-share-link");
+      if (shareBtn) {
+        shareBtn.onclick = () => {
+          const url = window.location.href;
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(url).catch(() => {});
+          }
+          QCore.showToast(
+            vi
+              ? "🔗 Đã sao chép link! Mọi bài AI tạo mới trong khóa học đều chia sẻ công khai giữa các tài khoản (tiến trình làm bài vẫn riêng tư từng acc)."
+              : "🔗 Link copied! All AI exercises are publicly shared across accounts, while completion progress stays 100% private per account."
+          );
+        };
+      }
 
       container.querySelector("#hub-back-skills").onclick = () => {
         hubState.view = "skills";

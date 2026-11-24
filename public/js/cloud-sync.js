@@ -682,6 +682,79 @@ window.QCloud = (function () {
     return out;
   }
 
+  let sharedExerciseListener = null;
+
+  function onSharedExercise(cb) {
+    sharedExerciseListener = typeof cb === "function" ? cb : null;
+  }
+
+  async function fetchSharedExercises(hskLevel = 1) {
+    if (!isCloudMode()) return { ok: false, items: [] };
+    await ensureValidSession();
+    try {
+      const qs = `is_public=eq.true&hsk_level=eq.${encodeURIComponent(Number(hskLevel) || 1)}&select=id,hsk_level,lesson_num,skill,author_name,exercise_json,created_at&order=created_at.asc&limit=500`;
+      const res = await fetch(`${config.supabaseUrl}/rest/v1/qchinese_shared_exercises?${qs}`, {
+        method: "GET",
+        headers: getHeaders(Boolean(session && session.access_token))
+      });
+      if (res.status === 404) {
+        return { ok: false, missingTable: true, items: [] };
+      }
+      if (!res.ok) return { ok: false, items: [] };
+      const rows = await res.json().catch(() => []);
+      const items = (Array.isArray(rows) ? rows : []).map((r) => {
+        const ex = (r && typeof r.exercise_json === "object" && r.exercise_json) ? Object.assign({}, r.exercise_json) : {};
+        ex.id = ex.id || r.id;
+        ex.hskLevel = Number(r.hsk_level || ex.hskLevel || 1);
+        ex.lessonNum = Number(r.lesson_num || ex.lessonNum || 1);
+        ex.skill = String(r.skill || ex.skill || "reading").toLowerCase();
+        ex.authorName = ex.authorName || r.author_name || "Học viên QChinese";
+        ex.isSharedPublic = true;
+        ex.createdAt = ex.createdAt || r.created_at;
+        return ex;
+      }).filter((x) => Boolean(x.id));
+      return { ok: true, items };
+    } catch (_) {
+      return { ok: false, items: [] };
+    }
+  }
+
+  async function publishSharedExercise({ hskLevel = 1, lessonNum = 1, skill = "reading", exercise, authorName = "" }) {
+    if (!isCloudMode() || !exercise || !exercise.id) return { ok: false };
+    const valid = await ensureValidSession();
+    if (!valid || !session || !session.user) return { ok: false };
+    try {
+      const cleanAuthor = String(authorName || (session.user.user_metadata && session.user.user_metadata.display_name) || session.user.email || "Học viên QChinese").trim().slice(0, 60);
+      const payload = {
+        id: String(exercise.id),
+        hsk_level: Number(hskLevel) || 1,
+        lesson_num: Number(lessonNum) || 1,
+        skill: String(skill || "reading").toLowerCase(),
+        author_user_id: session.user.id,
+        author_name: cleanAuthor,
+        is_public: true,
+        exercise_json: Object.assign({}, exercise, {
+          hskLevel: Number(hskLevel) || 1,
+          lessonNum: Number(lessonNum) || 1,
+          skill: String(skill || "reading").toLowerCase(),
+          authorName: cleanAuthor,
+          isSharedPublic: true
+        })
+      };
+      const res = await fetch(`${config.supabaseUrl}/rest/v1/qchinese_shared_exercises`, {
+        method: "POST",
+        headers: Object.assign({}, getHeaders(true), {
+          Prefer: "resolution=merge-duplicates,return=representation"
+        }),
+        body: JSON.stringify(payload)
+      });
+      if (res.status === 404) return { ok: false, missingTable: true };
+      return { ok: res.ok };
+    } catch (_) {
+      return { ok: false };
+    }
+  }
+
   /* -------------------- REAL-TIME WEBSOCKET SYNC (24/7) -------------------- */
   function connectRealtime(onRemoteSnapshot, onRevoked) {
     const uid = session && session.user && session.user.id;
@@ -709,7 +782,8 @@ window.QCloud = (function () {
               presence: { key: getDeviceId() },
               postgres_changes: [
                 { event: "*", schema: "public", table: "qchinese_user_snapshots", filter: `user_id=eq.${uid}` },
-                { event: "*", schema: "public", table: "qchinese_user_devices", filter: `user_id=eq.${uid}` }
+                { event: "*", schema: "public", table: "qchinese_user_devices", filter: `user_id=eq.${uid}` },
+                { event: "INSERT", schema: "public", table: "qchinese_shared_exercises" }
               ]
             },
             access_token: session.access_token
@@ -737,6 +811,21 @@ window.QCloud = (function () {
           if (data.table === "qchinese_user_devices") {
             if (rec.device_id === getDeviceId() && rec.is_revoked === true && typeof onRevoked === "function") {
               onRevoked();
+            }
+            return;
+          }
+          if (data.table === "qchinese_shared_exercises") {
+            if (rec.is_public !== false && rec.exercise_json && typeof sharedExerciseListener === "function") {
+              const ex = Object.assign({}, rec.exercise_json, {
+                id: rec.id,
+                hskLevel: Number(rec.hsk_level || 1),
+                lessonNum: Number(rec.lesson_num || 1),
+                skill: String(rec.skill || "reading").toLowerCase(),
+                authorName: rec.author_name || "Học viên QChinese",
+                isSharedPublic: true,
+                createdAt: rec.created_at
+              });
+              sharedExerciseListener(ex);
             }
             return;
           }
@@ -818,6 +907,9 @@ window.QCloud = (function () {
     pushSnapshot,
     mergeStates,
     connectRealtime,
-    disconnectRealtime
+    disconnectRealtime,
+    fetchSharedExercises,
+    publishSharedExercise,
+    onSharedExercise
   };
 })();

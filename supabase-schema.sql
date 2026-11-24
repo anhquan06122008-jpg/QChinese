@@ -98,9 +98,43 @@ on public.qchinese_user_devices for all
 using (auth.uid() = user_id)
 with check (auth.uid() = user_id);
 
--- 4. Enable Supabase Realtime (CDC WebSocket Push) on QChinese multi-device tables
+-- 4. Public Shared AI-Generated Exercises (Community Pool shared across all accounts, while progress stays 100% per-account!)
+create table if not exists public.qchinese_shared_exercises (
+    id text primary key,
+    hsk_level integer not null default 1,
+    lesson_num integer not null default 1,
+    skill text not null,
+    author_user_id uuid references auth.users(id) on delete set null,
+    author_name text not null default 'Học viên QChinese',
+    is_public boolean not null default true,
+    exercise_json jsonb not null,
+    created_at timestamptz not null default now()
+);
+
+create index if not exists idx_qchinese_shared_ex_lookup
+    on public.qchinese_shared_exercises (hsk_level, lesson_num, skill, created_at asc);
+
+alter table public.qchinese_shared_exercises enable row level security;
+
+drop policy if exists "QChinese everyone reads public shared exercises" on public.qchinese_shared_exercises;
+create policy "QChinese everyone reads public shared exercises"
+on public.qchinese_shared_exercises for select
+using (is_public = true);
+
+drop policy if exists "QChinese authenticated users publish shared exercises" on public.qchinese_shared_exercises;
+create policy "QChinese authenticated users publish shared exercises"
+on public.qchinese_shared_exercises for insert
+with check (auth.uid() is not null and (author_user_id is null or author_user_id = auth.uid()));
+
+drop policy if exists "QChinese authors delete own shared exercises" on public.qchinese_shared_exercises;
+create policy "QChinese authors delete own shared exercises"
+on public.qchinese_shared_exercises for delete
+using (auth.uid() = author_user_id);
+
+-- 5. Enable Supabase Realtime (CDC WebSocket Push) on QChinese multi-device & shared tables
 alter table public.qchinese_user_snapshots replica identity full;
 alter table public.qchinese_user_devices replica identity full;
+alter table public.qchinese_shared_exercises replica identity full;
 
 do $$
 begin
@@ -117,12 +151,21 @@ begin
     ) then
         alter publication supabase_realtime add table public.qchinese_user_devices;
     end if;
+
+    if not exists (
+        select 1 from pg_publication_tables
+        where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'qchinese_shared_exercises'
+    ) then
+        alter publication supabase_realtime add table public.qchinese_shared_exercises;
+    end if;
 end $$;
 
--- 5. Explicit least-privilege table grants for authenticated users (RLS isolates by auth.uid())
-grant usage on schema public to authenticated;
+-- 6. Explicit least-privilege table grants
+grant usage on schema public to authenticated, anon;
 grant select, insert, update, delete on table
     public.qchinese_user_profiles,
     public.qchinese_user_snapshots,
     public.qchinese_user_devices
 to authenticated;
+grant select, insert, delete on table public.qchinese_shared_exercises to authenticated;
+grant select on table public.qchinese_shared_exercises to anon;
